@@ -1,0 +1,15 @@
+---
+namespace: expedient
+name: elastic
+readme: README.md
+# the version key is generated during the release by Github Action
+authors:
+- Expedient (https://github.com/Expedient)
+description: Expedient collection for interacting with Elastic
+license_file: LICENSE
+tags:
+- elastic
+dependencies: {}
+repository: https://github.com/Expedient/ansible-collection-elastic
+homepage: https://github.com/Expedient/ansible-collection-elastic
+issues: https://github.com/Expedient/ansible-collection-elastic/issues
