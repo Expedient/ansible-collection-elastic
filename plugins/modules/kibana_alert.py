@@ -1,5 +1,5 @@
 try:
-  from ansible_collections.expedient.elastic.module_utils.kibana import Kibana
+  from ansible_collections.expedient.elastic.plugins.module_utils.kibana import Kibana
 except:
   import sys
   import os
