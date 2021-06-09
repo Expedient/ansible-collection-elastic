@@ -24,14 +24,14 @@ class Kibana(object):
       headers['kbn-version'] = self.version
     try:
       response = open_url(url, data=payload, method=method, validate_certs=self.validate_certs, headers=headers,
-                          force_basic_auth=True, url_username=self.username, url_password=self.password)
+                          force_basic_auth=True, url_username=self.username, url_password=self.password, timeout=60)
     except HTTPError as e:
       raise e ## This allows errors raised during the request to be inspected while debugging
     return loads(response.read())
 
   def get_cluster_status(self):
     endpoint = 'status'
-    return self.send_api_request(endpoint, 'GET', timeout=60)
+    return self.send_api_request(endpoint, 'GET')
 
   def get_cluster_version(self):
     status = self.get_cluster_status()
