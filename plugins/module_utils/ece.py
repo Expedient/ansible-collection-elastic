@@ -70,7 +70,7 @@ class ECE(object):
   def wait_for_cluster_state(self, cluster_type, cluster_id, cluster_state, completion_timeout=600):
     timeout = time.time() + completion_timeout
     while self.get_cluster_by_id(cluster_type, cluster_id)['status'] != cluster_state:
-      time.sleep(5)
+      time.sleep(1)
       if time.time() > timeout:
         return False
     return True
