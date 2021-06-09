@@ -399,7 +399,7 @@ def main():
     kibana_settings=dict(type='dict', required=False, options=kibana_settings_spec),
     apm_settings=dict(type='dict', required=False, options=apm_settings_spec),
     ml_settings=dict(type='dict', required=False, options=ml_settings_spec),
-    version=dict(type='str', default='7.7.0'),
+    version=dict(type='str', default='7.13.0'),
     deployment_template=dict(type='str', required=False),
     wait_for_completion=dict(type='bool', default=False),
     completion_timeout=dict(type='int', default=10),
