@@ -401,7 +401,7 @@ def main():
     version=dict(type='str', default='7.13.0'),
     deployment_template=dict(type='str', required=True),
     wait_for_completion=dict(type='bool', default=False),
-    completion_timeout=dict(type='int', default=10),
+    completion_timeout=dict(type='int', default=600),
   )
 
   results = {'changed': False}
