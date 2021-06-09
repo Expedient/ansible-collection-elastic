@@ -334,8 +334,7 @@ class ECE_Cluster(ECE):
       kibana_result = self.wait_for_cluster_state('kibana', cluster_creation_result['kibana_cluster_id'], 'started', self.completion_timeout)
       if not elastic_result and kibana_result:
         return False
-    cluster = self.get_cluster_by_id('elasticsearch', cluster_creation_result['elasticsearch_cluster_id'])
-    return cluster
+    return cluster_creation_result
 
   def delete_cluster(self, cluster_id):
     self.terminate_cluster(cluster_id)
