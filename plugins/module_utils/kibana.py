@@ -31,7 +31,7 @@ class Kibana(object):
 
   def get_cluster_status(self):
     endpoint = 'status'
-    return self.send_api_request(endpoint, 'GET')
+    return self.send_api_request(endpoint, 'GET', timeout=60)
 
   def get_cluster_version(self):
     status = self.get_cluster_status()
