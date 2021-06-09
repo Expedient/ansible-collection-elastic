@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from ansible.module_utils.six import assertRaisesRegex
-from plugins.modules.ece_cluster import DOCUMENTATION
+#from plugins.modules.ece_cluster import DOCUMENTATION
 
 
 ANSIBLE_METADATA = {
