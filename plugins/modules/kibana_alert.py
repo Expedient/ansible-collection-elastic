@@ -31,11 +31,72 @@ description:
 options:
   state:
     description:
-      - setting whether cluster should be created or deleted
-      - 
+      - setting whether alert should be created or deleted
     choices: ['present', 'absent']
     default: present
     type: str
+  alert_name:
+    description:
+      - name of the alert to create
+    required: True
+    type: str
+  enabled:
+    description:
+      - whether to enable the alert when creating
+    default: True
+    type: bool
+  alert_type:
+    description:
+      - type of alert to create
+    choices:
+      - metrics_threshold
+  tags:
+    description:
+      - metadata tags to attach to the alert
+    type: str
+  check_every:
+    description:
+      - frequency to check the alert on
+    default: 1m
+    type: str
+  notify_on:
+    description:
+      - when to send the alert
+    default: status_change
+    choices:
+      - status_change
+    type: str
+  conditions:
+    description:
+      - dictionary defining which conditions to alert on
+      - see examples for details
+    type: dict
+  filter:
+    description:
+      - kql filter to apply to the conditions
+    type: str
+  alert_on_no_data:
+    description:
+      whether to alert if there is no data available in the check period
+    type: bool
+  group_by:
+    description:
+      - defines the "alert for every" field in the Kibana alert
+      - generally the sensible default is host.name
+    default: host.name
+    type: str
+  actions:
+    description:
+      - actions to run when alert conditions are triggered
+    type: dict
+  consumer:
+    description:
+      - name of the application that owns the alert
+    default: alerts
+    type: str
+
+extends_documentation_fragment:
+  - expedient.elastic.elastic_auth_options
 '''
 
 
@@ -162,6 +223,10 @@ class KibanaAlert(Kibana):
     result = self.send_api_request(endpoint, 'POST', data=data)
     return result
 
+  def delete_alert(self):
+    endpoint = f'alerts/alert/{self.alert["id"]}'
+    return self.send_api_request(endpoint, 'DELETE')
+
 
 
 
@@ -176,11 +241,11 @@ def main():
     verify_ssl_cert=dict(type='bool', default=True),
     state=dict(type='str', default='present', choices=['present', 'absent']),
     alert_name=dict(type='str', required=True),
-    enabled=dict(type='bool'),
+    enabled=dict(type='bool', default=True),
     alert_type=dict(type='str', choices=['metrics_threshold']), #more types will be added as we gain the ability to support them
     tags=dict(type='list', elements='str', default=[]),
     check_every=dict(type='str', default='1m'),
-    notify_on=dict(type='str', default='status_change'),
+    notify_on=dict(type='str', default='status_change', choices=['status_change']),
     conditions=dict(type='list', elements='dict', options=dict(
       when=dict(type='str', required=True, choices=['max', 'min', 'average', 'cardnality', 'rate', 'document_count', 'sum', '95th_percentile', '99th_percentile']),
       field=dict(type='str', required=True),
@@ -190,7 +255,7 @@ def main():
       time_period=dict(type='int', default=5),
       time_unit=dict(type='str', default='minute', choices=['second', 'seconds', 'minute', 'minutes', 'hour', 'hours', 'day', 'days']),
     )),
-    filter=dict(type='str', required=False),
+    filter=dict(type='str'),
     alert_on_no_data=dict(type='bool', default=False),
     group_by=dict(type='list', elements='str', default=['host.name']),
     actions=dict(type='list', elements='dict', options=dict(
@@ -222,7 +287,15 @@ def main():
       results['alert'] = kibana_alert.create_alert()
       results['msg'] = f'alert named {module.params.get("alert_name")} created'
     module.exit_json(**results)
-
+  if state == 'absent':
+    if not kibana_alert.alert:
+      results['msg'] = f'alert named {kibana_alert.alert_name} does not exist'
+      module.exit_json(**results)
+    results['changed'] = True
+    results['msg'] = f'alert named {module.params.get("alert_name")} will be deleted'
+    if not module.check_mode:
+      kibana_alert.delete_alert()
+    module.exit_json(**results)
 
 if __name__ == '__main__':
   main()
