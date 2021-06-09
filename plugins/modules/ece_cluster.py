@@ -46,7 +46,7 @@ options:
         description:
           - Amount of memory to assign cluster, in mb
         required: True
-        type: str
+        type: int
       instance_config:
         description:
           - Name of the instance configuration to use for the elastic nodes
