@@ -1,3 +1,44 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+from ansible.module_utils.six import assertRaisesRegex
+from plugins.modules.ece_cluster import DOCUMENTATION
+
+
+ANSIBLE_METADATA = {
+  'metadata_version': '1.1',
+  'status': ['preview'],
+  'supported_by': 'community'
+}
+
+DOCUMENTATION = r'''
+---
+module: kibana_alert
+
+short_description: Create or delete alerts in Kibana
+
+version_added: 2.11.1
+
+author: Mike Garuccio (@mgaruccio)
+
+requirements:
+  - python3
+
+description:
+  - "This module creates or deletes alerts in kibana"
+  - "currently supports threshold alerts"
+
+options:
+  state:
+    description:
+      - setting whether cluster should be created or deleted
+      - 
+    choices: ['present', 'absent']
+    default: present
+    type: str
+'''
+
+
 try:
   from ansible_collections.expedient.elastic.plugins.module_utils.kibana import Kibana
 except:
@@ -135,14 +176,13 @@ def main():
     verify_ssl_cert=dict(type='bool', default=True),
     state=dict(type='str', default='present', choices=['present', 'absent']),
     alert_name=dict(type='str', required=True),
-    enabled=dict(type='bool', default=True),
-    alert_type=dict(type='str', required=True, choices=['metrics_threshold']), #more types will be added as we gain the ability to support them
+    enabled=dict(type='bool'),
+    alert_type=dict(type='str', choices=['metrics_threshold']), #more types will be added as we gain the ability to support them
     tags=dict(type='list', elements='str', default=[]),
     check_every=dict(type='str', default='1m'),
     notify_on=dict(type='str', default='status_change'),
     conditions=dict(type='list', elements='dict', options=dict(
       when=dict(type='str', required=True, choices=['max', 'min', 'average', 'cardnality', 'rate', 'document_count', 'sum', '95th_percentile', '99th_percentile']),
-      #comparator=dict(type='str', required=True, choices=['>', '<', '=']),
       field=dict(type='str', required=True),
       state=dict(type='str', required=True),
       threshold=dict(type='float', required=True),
@@ -162,9 +202,14 @@ def main():
     consumer=dict(type='str', default='alerts'), ## This seems to always be the default value at this time, just future-proofing
   )
 
+  # https://docs.ansible.com/ansible/latest/dev_guide/developing_program_flow_modules.html#argument-spec-dependencies
+  argument_dependencies = [
+    ('state', 'present', ('enabled', 'alert_type', 'conditions', 'actions'))
+  ]
+
   results = {'changed': False}
 
-  module = AnsibleModule(argument_spec=module_args, supports_check_mode=False)
+  module = AnsibleModule(argument_spec=module_args, required_if=argument_dependencies, supports_check_mode=False)
   state = module.params.get('state')
   kibana_alert = KibanaAlert(module)
   if state == 'present':
