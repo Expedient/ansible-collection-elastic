@@ -209,15 +209,18 @@ def main():
 
   results = {'changed': False}
 
-  module = AnsibleModule(argument_spec=module_args, required_if=argument_dependencies, supports_check_mode=False)
+  module = AnsibleModule(argument_spec=module_args, required_if=argument_dependencies, supports_check_mode=True)
   state = module.params.get('state')
   kibana_alert = KibanaAlert(module)
   if state == 'present':
     if kibana_alert.alert:
       results['msg'] = f'alert named {kibana_alert.alert_name} exists'
       module.exit_json(**results)
-    results['alert'] = kibana_alert.create_alert()
     results['changed'] = True
+    results['msg'] = f'alert named {module.params.get("alert_name")} will be created'
+    if not module.check_mode:
+      results['alert'] = kibana_alert.create_alert()
+      results['msg'] = f'alert named {module.params.get("alert_name")} created'
     module.exit_json(**results)
 
 
