@@ -79,7 +79,7 @@ extends_documentation_fragment:
 
 
 try:
-  from ansible_collections.expedient.elastic.module_utils.elastic import Elastic
+  from ansible_collections.expedient.elastic.plugins.module_utils.elastic import Elastic
 except:
   import sys
   import os

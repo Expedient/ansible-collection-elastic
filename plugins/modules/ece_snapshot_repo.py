@@ -66,7 +66,7 @@ extends_documentation_fragment:
 '''
 
 try:
-  from ansible_collections.expedient.elastic.module_utils.ece import ECE
+  from ansible_collections.expedient.elastic.plugins.module_utils.ece import ECE
 except:
   import sys
   import os

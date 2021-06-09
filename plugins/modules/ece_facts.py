@@ -8,7 +8,7 @@ ANSIBLE_METADATA = {
 
 ## need to support both loading as part of a collection and running in test/debug mode
 try:
-  from ansible_collections.expedient.elastic.module_utils.ece import ECE
+  from ansible_collections.expedient.elastic.plugins.module_utils.ece import ECE
 except:
   import sys
   import os

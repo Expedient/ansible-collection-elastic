@@ -1,5 +1,5 @@
 try:
-  from ansible_collections.expedient.elastic.module_utils.endgame import Endgame
+  from ansible_collections.expedient.elastic.plugins.module_utils.endgame import Endgame
 except:
   import sys
   import os
