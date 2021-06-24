@@ -1,2 +1,3 @@
 tmp
 .vscode
+plugins/module_utils/__pycache__/*

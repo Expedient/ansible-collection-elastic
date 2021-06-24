@@ -48,6 +48,11 @@ class Kibana(object):
     return next(filter(lambda x: x['name'] == alert_name, alerts['data']), None)
 
   def get_alert_connector_by_name(self, connector_name):
-    endpoint = 'actions'
+    endpoint = 'actions/connectors'
     actions = self.send_api_request(endpoint, 'GET')
     return next(filter(lambda x: x['name'] == connector_name, actions), None)
+
+  def get_alert_connector_type_by_name(self, connector_type_name):
+    endpoint = 'actions/connector_types'
+    connector_types = self.send_api_request(endpoint, 'GET')
+    return next(filter(lambda x: x['name'] == connector_type_name, connector_types), None)
