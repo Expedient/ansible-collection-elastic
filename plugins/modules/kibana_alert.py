@@ -1,7 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-from ansible.module_utils.six import assertRaisesRegex
 #from plugins.modules.ece_cluster import DOCUMENTATION
 
 
@@ -69,6 +68,7 @@ options:
   conditions:
     description:
       - dictionary defining which conditions to alert on
+      - only used for metrics threshold alerts.
       - see examples for details
     type: dict
   filter:
@@ -269,7 +269,8 @@ def main():
 
   # https://docs.ansible.com/ansible/latest/dev_guide/developing_program_flow_modules.html#argument-spec-dependencies
   argument_dependencies = [
-    ('state', 'present', ('enabled', 'alert_type', 'conditions', 'actions'))
+    ('state', 'present', ('enabled', 'alert_type', 'conditions', 'actions')),
+    ('alert_type', 'metrics_threshold', ('conditions'))
   ]
 
   results = {'changed': False}
