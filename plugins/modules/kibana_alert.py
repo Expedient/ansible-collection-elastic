@@ -165,7 +165,7 @@ class KibanaAlert(Kibana):
     self.group_by = self.module.params.get('group_by')
     self.alert_on_no_data = self.module.params.get('alert_on_no_data')
     self.consumer = self.module.params.get('consumer')
-
+    self.filter = self.module.params.get('filter')
 
 
     self.alert = self.get_alert_by_name(self.alert_name)
@@ -178,14 +178,19 @@ class KibanaAlert(Kibana):
   # This will defnitely need changes as we expand out functionality of the alert module, currently really only works with metrcis thresholds
   def format_conditions(self):
     conditions = self.module.params.get('conditions')
-    return [{
-      'aggType': condition['when'],
-      'comparator': state_lookup[condition['state']],
-      'threshold': [condition['threshold']],
-      'timeSize': condition['time_period'],
-      'timeUnit': time_unit_lookup[condition['time_unit']],
-      'metric': condition['field'],
-    } for condition in conditions]
+    formatted_conditions = []
+    for condition in conditions:
+      formatted_condition = {
+        'aggType': condition['when'],
+        'comparator': state_lookup[condition['state']],
+        'threshold': [condition['threshold']],
+        'timeSize': condition['time_period'],
+        'timeUnit': time_unit_lookup[condition['time_unit']],
+      }
+      if condition['field'] is not None:
+        formatted_condition['metric'] = condition['field']
+      formatted_conditions.append(formatted_condition)
+    return formatted_conditions
 
   def format_actions(self):
     actions = self.module.params.get('actions')
@@ -220,6 +225,8 @@ class KibanaAlert(Kibana):
       'name': self.alert_name,
       'enabled': self.enabled
     }
+    if self.filter is not None:
+      data['params']['filterQueryText'] = self.filter
     result = self.send_api_request(endpoint, 'POST', data=data)
     return result
 
@@ -247,8 +254,8 @@ def main():
     check_every=dict(type='str', default='1m'),
     notify_on=dict(type='str', default='status_change', choices=['status_change']),
     conditions=dict(type='list', elements='dict', options=dict(
-      when=dict(type='str', required=True, choices=['max', 'min', 'average', 'cardnality', 'rate', 'document_count', 'sum', '95th_percentile', '99th_percentile']),
-      field=dict(type='str', required=True),
+      when=dict(type='str', required=True, choices=['max', 'min', 'average', 'cardnality', 'rate', 'count', 'sum', '95th_percentile', '99th_percentile']),
+      field=dict(type='str', required=False),
       state=dict(type='str', required=True),
       threshold=dict(type='float', required=True),
       warning_threshold=dict(type='float', required=False), # placeholder not currently implemented
@@ -270,7 +277,7 @@ def main():
   # https://docs.ansible.com/ansible/latest/dev_guide/developing_program_flow_modules.html#argument-spec-dependencies
   argument_dependencies = [
     ('state', 'present', ('enabled', 'alert_type', 'conditions', 'actions')),
-    ('alert_type', 'metrics_threshold', ('conditions'))
+    ('alert-type', 'metrics_threshold', ('conditions'))
   ]
 
   results = {'changed': False}
