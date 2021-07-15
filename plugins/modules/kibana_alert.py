@@ -116,6 +116,7 @@ except:
   from kibana import Kibana
 
 from ansible.module_utils.basic import AnsibleModule
+from json import dumps
 
 time_unit_lookup = {
   'second': 's',
@@ -205,7 +206,7 @@ class KibanaAlert(Kibana):
       'actionTypeId': action_type_lookup[action['action_type']],
       'group': action_group_lookup[action['run_when']],
       'params': {
-        action_param_type_lookup[action['action_type']]:[action['body']]
+        action_param_type_lookup[action['action_type']]: [action['body']] if action['body'] else dumps(action['body_json'], indent=2)
       },
       'id': self.get_alert_connector_by_name(action['connector'])['id'] ## need to actually implement this
     } for action in actions]
@@ -218,7 +219,6 @@ class KibanaAlert(Kibana):
       'notifyWhen': notify_lookup[self.notify_when],
       'params': {
         'criteria': criteria,
-        'groupBy': self.group_by,
         'alertOnNoData': self.alert_on_no_data,
         'sourceId': 'default' #entirely unclear what this does but it appears to be a static value so hard-coding for now
       },
@@ -232,9 +232,11 @@ class KibanaAlert(Kibana):
       'name': self.alert_name,
       'enabled': self.enabled
     }
-    if self.filter is not None:
+    if self.filter:
       data['params']['filterQueryText'] = self.filter
       data['params']['filterQuery'] = self.filter_query
+    if self.group_by:
+        data['params']['groupBy'] = self.group_bs
     result = self.send_api_request(endpoint, 'POST', data=data)
     return result
 
@@ -273,12 +275,13 @@ def main():
     filter=dict(type='str'),
     filter_query=dict(type='str'),
     alert_on_no_data=dict(type='bool', default=False),
-    group_by=dict(type='list', elements='str', default=['host.name']),
+    group_by=dict(type='list', elements='str', required=False),
     actions=dict(type='list', elements='dict', options=dict(
       action_type=dict(type='str', required=True, choices=['email', 'index', 'webhook']), #Only supporting these types for now, if we need more options later we can deal with them as-needed
       run_when=dict(type='str', default='alert', choices=['alert', 'warning', 'recovered']),
       connector=dict(type='str', required=True),
-      body=dict(type='str', required=True)
+      body=dict(type='str', required=False),
+      body_json=dict(type='dict', required=False)
     )),
     consumer=dict(type='str', default='alerts'), ## This seems to always be the default value at this time, just future-proofing
   )
