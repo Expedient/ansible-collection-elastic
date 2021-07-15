@@ -75,6 +75,12 @@ options:
     description:
       - kql filter to apply to the conditions
     type: str
+  filter_query:
+    description:
+      - lucence query to apply to the conditions
+      - at this time both this and "filter" are required for proper functioning of the module
+      - easiest way to get this is to do a kibana_alert_facts on an existing alert with the correct config
+      - alternatively can view the request in the discover tab of kibana
   alert_on_no_data:
     description:
       whether to alert if there is no data available in the check period
@@ -166,6 +172,7 @@ class KibanaAlert(Kibana):
     self.alert_on_no_data = self.module.params.get('alert_on_no_data')
     self.consumer = self.module.params.get('consumer')
     self.filter = self.module.params.get('filter')
+    self.filter_query = self.module.params.get('filter_query')
 
 
     self.alert = self.get_alert_by_name(self.alert_name)
@@ -183,7 +190,7 @@ class KibanaAlert(Kibana):
       formatted_condition = {
         'aggType': condition['when'],
         'comparator': state_lookup[condition['state']],
-        'threshold': [condition['threshold']],
+        'threshold': [condition['threshold']] if condition['threshold'] != 0.0 else [int(condition['threshold'])],
         'timeSize': condition['time_period'],
         'timeUnit': time_unit_lookup[condition['time_unit']],
       }
@@ -227,6 +234,7 @@ class KibanaAlert(Kibana):
     }
     if self.filter is not None:
       data['params']['filterQueryText'] = self.filter
+      data['params']['filterQuery'] = self.filter_query
     result = self.send_api_request(endpoint, 'POST', data=data)
     return result
 
@@ -263,6 +271,7 @@ def main():
       time_unit=dict(type='str', default='minute', choices=['second', 'seconds', 'minute', 'minutes', 'hour', 'hours', 'day', 'days']),
     )),
     filter=dict(type='str'),
+    filter_query=dict(type='str'),
     alert_on_no_data=dict(type='bool', default=False),
     group_by=dict(type='list', elements='str', default=['host.name']),
     actions=dict(type='list', elements='dict', options=dict(
