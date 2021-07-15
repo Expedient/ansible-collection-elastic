@@ -1,6 +1,7 @@
 from ansible.module_utils.urls import open_url, urllib_error
 from json import loads, dumps
 from urllib.error import HTTPError
+import urllib.parse
 
 class Kibana(object):
   def __init__(self, module):
@@ -43,7 +44,7 @@ class Kibana(object):
     return alert_types
 
   def get_alert_by_name(self, alert_name):
-    endpoint = f'alerts/_find?search_fields=name&search={alert_name}'
+    endpoint = f'alerts/_find?search_fields=name&search={urllib.parse.quote(alert_name)}'
     alerts = self.send_api_request(endpoint, 'GET')
     return next(filter(lambda x: x['name'] == alert_name, alerts['data']), None)
 
