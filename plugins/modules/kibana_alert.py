@@ -187,17 +187,18 @@ class KibanaAlert(Kibana):
   def format_conditions(self):
     conditions = self.module.params.get('conditions')
     formatted_conditions = []
-    for condition in conditions:
-      formatted_condition = {
-        'aggType': condition['when'],
-        'comparator': state_lookup[condition['state']],
-        'threshold': [condition['threshold']] if condition['threshold'] != 0.0 else [int(condition['threshold'])],
-        'timeSize': condition['time_period'],
-        'timeUnit': time_unit_lookup[condition['time_unit']],
-      }
-      if condition['field'] is not None:
-        formatted_condition['metric'] = condition['field']
-      formatted_conditions.append(formatted_condition)
+    if self.alert_type == 'metrics_threshold':
+      for condition in conditions:
+        formatted_condition = {
+          'aggType': condition['when'],
+          'comparator': state_lookup[condition['state']],
+          'threshold': [condition['threshold']] if condition['threshold'] != 0.0 else [int(condition['threshold'])],
+          'timeSize': condition['time_period'],
+          'timeUnit': time_unit_lookup[condition['time_unit']],
+        }
+        if condition['field'] is not None:
+          formatted_condition['metric'] = condition['field']
+        formatted_conditions.append(formatted_condition)
     return formatted_conditions
 
   def format_actions(self):
