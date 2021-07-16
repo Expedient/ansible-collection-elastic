@@ -237,7 +237,7 @@ class KibanaAlert(Kibana):
       data['params']['filterQueryText'] = self.filter
       data['params']['filterQuery'] = self.filter_query
     if self.group_by:
-        data['params']['groupBy'] = self.group_bs
+        data['params']['groupBy'] = self.group_by
     result = self.send_api_request(endpoint, 'POST', data=data)
     return result
 
@@ -265,7 +265,7 @@ def main():
     check_every=dict(type='str', default='1m'),
     notify_on=dict(type='str', default='status_change', choices=['status_change']),
     conditions=dict(type='list', elements='dict', options=dict(
-      when=dict(type='str', required=True, choices=['max', 'min', 'average', 'cardnality', 'rate', 'count', 'sum', '95th_percentile', '99th_percentile']),
+      when=dict(type='str', required=True, choices=['max', 'min', 'avg', 'cardnality', 'rate', 'count', 'sum', '95th_percentile', '99th_percentile']),
       field=dict(type='str', required=False),
       state=dict(type='str', required=True),
       threshold=dict(type='float', required=True),
