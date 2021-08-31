@@ -26,7 +26,7 @@ jobs:
 
       - name: Append version to galaxy.yml
         run: |
-          echo "version: ${{ env.version }}" >> galaxy.yml
+          sed -ir "s/^version:.*$/version: ${{ env.version }}/" galaxy.yml
 
       - name: Build Ansible Collection
         run: ansible-galaxy collection build . --force --output-path /tmp

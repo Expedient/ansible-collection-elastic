@@ -14,3 +14,4 @@ dependencies: {}
 repository: https://github.com/Expedient/ansible-collection-elastic
 homepage: https://github.com/Expedient/ansible-collection-elastic
 issues: https://github.com/Expedient/ansible-collection-elastic/issues
+version: 0.0.0
