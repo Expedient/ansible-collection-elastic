@@ -416,8 +416,15 @@ def main():
     module.fail_json(**results)
 
   if state == 'present':
-    if len(matching_clusters) == 1:
+    if len(matching_clusters) > 0:
       results['msg'] = 'cluster exists'
+      ## This code handles edge cases poorly, in the interest of being able to match the data format of the cluster creation result
+      results['cluster_data'] = {
+        'elastic_cluster_id': matching_clusters[0]['cluster_id'],
+        'kibana_cluster_id': matching_clusters[0]['associated_kibana_clusters'][0]['kibana_id']
+      }
+      if len(matching_clusters[0]['associated_apm_clusters']) > 0:
+        results['cluster_data']['apm_id'] = matching_clusters[0]['associated_apm_clusters'][0]['apm_id']
       module.exit_json(**results)
 
     results['changed'] = True
