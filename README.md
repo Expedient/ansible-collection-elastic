@@ -2,8 +2,6 @@
 
 This repo hosts the `expedient.elastic` Ansible Collection.
 
-[![Release and Deploy collection](https://github.com/Expedient/ansible-collection-elastic/actions/workflows/publish.yml/badge.svg)](https://github.com/Expedient/ansible-collection-elastic/actions/workflows/publish.yml)
-
 <!--start requires_ansible-->
 ## Ansible version compatibility
 
