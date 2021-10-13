@@ -116,7 +116,7 @@ options:
     type: str
 
 extends_documentation_fragment:
-  - expedient.elastic.elastic_auth_options
+  - expedient.elastic.elastic_auth_options.documentation
 '''
 
 

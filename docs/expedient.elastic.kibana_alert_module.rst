@@ -1,14 +1,14 @@
-.. _expedient.elastic.elastic_user_module:
+.. _expedient.elastic.kibana_alert_module:
 
 
 ******************************
-expedient.elastic.elastic_user
+expedient.elastic.kibana_alert
 ******************************
 
-**elastic user management**
+**Create or delete alerts in Kibana**
 
 
-Version added: 2.9
+Version added: 2.11.1
 
 .. contents::
    :local:
@@ -17,8 +17,8 @@ Version added: 2.9
 
 Synopsis
 --------
-- This module creates or deletes users with elastic
-- Update state not yet implemented
+- This module creates or deletes alerts in kibana
+- currently supports threshold alerts
 
 
 
@@ -43,23 +43,22 @@ Parameters
             <tr>
                 <td colspan="1">
                     <div class="ansibleOptionAnchor" id="parameter-"></div>
-                    <b>elastic_password</b>
+                    <b>actions</b>
                     <a class="ansibleOptionLink" href="#parameter-" title="Permalink to this option"></a>
                     <div style="font-size: small">
-                        <span style="color: purple">string</span>
+                        <span style="color: purple">dictionary</span>
                     </div>
                 </td>
                 <td>
                 </td>
                 <td>
-                        <div>Password for the user</div>
-                        <div>Required when creating a new user</div>
+                        <div>actions to run when alert conditions are triggered</div>
                 </td>
             </tr>
             <tr>
                 <td colspan="1">
                     <div class="ansibleOptionAnchor" id="parameter-"></div>
-                    <b>elastic_user</b>
+                    <b>alert_name</b>
                     <a class="ansibleOptionLink" href="#parameter-" title="Permalink to this option"></a>
                     <div style="font-size: small">
                         <span style="color: purple">string</span>
@@ -69,22 +68,93 @@ Parameters
                 <td>
                 </td>
                 <td>
-                        <div>The name of the user to create or delete</div>
+                        <div>name of the alert to create</div>
                 </td>
             </tr>
             <tr>
                 <td colspan="1">
                     <div class="ansibleOptionAnchor" id="parameter-"></div>
-                    <b>email</b>
+                    <b>alert_on_no_data</b>
+                    <a class="ansibleOptionLink" href="#parameter-" title="Permalink to this option"></a>
+                    <div style="font-size: small">
+                        <span style="color: purple">boolean</span>
+                    </div>
+                </td>
+                <td>
+                        <ul style="margin: 0; padding: 0"><b>Choices:</b>
+                                    <li>no</li>
+                                    <li>yes</li>
+                        </ul>
+                </td>
+                <td>
+                        <div>whether to alert if there is no data available in the check period</div>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="1">
+                    <div class="ansibleOptionAnchor" id="parameter-"></div>
+                    <b>alert_type</b>
+                    <a class="ansibleOptionLink" href="#parameter-" title="Permalink to this option"></a>
+                    <div style="font-size: small">
+                        <span style="color: purple">-</span>
+                    </div>
+                </td>
+                <td>
+                        <ul style="margin: 0; padding: 0"><b>Choices:</b>
+                                    <li>metrics_threshold</li>
+                        </ul>
+                </td>
+                <td>
+                        <div>type of alert to create</div>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="1">
+                    <div class="ansibleOptionAnchor" id="parameter-"></div>
+                    <b>check_every</b>
                     <a class="ansibleOptionLink" href="#parameter-" title="Permalink to this option"></a>
                     <div style="font-size: small">
                         <span style="color: purple">string</span>
                     </div>
                 </td>
                 <td>
+                        <b>Default:</b><br/><div style="color: blue">"1m"</div>
                 </td>
                 <td>
-                        <div>email address to associate with the user</div>
+                        <div>frequency to check the alert on</div>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="1">
+                    <div class="ansibleOptionAnchor" id="parameter-"></div>
+                    <b>conditions</b>
+                    <a class="ansibleOptionLink" href="#parameter-" title="Permalink to this option"></a>
+                    <div style="font-size: small">
+                        <span style="color: purple">dictionary</span>
+                    </div>
+                </td>
+                <td>
+                </td>
+                <td>
+                        <div>dictionary defining which conditions to alert on</div>
+                        <div>only used for metrics threshold alerts.</div>
+                        <div>see examples for details</div>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="1">
+                    <div class="ansibleOptionAnchor" id="parameter-"></div>
+                    <b>consumer</b>
+                    <a class="ansibleOptionLink" href="#parameter-" title="Permalink to this option"></a>
+                    <div style="font-size: small">
+                        <span style="color: purple">string</span>
+                    </div>
+                </td>
+                <td>
+                        <b>Default:</b><br/><div style="color: blue">"alerts"</div>
+                </td>
+                <td>
+                        <div>name of the application that owns the alert</div>
                 </td>
             </tr>
             <tr>
@@ -103,13 +173,13 @@ Parameters
                         </ul>
                 </td>
                 <td>
-                        <div>whether to enable the newly created user</div>
+                        <div>whether to enable the alert when creating</div>
                 </td>
             </tr>
             <tr>
                 <td colspan="1">
                     <div class="ansibleOptionAnchor" id="parameter-"></div>
-                    <b>full_name</b>
+                    <b>filter</b>
                     <a class="ansibleOptionLink" href="#parameter-" title="Permalink to this option"></a>
                     <div style="font-size: small">
                         <span style="color: purple">string</span>
@@ -118,7 +188,42 @@ Parameters
                 <td>
                 </td>
                 <td>
-                        <div>full name of the user</div>
+                        <div>kql filter to apply to the conditions</div>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="1">
+                    <div class="ansibleOptionAnchor" id="parameter-"></div>
+                    <b>filter_query</b>
+                    <a class="ansibleOptionLink" href="#parameter-" title="Permalink to this option"></a>
+                    <div style="font-size: small">
+                        <span style="color: purple">-</span>
+                    </div>
+                </td>
+                <td>
+                </td>
+                <td>
+                        <div>lucence query to apply to the conditions</div>
+                        <div>at this time both this and &quot;filter&quot; are required for proper functioning of the module</div>
+                        <div>easiest way to get this is to do a kibana_alert_facts on an existing alert with the correct config</div>
+                        <div>alternatively can view the request in the discover tab of kibana</div>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="1">
+                    <div class="ansibleOptionAnchor" id="parameter-"></div>
+                    <b>group_by</b>
+                    <a class="ansibleOptionLink" href="#parameter-" title="Permalink to this option"></a>
+                    <div style="font-size: small">
+                        <span style="color: purple">string</span>
+                    </div>
+                </td>
+                <td>
+                        <b>Default:</b><br/><div style="color: blue">"host.name"</div>
+                </td>
+                <td>
+                        <div>defines the &quot;alert for every&quot; field in the Kibana alert</div>
+                        <div>generally the sensible default is host.name</div>
                 </td>
             </tr>
             <tr>
@@ -140,18 +245,19 @@ Parameters
             <tr>
                 <td colspan="1">
                     <div class="ansibleOptionAnchor" id="parameter-"></div>
-                    <b>metadata</b>
+                    <b>notify_on</b>
                     <a class="ansibleOptionLink" href="#parameter-" title="Permalink to this option"></a>
                     <div style="font-size: small">
-                        <span style="color: purple">dictionary</span>
+                        <span style="color: purple">string</span>
                     </div>
                 </td>
                 <td>
-                        <b>Default:</b><br/><div style="color: blue">{}</div>
+                        <ul style="margin: 0; padding: 0"><b>Choices:</b>
+                                    <li><div style="color: blue"><b>status_change</b>&nbsp;&larr;</div></li>
+                        </ul>
                 </td>
                 <td>
-                        <div>metadata object to associate with the user</div>
-                        <div>can contain any arbitrary key:value pairs</div>
+                        <div>when to send the alert</div>
                 </td>
             </tr>
             <tr>
@@ -189,22 +295,6 @@ Parameters
             <tr>
                 <td colspan="1">
                     <div class="ansibleOptionAnchor" id="parameter-"></div>
-                    <b>roles</b>
-                    <a class="ansibleOptionLink" href="#parameter-" title="Permalink to this option"></a>
-                    <div style="font-size: small">
-                        <span style="color: purple">list</span>
-                    </div>
-                </td>
-                <td>
-                </td>
-                <td>
-                        <div>list of roles to assign to the user</div>
-                        <div>Required when creating a new user</div>
-                </td>
-            </tr>
-            <tr>
-                <td colspan="1">
-                    <div class="ansibleOptionAnchor" id="parameter-"></div>
                     <b>state</b>
                     <a class="ansibleOptionLink" href="#parameter-" title="Permalink to this option"></a>
                     <div style="font-size: small">
@@ -218,7 +308,22 @@ Parameters
                         </ul>
                 </td>
                 <td>
-                        <div>The desired state for the user</div>
+                        <div>setting whether alert should be created or deleted</div>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="1">
+                    <div class="ansibleOptionAnchor" id="parameter-"></div>
+                    <b>tags</b>
+                    <a class="ansibleOptionLink" href="#parameter-" title="Permalink to this option"></a>
+                    <div style="font-size: small">
+                        <span style="color: purple">string</span>
+                    </div>
+                </td>
+                <td>
+                </td>
+                <td>
+                        <div>metadata tags to attach to the alert</div>
                 </td>
             </tr>
             <tr>

@@ -36,6 +36,9 @@ Name | Description
 [expedient.elastic.ece_snapshot_repo](https://github.com/Expedient/ansible-collection-elastic/blob/main/docs/expedient.elastic.ece_snapshot_repo_module.rst)|Create or delete a snapshot repository
 [expedient.elastic.ece_traffic_ruleset](https://github.com/Expedient/ansible-collection-elastic/blob/main/docs/expedient.elastic.ece_traffic_ruleset_module.rst)|placeholder
 [expedient.elastic.elastic_user](https://github.com/Expedient/ansible-collection-elastic/blob/main/docs/expedient.elastic.elastic_user_module.rst)|elastic user management
+[expedient.elastic.kibana_alert](https://github.com/Expedient/ansible-collection-elastic/blob/main/docs/expedient.elastic.kibana_alert_module.rst)|Create or delete alerts in Kibana
+[expedient.elastic.kibana_alert_facts](https://github.com/Expedient/ansible-collection-elastic/blob/main/docs/expedient.elastic.kibana_alert_facts_module.rst)|get info on a kibana alert
 
 <!--end collection content-->
+
 
