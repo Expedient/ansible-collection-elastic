@@ -38,8 +38,17 @@ requirements:
   - python3
 
 description:
-  - "This module creates or deletes alerts in kibana"
-  - "currently supports threshold alerts"
+  - "This module gets facts about kibana alerts"
+  
+options:
+  alert_name:
+    description:
+      - name of the alert to create
+    required: True
+    type: str
+    
+extends_documentation_fragment:
+  - expedient.elastic.elastic_auth_options.documentation
 '''
 
 

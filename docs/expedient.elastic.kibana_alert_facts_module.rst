@@ -1,14 +1,14 @@
-.. _expedient.elastic.ece_traffic_ruleset_module:
+.. _expedient.elastic.kibana_alert_facts_module:
 
 
-*************************************
-expedient.elastic.ece_traffic_ruleset
-*************************************
+************************************
+expedient.elastic.kibana_alert_facts
+************************************
 
-**placeholder**
+**get info on a kibana alert**
 
 
-Version added: 2.9
+Version added: 2.11.1
 
 .. contents::
    :local:
@@ -17,7 +17,7 @@ Version added: 2.9
 
 Synopsis
 --------
-- 
+- This module gets facts about kibana alerts
 
 
 
@@ -42,6 +42,22 @@ Parameters
             <tr>
                 <td colspan="1">
                     <div class="ansibleOptionAnchor" id="parameter-"></div>
+                    <b>alert_name</b>
+                    <a class="ansibleOptionLink" href="#parameter-" title="Permalink to this option"></a>
+                    <div style="font-size: small">
+                        <span style="color: purple">string</span>
+                         / <span style="color: red">required</span>
+                    </div>
+                </td>
+                <td>
+                </td>
+                <td>
+                        <div>name of the alert to create</div>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="1">
+                    <div class="ansibleOptionAnchor" id="parameter-"></div>
                     <b>host</b>
                     <a class="ansibleOptionLink" href="#parameter-" title="Permalink to this option"></a>
                     <div style="font-size: small">
@@ -52,7 +68,7 @@ Parameters
                 <td>
                 </td>
                 <td>
-                        <div>DNS name of the ECE cluster&#x27;s admin console</div>
+                        <div>DNS name of the the Elasticsearch instance</div>
                 </td>
             </tr>
             <tr>
@@ -68,7 +84,7 @@ Parameters
                 <td>
                 </td>
                 <td>
-                        <div>Password to use when connecting to ECE</div>
+                        <div>Password to use when connecting to Elasticsearch</div>
                 </td>
             </tr>
             <tr>
@@ -84,7 +100,7 @@ Parameters
                         <b>Default:</b><br/><div style="color: blue">12443</div>
                 </td>
                 <td>
-                        <div>Port number of ECE cluster admin console</div>
+                        <div>Port number of the Elasticsearch instance</div>
                 </td>
             </tr>
             <tr>
@@ -100,7 +116,7 @@ Parameters
                 <td>
                 </td>
                 <td>
-                        <div>Username to use when connecting to ECE</div>
+                        <div>Username to use when connecting to Elasticsearch</div>
                 </td>
             </tr>
             <tr>
@@ -119,7 +135,7 @@ Parameters
                         </ul>
                 </td>
                 <td>
-                        <div>Set whether to verify the SSL cert of the ECE cluster when connecting</div>
+                        <div>Set whether to verify the SSL cert of the Elasticsearch cluster when connecting</div>
                         <div>Should always be True in prod</div>
                 </td>
             </tr>
