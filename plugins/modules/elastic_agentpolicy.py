@@ -38,7 +38,7 @@ class AgentPolicy(Kibana):
         #self.agent_policy_desc = self.module.params.get('agent_policy_desc')
         #self.check_mode = self.module.params.get('check_mode')
                 
-    def create_agent_policy(self, agent_policy_name, agent_policy_desc, check_mode):
+    def create_agent_policy(self, agent_policy_name, agent_policy_desc, check_mode=False):
       endpoint  = 'fleet/agent_policies'
       agent_policy_object = ""
       agent_policy_objects = self.send_api_request(endpoint, 'GET')
@@ -69,7 +69,7 @@ class AgentPolicy(Kibana):
           results['agent_policy_status'] = 'Created'
         results['msg'] = body_JSON
         results['agent_policy_object'] = agent_policy_object
-      return(results)
+      return(agent_policy_object)
 
     def get_agent_policy_id_byname(self, agent_policy_name):
       endpoint  = 'fleet/agent_policies'
@@ -84,7 +84,7 @@ class AgentPolicy(Kibana):
         results['agent_policy_status'] = 'Does not exist'
       results['agent_policy_object'] = agent_policy_object
       results['changed'] = False
-      return(results)
+      return(agent_policy_object)
                 
 def main():
 
