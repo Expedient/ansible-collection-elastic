@@ -53,6 +53,7 @@ class AgentPolicy(Kibana):
           agent_policy_object = agent_policy_object['item']
         else:
           agent_policy_object = "Cannot proceed with check_mode set to " + str(check_mode)
+      
       return(agent_policy_object)
 
     def get_agent_policy_id_byname(self, agent_policy_name):
@@ -93,8 +94,13 @@ def main():
         results['changed'] = True
     
     if module.params.get('agent_policy_action') == "create":
-      agent_policy_object = AgentPolicies.create_agent_policy(module.params.get('agent_policy_name'), module.params.get('agent_policy_desc'), module.params.get('check_mode'))
-      results['agent_policy_object_status'] = "Creating Agent Policy"
+      agent_policy_object = AgentPolicies.get_agent_policy_id_byname(module.params.get('agent_policy_name'))
+      if agent_policy_object:
+        results['agent_policy_object_status'] = "Agent Policy already exists"
+        results['changed'] = False
+      else:
+        agent_policy_object = AgentPolicies.create_agent_policy(module.params.get('agent_policy_name'), module.params.get('agent_policy_desc'), module.params.get('check_mode'))
+        results['agent_policy_object_status'] = "Creating Agent Policy"
       results['agent_policy_object'] = agent_policy_object
     elif module.params.get('agent_policy_action') == "get_id_by_name":
       agent_policy_object = AgentPolicies.get_agent_policy_id_byname(module.params.get('agent_policy_name'))
