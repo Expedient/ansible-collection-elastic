@@ -194,7 +194,7 @@ def main():
         results['pkg_policy_status'] = "Integration Package found"
         results['pkg_policy_object'] = pkg_policy_object
       else:
-        results['pkg_policy_object_status'] = "Integration Package NOT found"
+        results['pkg_policy_status'] = "Integration Package NOT found"
     else:
       results['pkg_policy_object'] = "A valid action name was not passed"
       
