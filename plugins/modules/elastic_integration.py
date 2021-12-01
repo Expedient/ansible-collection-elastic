@@ -67,12 +67,5 @@ class Integration(Kibana):
           if integration['title'] in integration_name:
             integration_object = integration
             if integration['status'] != 'installed':
-              results["integration_status"] = 'Installing integration'
               integration_install = Integration.install_integration(self,integration['name'],integration['version'])
-              results['changed'] = True
-              results['integration_install'] = integration_install
-          else:
-              results['integration_status'] = 'Integration is already installed.'
-        if integration_object == "":
-          results['integration_status'] = 'ERROR: Integration does not exist.'
         return(integration_object)

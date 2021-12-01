@@ -34,22 +34,9 @@ class AgentPolicy(Kibana):
     def __init__(self,module):
         super().__init__(module)
         self.module = module
-        #self.agent_policy_name = self.module.params.get('agent_policy_name')
-        #self.agent_policy_desc = self.module.params.get('agent_policy_desc')
-        #self.check_mode = self.module.params.get('check_mode')
                 
     def create_agent_policy(self, agent_policy_name, agent_policy_desc, check_mode=False):
-      endpoint  = 'fleet/agent_policies'
-      agent_policy_object = ""
-      agent_policy_objects = self.send_api_request(endpoint, 'GET')
-      results['check_mode'] = 'Check_mode is ' + str(check_mode)
-      for agent_policy in agent_policy_objects['items']:
-          if agent_policy['name'] == agent_policy_name:
-              agent_policy_object = agent_policy
-              results['changed'] = False
-              results['agent_policy_status'] = 'Existing'
-              results['agent_policy_object'] = agent_policy
-              continue
+      agent_policy_object = AgentPolicy.get_agent_policy_id_byname(self,agent_policy_name)
               
       if not agent_policy_object:
         body = {
@@ -60,15 +47,12 @@ class AgentPolicy(Kibana):
         }
         body_JSON = json.dumps(body)
         
-        if check_mode == True:
-          results['changed'] = False
-        else:
-          results['changed'] = True
+        if check_mode == False:
+          endpoint  = 'fleet/agent_policies'
           agent_policy_object = self.send_api_request(endpoint, 'POST', data=body_JSON)
           agent_policy_object = agent_policy_object['item']
-          results['agent_policy_status'] = 'Created'
-        results['msg'] = body_JSON
-        results['agent_policy_object'] = agent_policy_object
+        else:
+          agent_policy_object = "Cannot proceed with check_mode set to " + str(check_mode)
       return(agent_policy_object)
 
     def get_agent_policy_id_byname(self, agent_policy_name):
@@ -78,12 +62,7 @@ class AgentPolicy(Kibana):
       for agent_policy in agent_policy_objects['items']:
           if agent_policy['name'] == agent_policy_name:
               agent_policy_object = agent_policy
-              results['agent_policy_status'] = 'Exists'
               continue
-      if not agent_policy_object:
-        results['agent_policy_status'] = 'Does not exist'
-      results['agent_policy_object'] = agent_policy_object
-      results['changed'] = False
       return(agent_policy_object)
                 
 def main():
@@ -96,18 +75,33 @@ def main():
         verify_ssl_cert=dict(type='bool', default=True),
         agent_policy_name=dict(type='str', default='Ansible-Elastic-API-Testing'),
         agent_policy_desc=dict(type='str', default='None'),
+        agent_policy_action=dict(type='str', default='action'),
+        agent_policy_body=dict(type='str', default='body'),
         check_mode=dict(type='bool',default=False)
     )
     
-    #args = json.dumps(module_args)
     argument_dependencies = []
         #('state', 'present', ('enabled', 'alert_type', 'conditions', 'actions')),
         #('alert-type', 'metrics_threshold', ('conditions'))
     
     module = AnsibleModule(argument_spec=module_args, required_if=argument_dependencies, supports_check_mode=True)
-    #module.params['host'] = module.params['host'] + ".elastic.expedient.cloud"
     AgentPolicies = AgentPolicy(module)
-    AgentPolicies.create_agent_policy(module.params.get('agent_policy_name'), module.params.get('agent_policy_desc'), module.params.get('check_mode'))
+
+    if module.params.get('check_mode') == True:
+        results['changed'] = False
+    else:
+        results['changed'] = True
+    
+    if module.params.get('agent_policy_action') == "create":
+      agent_policy_object = AgentPolicies.create_agent_policy(module.params.get('agent_policy_name'), module.params.get('agent_policy_desc'), module.params.get('check_mode'))
+      results['agent_policy_object_status'] = "Creating Agent Policy"
+    elif module.params.get('agent_policy_action') == "get_id_by_name":
+      agent_policy_object = AgentPolicies.get_agent_policy_id_byname(module.params.get('agent_policy_name'))
+      results['agent_policy_object_status'] = "Getting Agent Policy"
+    else:
+      results['agent_policy_object'] = "A valid action name was not passed"
+    
+    results['agent_policy_object'] = agent_policy_object
     module.exit_json(**results)
 
 if __name__ == "__main__":

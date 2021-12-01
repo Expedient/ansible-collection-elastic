@@ -70,5 +70,5 @@ class Rules(Kibana):
           page_number = page_number + 1
           rules = Rules.get_rules(self,page_size,page_number)
           allrules = rules['data']
-      return("Rules are updated as indicated in results")
+      return("Rules are updated")
   
