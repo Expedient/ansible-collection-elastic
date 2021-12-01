@@ -96,18 +96,18 @@ def main():
     if module.params.get('agent_policy_action') == "create":
       agent_policy_object = AgentPolicies.get_agent_policy_id_byname(module.params.get('agent_policy_name'))
       if agent_policy_object:
-        results['agent_policy_object_status'] = "Agent Policy already exists"
+        results['agent_policy_status'] = "Agent Policy already exists"
         results['changed'] = False
       else:
         agent_policy_object = AgentPolicies.create_agent_policy(module.params.get('agent_policy_name'), module.params.get('agent_policy_desc'), module.params.get('check_mode'))
-        results['agent_policy_object_status'] = "Creating Agent Policy"
+        results['agent_policy_status'] = "Creating Agent Policy"
       results['agent_policy_object'] = agent_policy_object
     elif module.params.get('agent_policy_action') == "get_id_by_name":
       agent_policy_object = AgentPolicies.get_agent_policy_id_byname(module.params.get('agent_policy_name'))
-      results['agent_policy_object_status'] = "Getting Agent Policy"
+      results['agent_policy_status'] = "Getting Agent Policy"
       results['agent_policy_object'] = agent_policy_object
     else:
-      results['agent_policy_object_status'] = "A valid action name was not passed"
+      results['agent_policy_status'] = "A valid action name was not passed"
     
     module.exit_json(**results)
 
