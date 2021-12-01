@@ -1,0 +1,50 @@
+---
+- name: Get Elastic Cluster
+  gather_facts: no
+  hosts: localhost
+  tasks:
+  - name: Get Cluster Info
+    expedient.elastic.ece_cluster_info:
+      host: elastic-admin.expedient.cloud
+      port: 12443
+      username: api-testing
+      password: "{{ece_password}}"
+      verify_ssl_cert: True
+      deployment_name: 
+      deployment_action: get_deployment_id
+      check_mode: False
+    register: cluster_info
+  - name: Show Cluster Settings
+    debug:
+      var: cluster_info
+  - name: Create Agent Policy
+    expedient.elastic.elastic_agentpolicy:
+      host: "{{cluster_info.deployment_id}}"
+      port: 9243
+      username: 
+      password: 
+      verify_ssl_cert: True
+      agent_policy_name: 
+      agent_policy_desc: 
+      agent_policy_action: create
+      check_mode: False
+    register: agentpolicy_info
+  - name: Show Agent Policy Settings
+    debug:
+      var: agentpolicy_info
+  - name: Create Integration Packages
+    expedient.elastic.elastic_endpoint_baseline:
+      host: "{{cluster_info.deployment_id}}"
+      port: 9243
+      username: test1
+      password: testing
+      verify_ssl_cert: True
+      agent_policy_id: "{{agentpolicy_info.agent_policy_object.id}}"
+      integration_name: 
+      integration_pkg_name: 
+      integration_pkg_desc: 
+      check_mode: False
+    register: intpkgpolicy_info
+  - name: Show Package Policy Settings
+    debug:
+      var: intpkgpolicy_info
