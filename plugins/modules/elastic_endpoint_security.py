@@ -7,12 +7,10 @@
 ##################################################################
 
 from ansible.module_utils.basic import _ANSIBLE_ARGS, AnsibleModule
-#from ansible.module_utils.basic import *
-
 import json
 
 try:
-  from plugins.modules.elastic_integration import Integration
+  from ansible_collections.expedient.elastic.plugins.modules_utils.elastic_integration import Integration
 except:
   import sys
   import os
@@ -21,7 +19,7 @@ except:
   from elastic_integration import Integration
 
 try:
-  from plugins.modules.elastic_agentpolicy import AgentPolicy
+  from ansible_collections.expedient.elastic.plugins.modules_utils.elastic_agentpolicy import AgentPolicy
 except:
   import sys
   import os
@@ -30,7 +28,7 @@ except:
   from elastic_agentpolicy import AgentPolicy
   
 try:
-  from plugins.modules.elastic_pkgpolicy import PkgPolicy
+  from ansible_collections.expedient.elastic.plugins.modules_utils.elastic_pkgpolicy import PkgPolicy
 except:
   import sys
   import os
@@ -39,7 +37,7 @@ except:
   from elastic_pkgpolicy import PkgPolicy
 
 try:
-  from plugins.modules.elastic_rules import Rules
+  from ansible_collections.expedient.elastic.plugins.modules_utils.elastic_rules import Rules
 except:
   import sys
   import os
@@ -156,8 +154,6 @@ def main():
         username=dict(type='str', default='test1'),
         password=dict(type='str', no_log=True, default='test1'),   
         verify_ssl_cert=dict(type='bool', default=True),
-        agent_policy_name=dict(type='str', default='Agent Policy'),
-        agent_policy_desc=dict(type='str', default='Agent Policy Desc'),
         agent_policy_id=dict(type='str'),
         integration_name=dict(type='str', default='Int Name'),
         integration_pkg_name=dict(type='str', default='Int Pkg Name'),
@@ -177,19 +173,19 @@ def main():
     else:
         results['changed'] = True
         
-    if not module.params.get('agent_policy_id'):
-      ElasticAgentPolicyId = AgentPolicy(module)
-      agency_policy_object = ElasticAgentPolicyId.get_agent_policy_id_byname(module.params.get('agent_policy_name'))
-      try:
-        agent_policy_id = agency_policy_object['id']
-        results['agent_policy_status'] = "Agent Policy found."
-      except:
-        results['agent_policy_status'] = "Agent Policy was not found. Cannot continue without valid Agent Policy Name or ID"
-        results['changed'] = False
-        module.exit_json(**results)
-    else:
-      results['agent_policy_status'] = "Agent Policy ID found."
-      agent_policy_id = module.params.get('agent_policy_id')
+    #if not module.params.get('agent_policy_id'):
+    #  ElasticAgentPolicyId = AgentPolicy(module)
+    #  agency_policy_object = ElasticAgentPolicyId.get_agent_policy_id_byname(module.params.get('agent_policy_name'))
+    #  try:
+    #    agent_policy_id = agency_policy_object['id']
+    #    results['agent_policy_status'] = "Agent Policy found."
+    #  except:
+    #    results['agent_policy_status'] = "Agent Policy was not found. Cannot continue without valid Agent Policy Name or ID"
+    #    results['changed'] = False
+    #    module.exit_json(**results)
+    #else:
+    #  results['agent_policy_status'] = "Agent Policy ID found."
+    #  agent_policy_id = module.params.get('agent_policy_id')
     
     ElasticIntegration = Integration(module)
     if module.params.get('integration_name'):
@@ -206,7 +202,7 @@ def main():
             
     ElasticSecurityBaseline = SecurityBaseline(module)
     pkg_policy_object = ElasticSecurityBaseline.create_securityctrl_baseline_settings(
-      agent_policy_id, 
+      module.params.get('agent_policy_id'), 
       integration_object,
       module.params.get('integration_pkg_name'),
       module.params.get('integration_pkg_desc'),

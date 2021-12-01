@@ -46,6 +46,9 @@ class Deployments(ECE):
         super().__init__(module)
         self.module = module
         self.deployment_name = self.module.params.get('deployment_name')
+        self.deployment_action = self.module.params.get('deployment_action')
+        self.deployment_body = self.module.params.get('deployment_body')
+        self.check_mode = self.module.params.get('check_mode')
         
     def get_deployment_id(self,deployment_name):
 
@@ -61,8 +64,7 @@ class Deployments(ECE):
               if resource['ref_id'] == 'main-kibana':
                 deployment_id = resource['id']
                 break
-        #print("This is the deployment_id " + str(deployment_object['id']))          
-        #print("This is the deployment_list " + str(deployment_list))
+
         results['deployment_object'] = deployment_object
         try:
           results['deployment_id'] = deployment_id
