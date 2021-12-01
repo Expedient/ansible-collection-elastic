@@ -50,12 +50,12 @@ class Integration(Kibana):
         integration_objects = self.send_api_request(endpoint, 'GET')
         return integration_objects
     
-    def install_integration(self, name, version):
+    def install_integration(self, integration_name, version):
         body = {
             "force": True
         }
         body_JSON = json.dumps(body)
-        endpoint  = 'fleet/epm/packages/' + name + "-" + version
+        endpoint  = 'fleet/epm/packages/' + integration_name + "-" + version
         integration_install = self.send_api_request(endpoint, 'POST', data=body_JSON)
         return integration_install
     

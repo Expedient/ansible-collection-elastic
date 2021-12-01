@@ -28,6 +28,15 @@ except:
   util_path = new_path = f'{os.getcwd()}/plugins/modules'
   sys.path.append(util_path)
   from elastic_rules import Rules
+
+try:
+  from plugins.modules.elastic_integration import Integration
+except:
+  import sys
+  import os
+  util_path = new_path = f'{os.getcwd()}/plugins/modules'
+  sys.path.append(util_path)
+  from elastic_integration import Integration
   
 try:
   from ansible_collections.expedient.elastic.plugins.module_utils.ece import ECE
@@ -143,26 +152,51 @@ def main():
     
     if not module.params.get('agent_policy_id'):
       ElasticAgentPolicyId = AgentPolicy(module)
-      AgentPolicyObject = ElasticAgentPolicyId.get_agent_policy_id_byname(module.params.get('agent_policy_name'))
-      agent_policy_id = AgentPolicyObject['id']
+      agency_policy_object = ElasticAgentPolicyId.get_agent_policy_id_byname(module.params.get('agent_policy_name'))
+      try:
+        agent_policy_id = agency_policy_object['id']
+        results['agent_policy_status'] = "Agent Policy found."
+      except:
+        results['agent_policy_status'] = "Agent Policy was not found. Cannot continue without valid Agent Policy Name or ID"
+        results['changed'] = False
+        module.exit_json(**results)
     else:
+      results['agent_policy_status'] = "Agent Policy ID found."
       agent_policy_id = module.params.get('agent_policy_id')
+      
+    ElasticIntegration = Integration(module)
+    if module.params.get('integration_name'):
+      integration_object = ElasticIntegration.check_integration(module.params.get('integration_name'))
+    else:
+      results['integration_status'] = "No Integration Name provided to get the integration object"
+      results['changed'] = False
+      module.exit_json(**results)
+    
+    if not integration_object:
+      results['integration_status'] = 'Integration name is not a valid'
+      results['changed'] = False
+      module.exit_json(**results)
     
     if module.params.get('pkg_policy_action') == "create":
-      pkg_policy_object = pkg_policy.create_pkg_policy(agent_policy_id, module.params.get('integration_object'), module.params.get('pkg_policy_name'), module.params.get('pkg_policy_desc'), module.params.get('check_mode'))
-    elif module.params.get('pkg_policy_action') == "get_id_by_name":
       pkg_policy_object = pkg_policy.get_pkg_policy(module.params.get('pkg_policy_name'),module.params.get('agent_policy_id'))
+      if pkg_policy_object:
+        results['pkg_policy_object_status'] = "Integration Package found, No package created"
+        results['changed'] = False
+        results['pkg_policy_object'] = pkg_policy_object
+      else:    
+        pkg_policy_object = pkg_policy.create_pkg_policy(agent_policy_id, integration_object, module.params.get('pkg_policy_name'), module.params.get('pkg_policy_desc'), module.params.get('check_mode'))
+        results['pkg_policy_object_status'] = "No Integration Package found, Package Policy created"
+        results['pkg_policy_object'] = pkg_policy_object
+    elif module.params.get('pkg_policy_action') == "get_id_by_name":
+      results['changed'] = False
+      pkg_policy_object = pkg_policy.get_pkg_policy(module.params.get('pkg_policy_name'),module.params.get('agent_policy_id'))
+      if pkg_policy_object:
+        results['pkg_policy_object_status'] = "Integration Package found"
+        results['pkg_policy_object'] = pkg_policy_object
+      else:
+        results['pkg_policy_object_status'] = "Integration Package NOT found"
     else:
       results['pkg_policy_object'] = "A valid action name was not passed"
-      module.exit_json(**results)
-    results['pkg_policy_object'] = pkg_policy_object
-      
-    if not module.params.get('agent_policy_id'):
-      ElasticAgentPolicyId = AgentPolicy(module)
-      AgentPolicyObject = ElasticAgentPolicyId.get_agent_policy_id_byname(module.params.get('agent_policy_name'))
-      agent_policy_id = AgentPolicyObject['id']
-    else:
-      agent_policy_id = module.params.get('agent_policy_id')
       
     module.exit_json(**results)
 
