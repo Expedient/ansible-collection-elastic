@@ -7,8 +7,16 @@
 ##################################################################
 
 from ansible.module_utils.basic import _ANSIBLE_ARGS, AnsibleModule
-
 import json
+
+try:
+  from ansible_collections.expedient.elastic.plugins.module_utils.elastic_agentpolicy import AgentPolicy
+except:
+  import sys
+  import os
+  util_path = new_path = f'{os.getcwd()}/plugins/module_utils'
+  sys.path.append(util_path)
+  from elastic_agentpolicy import AgentPolicy
 
 try:
   from ansible_collections.expedient.elastic.plugins.module_utils.elastic import Elastic
@@ -29,42 +37,6 @@ except:
   from kibana import Kibana
 
 results = {}
-
-class AgentPolicy(Kibana):
-    def __init__(self,module):
-        super().__init__(module)
-        self.module = module
-                
-    def create_agent_policy(self, agent_policy_name, agent_policy_desc, check_mode=False):
-      agent_policy_object = AgentPolicy.get_agent_policy_id_byname(self,agent_policy_name)
-              
-      if not agent_policy_object:
-        body = {
-            "name": agent_policy_name,
-            "namespace": "default",
-            "description": agent_policy_desc,
-            "monitoring_enabled": []
-        }
-        body_JSON = json.dumps(body)
-        
-        if check_mode == False:
-          endpoint  = 'fleet/agent_policies'
-          agent_policy_object = self.send_api_request(endpoint, 'POST', data=body_JSON)
-          agent_policy_object = agent_policy_object['item']
-        else:
-          agent_policy_object = "Cannot proceed with check_mode set to " + str(check_mode)
-      
-      return(agent_policy_object)
-
-    def get_agent_policy_id_byname(self, agent_policy_name):
-      endpoint  = 'fleet/agent_policies'
-      agent_policy_object = ""
-      agent_policy_objects = self.send_api_request(endpoint, 'GET')
-      for agent_policy in agent_policy_objects['items']:
-          if agent_policy['name'] == agent_policy_name:
-              agent_policy_object = agent_policy
-              continue
-      return(agent_policy_object)
                 
 def main():
 

@@ -10,38 +10,38 @@ from ansible.module_utils.basic import _ANSIBLE_ARGS, AnsibleModule
 import json
 
 try:
-  from ansible_collections.expedient.elastic.plugins.modules_utils.elastic_integration import Integration
+  from ansible_collections.expedient.elastic.plugins.module_utils.elastic_integration import Integration
 except:
   import sys
   import os
-  util_path = new_path = f'{os.getcwd()}/plugins/modules'
+  util_path = new_path = f'{os.getcwd()}/plugins/module_utils'
   sys.path.append(util_path)
   from elastic_integration import Integration
 
 try:
-  from ansible_collections.expedient.elastic.plugins.modules_utils.elastic_agentpolicy import AgentPolicy
+  from ansible_collections.expedient.elastic.plugins.module_utils.elastic_agentpolicy import AgentPolicy
 except:
   import sys
   import os
-  util_path = new_path = f'{os.getcwd()}/plugins/modules'
+  util_path = new_path = f'{os.getcwd()}/plugins/module_utils'
   sys.path.append(util_path)
   from elastic_agentpolicy import AgentPolicy
   
 try:
-  from ansible_collections.expedient.elastic.plugins.modules_utils.elastic_pkgpolicy import PkgPolicy
+  from ansible_collections.expedient.elastic.plugins.module_utils.elastic_pkgpolicy import PkgPolicy
 except:
   import sys
   import os
-  util_path = new_path = f'{os.getcwd()}/plugins/modules'
+  util_path = new_path = f'{os.getcwd()}/plugins/module_utils'
   sys.path.append(util_path)
   from elastic_pkgpolicy import PkgPolicy
 
 try:
-  from ansible_collections.expedient.elastic.plugins.modules_utils.elastic_rules import Rules
+  from ansible_collections.expedient.elastic.plugins.module_utils.elastic_rules import Rules
 except:
   import sys
   import os
-  util_path = new_path = f'{os.getcwd()}/plugins/modules'
+  util_path = new_path = f'{os.getcwd()}/plugins/module_utils'
   sys.path.append(util_path)
   from elastic_rules import Rules
   
@@ -173,19 +173,19 @@ def main():
     else:
         results['changed'] = True
         
-    #if not module.params.get('agent_policy_id'):
-    #  ElasticAgentPolicyId = AgentPolicy(module)
-    #  agency_policy_object = ElasticAgentPolicyId.get_agent_policy_id_byname(module.params.get('agent_policy_name'))
-    #  try:
-    #    agent_policy_id = agency_policy_object['id']
-    #    results['agent_policy_status'] = "Agent Policy found."
-    #  except:
-    #    results['agent_policy_status'] = "Agent Policy was not found. Cannot continue without valid Agent Policy Name or ID"
-    #    results['changed'] = False
-    #    module.exit_json(**results)
-    #else:
-    #  results['agent_policy_status'] = "Agent Policy ID found."
-    #  agent_policy_id = module.params.get('agent_policy_id')
+    if not module.params.get('agent_policy_id'):
+      ElasticAgentPolicyId = AgentPolicy(module)
+      agency_policy_object = ElasticAgentPolicyId.get_agent_policy_id_byname(module.params.get('agent_policy_name'))
+      try:
+        agent_policy_id = agency_policy_object['id']
+        results['agent_policy_status'] = "Agent Policy found."
+      except:
+        results['agent_policy_status'] = "Agent Policy was not found. Cannot continue without valid Agent Policy Name or ID"
+        results['changed'] = False
+        module.exit_json(**results)
+    else:
+      results['agent_policy_status'] = "Agent Policy ID found."
+      agent_policy_id = module.params.get('agent_policy_id')
     
     ElasticIntegration = Integration(module)
     if module.params.get('integration_name'):

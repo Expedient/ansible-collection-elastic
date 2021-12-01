@@ -12,31 +12,32 @@ from ansible.module_utils.basic import _ANSIBLE_ARGS, AnsibleModule
 import json
 
 try:
-  from plugins.modules.elastic_agentpolicy import AgentPolicy
+  from ansible_collections.expedient.elastic.plugins.module_utils.elastic_integration import Integration
 except:
   import sys
   import os
-  util_path = new_path = f'{os.getcwd()}/plugins/modules'
+  util_path = new_path = f'{os.getcwd()}/plugins/module_utils'
+  sys.path.append(util_path)
+  from elastic_integration import Integration
+  
+try:
+  from ansible_collections.expedient.elastic.plugins.module_utils.elastic_agentpolicy import AgentPolicy
+except:
+  import sys
+  import os
+  util_path = new_path = f'{os.getcwd()}/plugins/module_utils'
   sys.path.append(util_path)
   from elastic_agentpolicy import AgentPolicy
 
 try:
-  from plugins.modules.elastic_rules import Rules
+  from ansible_collections.expedient.elastic.plugins.module_utils.elastic_rules import Rules
 except:
   import sys
   import os
-  util_path = new_path = f'{os.getcwd()}/plugins/modules'
+  util_path = new_path = f'{os.getcwd()}/plugins/module_utils'
   sys.path.append(util_path)
   from elastic_rules import Rules
 
-try:
-  from plugins.modules.elastic_integration import Integration
-except:
-  import sys
-  import os
-  util_path = new_path = f'{os.getcwd()}/plugins/modules'
-  sys.path.append(util_path)
-  from elastic_integration import Integration
   
 try:
   from ansible_collections.expedient.elastic.plugins.module_utils.ece import ECE
@@ -121,6 +122,7 @@ class PkgPolicy(Kibana):
       else:
         return pkg_policy_object
 
+"""
 def main():
 
     module_args=dict(   
@@ -202,5 +204,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
-     
+"""

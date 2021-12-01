@@ -65,7 +65,7 @@ class AgentPolicy(Kibana):
               agent_policy_object = agent_policy
               continue
       return(agent_policy_object)
-                
+"""          
 def main():
 
     module_args=dict(    
@@ -113,3 +113,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+"""
