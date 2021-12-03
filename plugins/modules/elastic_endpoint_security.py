@@ -81,7 +81,7 @@ class SecurityBaseline(Kibana):
         
     def create_securityctrl_baseline_settings(
         self,
-        agent_policy_id, 
+        agent_policy_id,
         integration_object, 
         integration_pkg_name, 
         integration_pkg_desc, 
@@ -139,10 +139,11 @@ class SecurityBaseline(Kibana):
           
         if integration_object['title'] == 'Prebuilt Security Detection Rules' and prebuilt_rules_activate == True:
             if check_mode == False:
-                SecurityRules = Rules.activating_all_rules(self,50)
-                results['Activating Rules'] = SecurityRules
+                #SecurityRules = Rules.activating_all_rules(self,50)
+                SecurityRules = Rules.activate_rule(self,50,'Endpoint Security')
+                results['Activating Rule'] = SecurityRules
             else:
-                results['Activating Rules'] = "Check_mode is set to True so rules will not be activated"
+                results['Activating Rule'] = "Check_mode is set to True so rule will not be activated"
         
         return pkg_policy_object
 
@@ -155,6 +156,7 @@ def main():
         password=dict(type='str', no_log=True, default='test1'),   
         verify_ssl_cert=dict(type='bool', default=True),
         agent_policy_id=dict(type='str'),
+        agent_policy_name=dict(type='str'),
         integration_name=dict(type='str', default='Int Name'),
         integration_pkg_name=dict(type='str', default='Int Pkg Name'),
         integration_pkg_desc=dict(type='str', default='Int Pkg Desc'),
@@ -202,7 +204,7 @@ def main():
             
     ElasticSecurityBaseline = SecurityBaseline(module)
     pkg_policy_object = ElasticSecurityBaseline.create_securityctrl_baseline_settings(
-      module.params.get('agent_policy_id'), 
+      agent_policy_id, 
       integration_object,
       module.params.get('integration_pkg_name'),
       module.params.get('integration_pkg_desc'),
