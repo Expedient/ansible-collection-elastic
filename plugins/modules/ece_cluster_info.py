@@ -48,7 +48,6 @@ class Deployments(ECE):
         self.deployment_name = self.module.params.get('deployment_name')
         self.deployment_action = self.module.params.get('deployment_action')
         self.deployment_body = self.module.params.get('deployment_body')
-        self.check_mode = self.module.params.get('check_mode')
         
     def get_deployment_id(self,deployment_name):
 
@@ -82,8 +81,7 @@ def main():
         verify_ssl_cert=dict(type='bool', default=True),
         deployment_name=dict(type='str', default='Expedient-prodops-testing'),
         deployment_action=dict(type='str', default='action'),
-        deployment_body=dict(type='str', default='body'),
-        check_mode=dict(type='bool',default=False)
+        deployment_body=dict(type='str', default='body')
     )
     argument_dependencies = []
         #('state', 'present', ('enabled', 'alert_type', 'conditions', 'actions')),
@@ -91,7 +89,7 @@ def main():
     
     module = AnsibleModule(argument_spec=module_args, required_if=argument_dependencies, supports_check_mode=True)
     
-    if module.params.get('check_mode') == True:
+    if module.check_mode:
         results['changed'] = False
     else:
         results['changed'] = True

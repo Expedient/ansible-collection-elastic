@@ -49,8 +49,7 @@ def main():
         agent_policy_name=dict(type='str', default='Ansible-Elastic-API-Testing'),
         agent_policy_desc=dict(type='str', default='None'),
         agent_policy_action=dict(type='str', default='action'),
-        agent_policy_body=dict(type='str', default='body'),
-        check_mode=dict(type='bool',default=False)
+        agent_policy_body=dict(type='str', default='body')
     )
     
     argument_dependencies = []
@@ -60,18 +59,18 @@ def main():
     module = AnsibleModule(argument_spec=module_args, required_if=argument_dependencies, supports_check_mode=True)
     AgentPolicies = AgentPolicy(module)
 
-    if module.params.get('check_mode') == True:
+    if module.check_mode:
         results['changed'] = False
     else:
         results['changed'] = True
     
     if module.params.get('agent_policy_action') == "create":
-      agent_policy_object = AgentPolicies.get_agent_policy_id_byname(module.params.get('agent_policy_name'))
+      agent_policy_object = AgentPolicies.get_agent_policy_id_byname()
       if agent_policy_object:
         results['agent_policy_status'] = "Agent Policy already exists"
         results['changed'] = False
       else:
-        agent_policy_object = AgentPolicies.create_agent_policy(module.params.get('agent_policy_name'), module.params.get('agent_policy_desc'), module.params.get('check_mode'))
+        agent_policy_object = AgentPolicies.create_agent_policy()
         results['agent_policy_status'] = "Creating Agent Policy"
       results['agent_policy_object'] = agent_policy_object
     elif module.params.get('agent_policy_action') == "get_id_by_name":

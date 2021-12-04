@@ -55,39 +55,40 @@ class Rules(Kibana):
       return update_rule
   
     def activating_all_rules(self, page_size):
-
+      rule_actions = Rules(self)
       #### Getting first page of rules
       page_number = 1
-      rules = Rules.get_rules(self,page_size,page_number)
+      rules = rule_actions.get_rules(self,page_size,page_number)
       noOfRules = rules['total']
       allrules = rules['data']
       #### Going through each rule page by page and enabling each rule that isn't enabled.
       while noOfRules > page_size * (page_number - 1):
           for rule in allrules:
             if rule['enabled'] == False:
-              enable_rule = Rules.enable_rule(self,rule['id'])
+              enable_rule = rule_actions.enable_rule(self,rule['id'])
               return(rule['id'] + ": Rule is updated")
           page_number = page_number + 1
-          rules = Rules.get_rules(self,page_size,page_number)
+          rules = rule_actions.get_rules(self,page_size,page_number)
           allrules = rules['data']
       return("Rules are updated")
 
     def activate_rule(self, page_size, rule_name):
+      rule_actions = Rules(self)
       #### Getting first page of rules
       page_number = 1
-      rules = Rules.get_rules(self,page_size,page_number)
+      rules = rule_actions.get_rules(self,page_size,page_number)
       noOfRules = rules['total']
       allrules = rules['data']
       #### Going through each rule page by page and enabling each rule that isn't enabled.
       while noOfRules > page_size * (page_number - 1):
           for rule in allrules:
             if rule['enabled'] == False and rule_name == rule['name']:
-              enable_rule = Rules.enable_rule(self,rule['id'])
+              enable_rule = rule_actions.enable_rule(self,rule['id'])
               return(rule['name'] + ": Rule is updated")
             elif rule['enabled'] == True and rule_name == rule['name']:
               return(rule['name'] + ": Rule is already enabled")
           page_number = page_number + 1
-          rules = Rules.get_rules(self,page_size,page_number)
+          rules = rule_actions.get_rules(self,page_size,page_number)
           allrules = rules['data']
       return(rule['name'] + ": Rule not found")
   

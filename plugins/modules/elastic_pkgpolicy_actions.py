@@ -90,8 +90,7 @@ def main():
         pkg_policy_name=dict(type='str', default='Int Pkg Name'),
         pkg_policy_desc=dict(type='str', default='Int Pkg Desc'),
         pkg_policy_action=dict(type='str', default='action'),
-        pkg_policy_body=dict(type='str', default='body'),
-        check_mode=dict(type='bool',default=False)
+        pkg_policy_body=dict(type='str', default='body')
     )
     argument_dependencies = []
         #('state', 'present', ('enabled', 'alert_type', 'conditions', 'actions')),
@@ -100,24 +99,23 @@ def main():
     module = AnsibleModule(argument_spec=module_args, required_if=argument_dependencies, supports_check_mode=True)
     pkg_policy = PkgPolicy(module)
 
-    if module.params.get('check_mode') == True:
+    if module.check_mode:
         results['changed'] = False
     else:
         results['changed'] = True
-    
+
+    agent_policy_action = AgentPolicy(module)
     if not module.params.get('agent_policy_id'):
-      ElasticAgentPolicyId = AgentPolicy(module)
-      agency_policy_object = ElasticAgentPolicyId.get_agent_policy_id_byname(module.params.get('agent_policy_name'))
-      try:
-        agent_policy_id = agency_policy_object['id']
-        results['agent_policy_status'] = "Agent Policy found."
-      except:
-        results['agent_policy_status'] = "Agent Policy was not found. Cannot continue without valid Agent Policy Name or ID"
-        results['changed'] = False
-        module.exit_json(**results)
+      agency_policy_object = agent_policy_action.get_agent_policy_id_byname()
     else:
-      results['agent_policy_status'] = "Agent Policy ID found."
-      agent_policy_id = module.params.get('agent_policy_id')
+      agency_policy_object = agent_policy_action.get_agent_policy_byid()
+    try:
+      agent_policy_id = agency_policy_object['id']
+      results['agent_policy_status'] = "Agent Policy found."
+    except:
+      results['agent_policy_status'] = "Agent Policy was not found. Cannot continue without valid Agent Policy Name or ID"
+      results['changed'] = False
+      module.exit_json(**results)
       
     ElasticIntegration = Integration(module)
     if module.params.get('integration_name'):
@@ -133,18 +131,18 @@ def main():
       module.exit_json(**results)
     
     if module.params.get('pkg_policy_action') == "create":
-      pkg_policy_object = pkg_policy.get_pkg_policy(module.params.get('pkg_policy_name'),module.params.get('agent_policy_id'))
+      pkg_policy_object = pkg_policy.get_pkg_policy(agent_policy_id)
       if pkg_policy_object:
         results['pkg_policy_status'] = "Integration Package found, No package created"
         results['changed'] = False
         results['pkg_policy_object'] = pkg_policy_object
       else:    
-        pkg_policy_object = pkg_policy.create_pkg_policy(agent_policy_id, integration_object, module.params.get('pkg_policy_name'), module.params.get('pkg_policy_desc'), module.params.get('check_mode'))
+        pkg_policy_object = pkg_policy.create_pkg_policy(agent_policy_id, integration_object)
         results['pkg_policy_status'] = "No Integration Package found, Package Policy created"
         results['pkg_policy_object'] = pkg_policy_object
     elif module.params.get('pkg_policy_action') == "get_id_by_name":
       results['changed'] = False
-      pkg_policy_object = pkg_policy.get_pkg_policy(module.params.get('pkg_policy_name'),module.params.get('agent_policy_id'))
+      pkg_policy_object = pkg_policy.get_pkg_policy(agent_policy_id)
       if pkg_policy_object:
         results['pkg_policy_status'] = "Integration Package found"
         results['pkg_policy_object'] = pkg_policy_object

@@ -60,12 +60,12 @@ class Integration(Kibana):
         return integration_install
     
     def check_integration(self, integration_name, check_mode=False):
-        results['check_mode'] = str(check_mode)
-        integration_objects = Integration.get_integrations(self)
+        integration_action = Integration(self.module)
+        integration_objects = integration_action.get_integrations()
         integration_object = ""
         for integration in integration_objects['response']:
           if integration['title'] in integration_name:
             integration_object = integration
             if integration['status'] != 'installed':
-              integration_install = Integration.install_integration(self,integration['name'],integration['version'])
+              integration_install = integration_action.install_integration(integration['name'],integration['version'])
         return(integration_object)

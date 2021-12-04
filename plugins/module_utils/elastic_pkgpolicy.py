@@ -69,11 +69,14 @@ except:
 results = {}
 
 class PkgPolicy(Kibana):
+  
     def __init__(self,module):
         super().__init__(module)
         self.module = module
         self.agent_policy_name = self.module.params.get('agent_policy_name')
         self.agent_policy_desc = self.module.params.get('agent_policy_desc')
+        self.pkg_policy_name = self.module.params.get('pkg_policy_name')
+        self.pkg_policy_desc = self.module.params.get('pkg_policy_desc')
     
     def get_all_pkg_policies(self):
         endpoint  = 'fleet/package_policies'
@@ -85,22 +88,24 @@ class PkgPolicy(Kibana):
         pkg_policy_update = self.send_api_request(endpoint, 'PUT', data=body)
         return pkg_policy_update
     
-    def get_pkg_policy(self,pkg_policy_name,agent_policy_id):
-      pkg_policy_objects = PkgPolicy.get_all_pkg_policies(self)
+    def get_pkg_policy(self,agent_policy_id):
+      pkg_policy_action = PkgPolicy(self.module)
+      pkg_policy_objects = pkg_policy_action.get_all_pkg_policies()
       pkg_policy_object = ""
       for pkgPolicy in pkg_policy_objects['items']:
-        if pkgPolicy['name'] == pkg_policy_name and pkgPolicy['policy_id'] == agent_policy_id:
+        if pkgPolicy['name'] == self.pkg_policy_name and pkgPolicy['policy_id'] == agent_policy_id:
           pkg_policy_object = pkgPolicy
           results['pkg_policy_status'] = "Integration Package found, no need to create"
       return(pkg_policy_object)
     
-    def create_pkg_policy(self,agent_policy_id, integration_object, pkg_policy_name, pkg_policy_desc, check_mode):
-      pkg_policy_object = PkgPolicy.get_pkg_policy(self,pkg_policy_name, agent_policy_id)
+    def create_pkg_policy(self,agent_policy_id, integration_object):
+      pkg_policy_action = PkgPolicy(self.module)
+      pkg_policy_object = pkg_policy_action.get_pkg_policy(agent_policy_id)
       if not pkg_policy_object:
         body = {
-          "name": pkg_policy_name,
+          "name": self.pkg_policy_name,
           "namespace": "default",
-          "description": pkg_policy_desc,
+          "description": self.pkg_policy_desc,
           "enabled": True,
           "policy_id": agent_policy_id,
           "output_id": "",
@@ -112,12 +117,12 @@ class PkgPolicy(Kibana):
           }
         }
         body_JSON = json.dumps(body)
-        if check_mode == True: 
+        if self.module.check_mode: 
           results['pkg_policy_object'] = "Package Policy NOT found or created. Check_mode is set to True. If you would like to create the Integration Package Policy, set check_mode to False"
           return 
         else:
-          endpoint  = 'fleet/package_policies'
-          pkg_policy_object = self.send_api_request(endpoint, 'POST', data=body)
+          endpoint = 'fleet/package_policies'
+          pkg_policy_object = self.send_api_request(endpoint, 'POST', data=body_JSON)
           return pkg_policy_object
       else:
         return pkg_policy_object
