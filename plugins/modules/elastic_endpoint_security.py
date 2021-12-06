@@ -87,67 +87,44 @@ class SecurityBaseline(Kibana):
         self.pkg_policy_name = self.module.params.get('pkg_policy_name')
         self.pkg_policy_desc = self.module.params.get('pkg_policy_desc')
         
-    def create_securityctrl_baseline_settings(self,agent_policy_id,integration_object):
-      
-        ###########################################################################################
-        #
-        # This should be run for the following Integrations:
-        #                                      -System
-        #                                      -Windows
-        #                                      -Linux
-        #                                      -Endpoint Security
-        #                                      -Prebuilt Security Detection Rules
-        #
-        # The code will create the policy packages and update them to comply with the baseline
-        #
-        ###########################################################################################
-        
+    def create_securityctrl_baseline_settings(self,pkg_policy_object):
         ################ Checking and creating package policy associated with Integration
         pkg_policy_action = PkgPolicy(self.module)
-        pkg_policy_object = pkg_policy_action.get_pkg_policy(agent_policy_id)
-        if pkg_policy_object == "":
-          results['pkg_policy_status'] = "Integration Package NOT found, creating package policy"
-          pkg_policy_object = pkg_policy_action.create_pkg_policy(agent_policy_id, integration_object)
-        else:
-          results['pkg_policy_status'] = "Integration Package found, No package policy created"
-          results['changed'] = False
-        
-        if integration_object['title'] == 'Endpoint Security' and self.module.check_mode:
-          pkgpolicy_objects = pkg_policy_action.get_all_pkg_policies()
-          pkgpolicy_object = ""
-          for pkgPolicy in pkgpolicy_objects['items']:
-            if pkgPolicy['name'] == self.integration_pkg_name and pkgPolicy['policy_id'] == agent_policy_id:
-              pkgpolicy_object = pkgPolicy
-              endPointpkgPolicyId = pkgpolicy_object['id']
-              i=0
-              for input in pkgpolicy_object['inputs']:
-                if input['type'] == 'endpoint':
-                  ########## Updating configuration
-                  pkgpolicy_object['inputs'][i]['config']['policy']['value']['windows']['antivirus_registration']['enabled'] = self.endpoint_security_antivirus
-                  ########## Removing values to reapply the JSON with the above values changed
-                  pkgpolicy_object.pop('id')
-                  pkgpolicy_object.pop('revision')
-                  pkgpolicy_object.pop('created_at')
-                  pkgpolicy_object.pop('created_by')
-                  pkgpolicy_object.pop('updated_at')
-                  pkgpolicy_object.pop('updated_by')
-                  break
-                i=+1
-          pkgpolicy_object_json = json.dumps(pkgpolicy_object)
-          pkg_policy_update = pkg_policy_action.update_pkg_policy(endPointpkgPolicyId,pkgpolicy_object_json)
-          results['pkg_policy_update_status'] = "Updating Endpoint Security Package"
-          pkg_policy_object = pkg_policy_update
+        try:
+          pkg_policy_object['package']
+        except:
+          pkg_policy_object = pkg_policy_object['item']
           
-        if integration_object['title'] == 'Prebuilt Security Detection Rules' and self.prebuilt_rules_activate == True:
-            if not self.module.check_mode:
-                rules_action = Rules(self.module)
-                #SecurityRules = rules_action.activating_all_rules(self,50)
-                SecurityRules = rules_action.activate_rule(50,'Endpoint Security')
-                results['Activating Rule'] = SecurityRules
-            else:
-                results['Activating Rule'] = "Check_mode is set to True so rule will not be activated"
+        if pkg_policy_object['package']['title'] == 'Endpoint Security' and self.module.check_mode == False and self.endpoint_security_antivirus == True:
+          i=0
+          for input in pkg_policy_object['inputs']:
+            if input['type'] == 'endpoint':
+                ########## Updating configuration
+                pkg_policy_object['inputs'][i]['config']['policy']['value']['windows']['antivirus_registration']['enabled'] = self.endpoint_security_antivirus
+                ########## Removing values to reapply the JSON with the above values changed
+                pkg_policy_object_id = pkg_policy_object['id'] 
+                pkg_policy_object.pop('id')
+                pkg_policy_object.pop('revision')
+                pkg_policy_object.pop('created_at')
+                pkg_policy_object.pop('created_by')
+                pkg_policy_object.pop('updated_at')
+                pkg_policy_object.pop('updated_by')
+                break
+            i=+1
+          pkg_policy_object_json = json.dumps(pkg_policy_object)
+          pkg_policy_update = pkg_policy_action.update_pkg_policy(pkg_policy_object_id,pkg_policy_object_json)
+          results['pkg_policy_update_status'] = "Updating Endpoint Security Package"
+          pkg_policy_info = pkg_policy_update
         
-        return pkg_policy_object
+        elif pkg_policy_object['package']['title'] == 'Prebuilt Security Detection Rules' and self.prebuilt_rules_activate == True and self.module.check_mode == False:
+              rules_action = Rules(self.module)
+              #SecurityRules = rules_action.activating_all_rules(self,50)
+              pkg_policy_info = rules_action.activate_rule(50,'Endpoint Security')
+        
+        elif self.module.check_mode == True:
+          results['pkg_policy_update_status'] = "Check mode is set to True, not going to update pkg policy"
+        
+        return pkg_policy_info
 
 def main():
 
@@ -176,19 +153,18 @@ def main():
     else:
         results['changed'] = True
         
+    agent_policy_action = AgentPolicy(module)
     if not module.params.get('agent_policy_id'):
-      ElasticAgentPolicyId = AgentPolicy(module)
-      agency_policy_object = ElasticAgentPolicyId.get_agent_policy_id_byname()
-      try:
-        agent_policy_id = agency_policy_object['id']
-        results['agent_policy_status'] = "Agent Policy found."
-      except:
-        results['agent_policy_status'] = "Agent Policy was not found. Cannot continue without valid Agent Policy Name or ID"
-        results['changed'] = False
-        module.exit_json(**results)
+      agency_policy_object = agent_policy_action.get_agent_policy_id_byname()
     else:
-      results['agent_policy_status'] = "Agent Policy ID found."
-      agent_policy_id = module.params.get('agent_policy_id')
+      agency_policy_object = agent_policy_action.get_agent_policy_byid()
+    try:
+      agent_policy_id = agency_policy_object['id']
+      results['agent_policy_status'] = "Agent Policy found."
+    except:
+      results['agent_policy_status'] = "Agent Policy was not found. Cannot continue without valid Agent Policy Name or ID"
+      results['changed'] = False
+      module.exit_json(**results)
     
     ElasticIntegration = Integration(module)
     if module.params.get('integration_name'):
@@ -202,9 +178,24 @@ def main():
       results['integration_status'] = 'Integration name is not a valid'
       results['changed'] = False
       module.exit_json(**results)
+    
+    pkg_policy_action = "create"
+    pkg_policy = PkgPolicy(module)
+    if pkg_policy_action == "create":
+      pkg_policy_object = pkg_policy.get_pkg_policy(agent_policy_id)
+      if pkg_policy_object:
+        results['pkg_policy_status'] = "Integration Package found, No package created"
+        results['changed'] = False
+        results['pkg_policy_object'] = pkg_policy_object
+      else:    
+        pkg_policy_object = pkg_policy.create_pkg_policy(agent_policy_id, integration_object)
+        results['pkg_policy_status'] = "No Integration Package found, Package Policy created"
+        results['pkg_policy_object'] = pkg_policy_object
             
     ElasticSecurityBaseline = SecurityBaseline(module)
-    pkg_policy_object = ElasticSecurityBaseline.create_securityctrl_baseline_settings(agent_policy_id, integration_object)
+    if integration_object['title'] == 'Endpoint Security' or integration_object['title'] == 'Prebuilt Security Detection Rules':
+      updated_pkg_policy_object = ElasticSecurityBaseline.create_securityctrl_baseline_settings(pkg_policy_object)
+      results['updated_pkg_policy_info'] = updated_pkg_policy_object
     
     results['pkg_policy_object'] = pkg_policy_object
     module.exit_json(**results)

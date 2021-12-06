@@ -55,7 +55,7 @@ class Rules(Kibana):
       return update_rule
   
     def activating_all_rules(self, page_size):
-      rule_actions = Rules(self)
+      rule_actions = Rules(self.module)
       #### Getting first page of rules
       page_number = 1
       rules = rule_actions.get_rules(self,page_size,page_number)
@@ -72,11 +72,11 @@ class Rules(Kibana):
           allrules = rules['data']
       return("Rules are updated")
 
-    def activate_rule(self, page_size, rule_name):
-      rule_actions = Rules(self)
+    def activate_rule(self, page_size, rule_name = 'All'):
+      rule_actions = Rules(self.module)
       #### Getting first page of rules
       page_number = 1
-      rules = rule_actions.get_rules(self,page_size,page_number)
+      rules = rule_actions.get_rules(page_size,page_number)
       noOfRules = rules['total']
       allrules = rules['data']
       #### Going through each rule page by page and enabling each rule that isn't enabled.
@@ -88,7 +88,7 @@ class Rules(Kibana):
             elif rule['enabled'] == True and rule_name == rule['name']:
               return(rule['name'] + ": Rule is already enabled")
           page_number = page_number + 1
-          rules = rule_actions.get_rules(self,page_size,page_number)
+          rules = rule_actions.get_rules(page_size,page_number)
           allrules = rules['data']
       return(rule['name'] + ": Rule not found")
   
