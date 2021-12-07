@@ -38,7 +38,6 @@ def main():
         verify_ssl_cert=dict(type='bool', default=True),
         agent_policy_name=dict(type='str', Required=True),
         agent_policy_desc=dict(type='str', default='None'),
-        agent_policy_body=dict(type='str', default='body'),
         state=dict(type='str', default='present')
     )
     

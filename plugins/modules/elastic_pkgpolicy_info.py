@@ -84,7 +84,7 @@ def main():
         username=dict(type='str', Required=True),
         password=dict(type='str', no_log=True, Required=True),   
         verify_ssl_cert=dict(type='bool', default=True),
-        agent_policy_name=dict(type='str', default='Agent Policy'),
+        agent_policy_name=dict(type='str'),
         agent_policy_id=dict(type='str'),
         integration_name=dict(type='str', Required=True),
         pkg_policy_name=dict(type='str', Required=True)
@@ -103,10 +103,10 @@ def main():
         results['changed'] = True
 
     agent_policy_action = AgentPolicy(module)
-    if not module.params.get('agent_policy_id'):
-      agency_policy_object = agent_policy_action.get_agent_policy_id_byname()
-    else:
+    if module.params.get('agent_policy_id'):
       agency_policy_object = agent_policy_action.get_agent_policy_byid()
+    else:
+      agency_policy_object = agent_policy_action.get_agent_policy_byname()
     try:
       agent_policy_id = agency_policy_object['id']
       results['agent_policy_status'] = "Agent Policy found."

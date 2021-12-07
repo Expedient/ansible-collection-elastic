@@ -44,8 +44,8 @@ def main():
     module_args=dict(
         host=dict(type='str',default='elastic-admin.expedient.cloud'),
         port=dict(type='int', default=12443),
-        username=dict(type='str', default='test1'),
-        password=dict(type='str', no_log=True, default='test1'),
+        username=dict(type='str', Required=True),
+        password=dict(type='str', no_log=True, Required=True),   
         verify_ssl_cert=dict(type='bool', default=True),
         deployment_name=dict(type='str', Required=True)
     )

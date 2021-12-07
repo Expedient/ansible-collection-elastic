@@ -144,10 +144,13 @@ class Kibana(object):
       }
       body_JSON = dumps(body)
       endpoint  = 'fleet/epm/packages/' + integration_name + "-" + version
-      integration_install = self.send_api_request(endpoint, 'POST', data=body_JSON)
+      if not self.module.check_mode:
+        integration_install = self.send_api_request(endpoint, 'POST', data=body_JSON)
+      else:
+        integration_install = "Cannot proceed with check_mode set to " + self.module.check_mode
       return integration_install
   
-  def check_integration(self, integration_name, check_mode=False):
+  def check_integration(self, integration_name):
       integration_action = Kibana(self.module)
       integration_objects = integration_action.get_integrations()
       integration_object = ""
@@ -167,7 +170,10 @@ class Kibana(object):
   
   def update_pkg_policy(self,pkgpolicy_id,body):
       endpoint = "fleet/package_policies/" + pkgpolicy_id
-      pkg_policy_update = self.send_api_request(endpoint, 'PUT', data=body)
+      if not self.module.check_mode:
+        pkg_policy_update = self.send_api_request(endpoint, 'PUT', data=body)
+      else:
+        pkg_policy_update = "Cannot proceed with check_mode set to " + self.module.check_mode
       return pkg_policy_update
   
   def get_pkg_policy(self,agent_policy_id):
@@ -202,7 +208,10 @@ class Kibana(object):
       }
       body_JSON = dumps(body)
       endpoint = 'fleet/package_policies'
-      pkg_policy_object = self.send_api_request(endpoint, 'POST', data=body_JSON)
+      if not self.module.check_mode:
+        pkg_policy_object = self.send_api_request(endpoint, 'POST', data=body_JSON)
+      else:
+        pkg_policy_object = "Cannot proceed with check_mode set to " + self.module.check_mode
       return pkg_policy_object
     else:
       return pkg_policy_object
@@ -216,12 +225,14 @@ class Kibana(object):
 
   def create_agent_policy(self, check_mode=False):
     agent_policy_action = Kibana(self.module)
-    agent_policy_id = self.module.params.get('agent_policy_id')
+    self.agent_policy_id = self.module.params.get('agent_policy_id')
     self.agent_policy_name = self.module.params.get('agent_policy_name')
     self.agent_policy_desc = self.module.params.get('agent_policy_desc')
-    if(agent_policy_id):
-      agent_policy_id = agent_policy_action.get_agent_policy_id_byname()
-    agent_policy_object = agent_policy_action.get_agent_policy_byid(agent_policy_id)
+    if self.agent_policy_id:
+      agent_policy_object = agent_policy_action.get_agent_policy_byid()
+    else:
+      agent_policy_object = agent_policy_action.get_agent_policy_byname()
+      
     if not agent_policy_object:
       body = {
           "name": self.agent_policy_name,
@@ -255,7 +266,8 @@ class Kibana(object):
     else:
       return
   
-  def get_agent_policy_byid(self, agent_policy_id):
-    endpoint  = 'fleet/agent_policies/' + agent_policy_id
+  def get_agent_policy_byid(self):
+    self.agent_policy_id = self.module.params.get('agent_policy_id')
+    endpoint  = 'fleet/agent_policies/' + self.agent_policy_id
     agent_policy_object = self.send_api_request(endpoint, 'GET')
     return(agent_policy_object['item'])
