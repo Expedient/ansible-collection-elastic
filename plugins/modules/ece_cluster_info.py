@@ -5,8 +5,6 @@
 #   Version 1.0 - 11/17/2021 - Ian Scott - Initial Draft
 #
 ##################################################################
-
-from typing_extensions import Required
 from ansible.module_utils.basic import AnsibleModule
 #from ansible.module_utils.basic import *
 
@@ -57,7 +55,8 @@ def main():
     
     module = AnsibleModule(argument_spec=module_args, required_if=argument_dependencies, supports_check_mode=True)
     ElasticDeployments = ECE(module)
-    ElasticDeployments.get_deployment_id(module.params.get('deployment_name'))
+    deployment_id = ElasticDeployments.get_deployment_id(module.params.get('deployment_name'))
+    results['deployment_id'] = deployment_id
    
     results['changed'] = False
     module.exit_json(**results)

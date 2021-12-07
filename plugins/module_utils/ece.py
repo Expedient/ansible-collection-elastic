@@ -110,7 +110,6 @@ class ECE(object):
     return next(filter(lambda x: x['repository_name'] == repo_name, repos), None)
 
   def get_deployment_id(self,deployment_name):
-
       endpoint  = 'deployments'
       deployment_objects = self.send_api_request(endpoint, 'GET')
       deployment_list = []
