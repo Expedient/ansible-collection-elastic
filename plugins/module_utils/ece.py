@@ -109,5 +109,18 @@ class ECE(object):
     repos = self.get_snapshot_repos()
     return next(filter(lambda x: x['repository_name'] == repo_name, repos), None)
 
+  def get_deployment_id(self,deployment_name):
 
+      endpoint  = 'deployments'
+      deployment_objects = self.send_api_request(endpoint, 'GET')
+      deployment_list = []
+      for deployment in deployment_objects['deployments']:
+        deployment_list.append(str(deployment['name']))
+        if deployment['name'] == deployment_name:
+          deployment_object = deployment
+          for resource in deployment['resources']:
+            if resource['ref_id'] == 'main-kibana':
+              deployment_id = resource['id']
+              break
+      return deployment_id
 

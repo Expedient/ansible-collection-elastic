@@ -38,38 +38,7 @@ except:
   sys.path.append(util_path)
   from kibana import Kibana
 
-results = {}
-
-
-class Deployments(ECE):
-    def __init__(self,module):
-        super().__init__(module)
-        self.module = module
-        self.deployment_name = self.module.params.get('deployment_name')
-        self.deployment_action = self.module.params.get('deployment_action')
-        self.deployment_body = self.module.params.get('deployment_body')
-        
-    def get_deployment_id(self,deployment_name):
-
-        endpoint  = 'deployments'
-        deployment_objects = self.send_api_request(endpoint, 'GET')
-        deployment_list = []
-        deployment_object = ""
-        for deployment in deployment_objects['deployments']:
-          deployment_list.append(str(deployment['name']))
-          if deployment['name'] == deployment_name:
-            deployment_object = deployment
-            for resource in deployment['resources']:
-              if resource['ref_id'] == 'main-kibana':
-                deployment_id = resource['id']
-                break
-
-        results['deployment_object'] = deployment_object
-        try:
-          results['deployment_id'] = deployment_id
-        except:
-          results['deployment_status'] = "A valid deployment name was not given"
-        return results
+results = {}    
     
 def main():
 
@@ -80,7 +49,6 @@ def main():
         password=dict(type='str', no_log=True, default='test1'),
         verify_ssl_cert=dict(type='bool', default=True),
         deployment_name=dict(type='str', default='Expedient-prodops-testing'),
-        deployment_action=dict(type='str', default='action'),
         deployment_body=dict(type='str', default='body')
     )
     argument_dependencies = []
@@ -94,7 +62,7 @@ def main():
     else:
         results['changed'] = True
     
-    ElasticDeployments = Deployments(module)
+    ElasticDeployments = Kibana(module)
     
     if module.params.get('deployment_action') == "get_deployment_id":
       ElasticDeployments.get_deployment_id(module.params.get('deployment_name'))
