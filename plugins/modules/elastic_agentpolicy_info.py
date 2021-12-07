@@ -6,6 +6,7 @@
 #
 ##################################################################
 
+from typing_extensions import Required
 from ansible.module_utils.basic import _ANSIBLE_ARGS, AnsibleModule
 import json
 
@@ -41,15 +42,13 @@ results = {}
 def main():
 
     module_args=dict(    
-        host=dict(type='str',default='id'),
+        host=dict(type='str',Required=True),
         port=dict(type='int', default=9243),
-        username=dict(type='str', default='test1'),
-        password=dict(type='str', no_log=True, default='test'),   
+        username=dict(type='str', Required=True),
+        password=dict(type='str', no_log=True, Required=True),   
         verify_ssl_cert=dict(type='bool', default=True),
-        agent_policy_name=dict(type='str', default='Ansible-Elastic-API-Testing'),
-        agent_policy_desc=dict(type='str', default='None'),
-        agent_policy_action=dict(type='str', default='action'),
-        agent_policy_body=dict(type='str', default='body')
+        agent_policy_name=dict(type='str'),
+        agent_policy_id=dict(type='str')
     )
     
     argument_dependencies = []
@@ -58,27 +57,17 @@ def main():
     
     module = AnsibleModule(argument_spec=module_args, required_if=argument_dependencies, supports_check_mode=True)
     AgentPolicies = AgentPolicy(module)
+    results['changed'] = False
 
-    if module.check_mode:
-        results['changed'] = False
+    if module.params.get('agent_policy_name'):
+      agent_policy_id = AgentPolicies.get_agent_policy_id_byname(module.params.get('agent_policy_name'))
     else:
-        results['changed'] = True
+      agent_policy_id = module.params.get('agent_policy_id')
+      
+    agent_policy_object = AgentPolicies.get_agent_policy_byid(agent_policy_id)
     
-    if module.params.get('agent_policy_action') == "create":
-      agent_policy_object = AgentPolicies.get_agent_policy_id_byname()
-      if agent_policy_object:
-        results['agent_policy_status'] = "Agent Policy already exists"
-        results['changed'] = False
-      else:
-        agent_policy_object = AgentPolicies.create_agent_policy()
-        results['agent_policy_status'] = "Creating Agent Policy"
-      results['agent_policy_object'] = agent_policy_object
-    elif module.params.get('agent_policy_action') == "get_id_by_name":
-      agent_policy_object = AgentPolicies.get_agent_policy_id_byname(module.params.get('agent_policy_name'))
-      results['agent_policy_status'] = "Getting Agent Policy"
-      results['agent_policy_object'] = agent_policy_object
-    else:
-      results['agent_policy_status'] = "A valid action name was not passed"
+    results['agent_policy_status'] = "Getting Agent Policy"
+    results['agent_policy_object'] = agent_policy_object
     
     module.exit_json(**results)
 

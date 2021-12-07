@@ -8,44 +8,6 @@
 
 from ansible.module_utils.basic import _ANSIBLE_ARGS, AnsibleModule
 #from ansible.module_utils.basic import *
-
-import json
-
-try:
-  from ansible_collections.expedient.elastic.plugins.module_utils.elastic_integration import Integration
-except:
-  import sys
-  import os
-  util_path = new_path = f'{os.getcwd()}/plugins/module_utils'
-  sys.path.append(util_path)
-  from elastic_integration import Integration
-
-try:
-  from ansible_collections.expedient.elastic.plugins.module_utils.elastic_agentpolicy import AgentPolicy
-except:
-  import sys
-  import os
-  util_path = new_path = f'{os.getcwd()}/plugins/module_utils'
-  sys.path.append(util_path)
-  from elastic_agentpolicy import AgentPolicy
-  
-try:
-  from ansible_collections.expedient.elastic.plugins.module_utils.elastic_pkgpolicy import PkgPolicy
-except:
-  import sys
-  import os
-  util_path = new_path = f'{os.getcwd()}/plugins/module_utils'
-  sys.path.append(util_path)
-  from elastic_pkgpolicy import PkgPolicy
-
-try:
-  from ansible_collections.expedient.elastic.plugins.module_utils.elastic_rules import Rules
-except:
-  import sys
-  import os
-  util_path = new_path = f'{os.getcwd()}/plugins/module_utils'
-  sys.path.append(util_path)
-  from elastic_rules import Rules
   
 try:
   from ansible_collections.expedient.elastic.plugins.module_utils.ece import ECE
@@ -79,36 +41,37 @@ results = {}
 def main():
 
     module_args=dict(   
-        host=dict(type='str',default='id'),
+        host=dict(type='str',Required=True),
         port=dict(type='int', default=9243),
-        username=dict(type='str', default='test1'),
-        password=dict(type='str', no_log=True, default='test1'),   
+        username=dict(type='str', Required=True),
+        password=dict(type='str', no_log=True, Required=True),   
         verify_ssl_cert=dict(type='bool', default=True),
         agent_policy_name=dict(type='str', default='Agent Policy'),
         agent_policy_id=dict(type='str'),
-        integration_name=dict(type='str', default='Int Name'),
-        pkg_policy_name=dict(type='str', default='Int Pkg Name'),
-        pkg_policy_desc=dict(type='str', default='Int Pkg Desc'),
-        pkg_policy_action=dict(type='str', default='action'),
-        pkg_policy_body=dict(type='str', default='body')
+        integration_name=dict(type='str', Required=True),
+        pkg_policy_name=dict(type='str', Required=True),
+        pkg_policy_desc=dict(type='str'),
+        pkg_policy_body=dict(type='str', default='body'),
+        state=dict(type='str', default='present')
     )
     argument_dependencies = []
         #('state', 'present', ('enabled', 'alert_type', 'conditions', 'actions')),
         #('alert-type', 'metrics_threshold', ('conditions'))
     
     module = AnsibleModule(argument_spec=module_args, required_if=argument_dependencies, supports_check_mode=True)
-    pkg_policy = PkgPolicy(module)
-
+    pkg_policy = Kibana(module)
+    state = module.params.get('state')
+    
     if module.check_mode:
         results['changed'] = False
     else:
         results['changed'] = True
 
-    agent_policy_action = AgentPolicy(module)
+    agent_policy_action = Kibana(module)
     if not module.params.get('agent_policy_id'):
-      agency_policy_object = agent_policy_action.get_agent_policy_id_byname()
+      agency_policy_object = agent_policy_action.get_agent_policy_byid(agent_policy_action.get_agent_policy_id_byname())
     else:
-      agency_policy_object = agent_policy_action.get_agent_policy_byid()
+      agency_policy_object = agent_policy_action.get_agent_policy_byid(module.params.get('agent_policy_id'))
     try:
       agent_policy_id = agency_policy_object['id']
       results['agent_policy_status'] = "Agent Policy found."
@@ -117,7 +80,8 @@ def main():
       results['changed'] = False
       module.exit_json(**results)
       
-    ElasticIntegration = Integration(module)
+    ElasticIntegration = Kibana(module)
+    
     if module.params.get('integration_name'):
       integration_object = ElasticIntegration.check_integration(module.params.get('integration_name'))
     else:
@@ -130,7 +94,7 @@ def main():
       results['changed'] = False
       module.exit_json(**results)
     
-    if module.params.get('pkg_policy_action') == "create":
+    if state == "present":
       pkg_policy_object = pkg_policy.get_pkg_policy(agent_policy_id)
       if pkg_policy_object:
         results['pkg_policy_status'] = "Integration Package found, No package created"
@@ -140,16 +104,8 @@ def main():
         pkg_policy_object = pkg_policy.create_pkg_policy(agent_policy_id, integration_object)
         results['pkg_policy_status'] = "No Integration Package found, Package Policy created"
         results['pkg_policy_object'] = pkg_policy_object
-    elif module.params.get('pkg_policy_action') == "get_id_by_name":
-      results['changed'] = False
-      pkg_policy_object = pkg_policy.get_pkg_policy(agent_policy_id)
-      if pkg_policy_object:
-        results['pkg_policy_status'] = "Integration Package found"
-        results['pkg_policy_object'] = pkg_policy_object
-      else:
-        results['pkg_policy_status'] = "Integration Package NOT found"
     else:
-      results['pkg_policy_object'] = "A valid action name was not passed"
+      results['pkg_policy_object'] = "A valid state was not passed"
       
     module.exit_json(**results)
 
