@@ -56,7 +56,7 @@ def main():
         results['changed'] = True
     
     if state == "present":
-      agent_policy_object = AgentPolicies.get_agent_policy_id_byname()
+      agent_policy_object = AgentPolicies.get_agent_policy_byname()
       if agent_policy_object:
         results['agent_policy_status'] = "Agent Policy already exists"
         results['changed'] = False

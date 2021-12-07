@@ -216,9 +216,12 @@ class Kibana(object):
 
   def create_agent_policy(self, check_mode=False):
     agent_policy_action = Kibana(self.module)
+    agent_policy_id = self.module.params.get('agent_policy_id')
     self.agent_policy_name = self.module.params.get('agent_policy_name')
     self.agent_policy_desc = self.module.params.get('agent_policy_desc')
-    agent_policy_object = agent_policy_action.get_agent_policy_id_byname()
+    if(agent_policy_id):
+      agent_policy_id = agent_policy_action.get_agent_policy_id_byname()
+    agent_policy_object = agent_policy_action.get_agent_policy_byid(agent_policy_id)
     if not agent_policy_object:
       body = {
           "name": self.agent_policy_name,
@@ -234,10 +237,11 @@ class Kibana(object):
         agent_policy_object = agent_policy_object['item']
       else:
         agent_policy_object = "Cannot proceed with check_mode set to " + self.module.check_mode
-    
+    else:
+      return
     return(agent_policy_object)
 
-  def get_agent_policy_id_byname(self):
+  def get_agent_policy_byname(self):
     agent_policy_action = Kibana(self.module)
     agent_policy_object = ""
     self.agent_policy_name=self.module.params.get('agent_policy_name')
@@ -247,7 +251,7 @@ class Kibana(object):
             agent_policy_object = agent_policy
             continue
     if agent_policy_object:
-      return(agent_policy_object['id'])
+      return(agent_policy_object)
     else:
       return
   

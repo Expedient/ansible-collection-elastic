@@ -122,7 +122,7 @@ def main():
     agent_policy_action = Kibana(module)
     
     if not module.params.get('agent_policy_id'):
-      agency_policy_object = agent_policy_action.get_agent_policy_byid(agent_policy_action.get_agent_policy_id_byname())
+      agency_policy_object = agent_policy_action.get_agent_policy_byname()
     else:
       agency_policy_object = agent_policy_action.get_agent_policy_byid()
     try:
