@@ -6,6 +6,7 @@
 #
 ##################################################################
 
+from typing_extensions import Required
 from ansible.module_utils.basic import AnsibleModule
 #from ansible.module_utils.basic import *
 
@@ -48,26 +49,15 @@ def main():
         username=dict(type='str', default='test1'),
         password=dict(type='str', no_log=True, default='test1'),
         verify_ssl_cert=dict(type='bool', default=True),
-        deployment_name=dict(type='str', default='Expedient-prodops-testing'),
-        deployment_body=dict(type='str', default='body')
+        deployment_name=dict(type='str', Required=True)
     )
     argument_dependencies = []
         #('state', 'present', ('enabled', 'alert_type', 'conditions', 'actions')),
         #('alert-type', 'metrics_threshold', ('conditions'))
     
     module = AnsibleModule(argument_spec=module_args, required_if=argument_dependencies, supports_check_mode=True)
-    
-    if module.check_mode:
-        results['changed'] = False
-    else:
-        results['changed'] = True
-    
-    ElasticDeployments = Kibana(module)
-    
-    if module.params.get('deployment_action') == "get_deployment_id":
-      ElasticDeployments.get_deployment_id(module.params.get('deployment_name'))
-    else:
-      results['deployment_status'] = "A valid action name was not passed"
+    ElasticDeployments = ECE(module)
+    ElasticDeployments.get_deployment_id(module.params.get('deployment_name'))
    
     results['changed'] = False
     module.exit_json(**results)
