@@ -28,6 +28,12 @@ class Kibana(object):
     self.validate_certs = module.params.get('verify_ssl_cert')
     self.version = None # this is a hack to make it so that we can run the first request to get the clutser version without erroring out
     self.version = self.get_cluster_version()
+    self.integration_name = self.module.params.get('integration_name')
+    self.agent_policy_id = self.module.params.get('agent_policy_id')
+    self.agent_policy_name = self.module.params.get('agent_policy_name')
+    self.agent_policy_desc = self.module.params.get('agent_policy_desc')
+    self.pkg_policy_name = self.module.params.get('pkg_policy_name')
+    self.pkg_policy_desc = self.module.params.get('pkg_policy_desc')
 
   def send_api_request(self, endpoint, method, data=None):
     url = f'https://{self.host}:{self.port}/api/{endpoint}'
@@ -90,44 +96,43 @@ class Kibana(object):
       'enabled': True,
       'id': rule_id
     }
-    update_rule = Kibana.update_rule(self, body)
+    update_rule = self.update_rule(self, body)
     return update_rule
 
   def activating_all_rules(self, page_size):
-    rule_actions = Kibana(self.module)
     #### Getting first page of rules
     page_number = 1
-    rules = rule_actions.get_rules(self,page_size,page_number)
+    rules = self.get_rules(self,page_size,page_number)
     noOfRules = rules['total']
     allrules = rules['data']
     #### Going through each rule page by page and enabling each rule that isn't enabled.
     while noOfRules > page_size * (page_number - 1):
         for rule in allrules:
           if rule['enabled'] == False:
-            enable_rule = rule_actions.enable_rule(self,rule['id'])
+            enable_rule = self.enable_rule(self,rule['id'])
             return(rule['id'] + ": Rule is updated")
         page_number = page_number + 1
-        rules = rule_actions.get_rules(self,page_size,page_number)
+        rules = self.get_rules(self,page_size,page_number)
         allrules = rules['data']
     return("Rules are updated")
 
   def activate_rule(self, page_size, rule_name = 'All'):
-    rule_actions = Kibana(self.module)
+
     #### Getting first page of rules
     page_number = 1
-    rules = rule_actions.get_rules(page_size,page_number)
+    rules = self.get_rules(page_size,page_number)
     noOfRules = rules['total']
     allrules = rules['data']
     #### Going through each rule page by page and enabling each rule that isn't enabled.
     while noOfRules > page_size * (page_number - 1):
         for rule in allrules:
           if rule['enabled'] == False and rule_name == rule['name']:
-            enable_rule = rule_actions.enable_rule(self,rule['id'])
+            enable_rule = self.enable_rule(self,rule['id'])
             return(rule['name'] + ": Rule is updated")
           elif rule['enabled'] == True and rule_name == rule['name']:
             return(rule['name'] + ": Rule is already enabled")
         page_number = page_number + 1
-        rules = rule_actions.get_rules(page_size,page_number)
+        rules = self.get_rules(page_size,page_number)
         allrules = rules['data']
     return(rule['name'] + ": Rule not found")
 
@@ -151,14 +156,13 @@ class Kibana(object):
       return integration_install
   
   def check_integration(self, integration_name):
-      integration_action = Kibana(self.module)
-      integration_objects = integration_action.get_integrations()
+      integration_objects = self.get_integrations()
       integration_object = ""
       for integration in integration_objects['response']:
         if integration['title'] in integration_name:
           integration_object = integration
           if integration['status'] != 'installed':
-            integration_install = integration_action.install_integration(integration['name'],integration['version'])
+            integration_install = self.install_integration(integration['name'],integration['version'])
       return(integration_object)
 
   # Elastic Integration Package Policy functions
@@ -177,9 +181,7 @@ class Kibana(object):
       return pkg_policy_update
   
   def get_pkg_policy(self,agent_policy_id):
-    self.integration_name = self.module.params.get('integration_name')
-    pkg_policy_action = Kibana(self.module)
-    pkg_policy_objects = pkg_policy_action.get_all_pkg_policies()
+    pkg_policy_objects = self.get_all_pkg_policies()
     pkg_policy_object = ""
     for pkgPolicy in pkg_policy_objects['items']:
       if pkgPolicy['package']['title'] == self.integration_name and pkgPolicy['policy_id'] == agent_policy_id:
@@ -187,10 +189,7 @@ class Kibana(object):
     return(pkg_policy_object)
   
   def create_pkg_policy(self,agent_policy_id, integration_object):
-    self.pkg_policy_name = self.module.params.get('pkg_policy_name')
-    self.pkg_policy_desc = self.module.params.get('pkg_policy_desc')
-    pkg_policy_action = Kibana(self.module)
-    pkg_policy_object = pkg_policy_action.get_pkg_policy(agent_policy_id)
+    pkg_policy_object = self.get_pkg_policy(agent_policy_id)
     if not pkg_policy_object:
       body = {
         "name": self.pkg_policy_name,
@@ -212,9 +211,8 @@ class Kibana(object):
         pkg_policy_object = self.send_api_request(endpoint, 'POST', data=body_JSON)
       else:
         pkg_policy_object = "Cannot proceed with check_mode set to " + self.module.check_mode
-      return pkg_policy_object
-    else:
-      return pkg_policy_object
+    return pkg_policy_object
+
     
 # Elastic Agent Policy functions
 
@@ -223,15 +221,11 @@ class Kibana(object):
     agent_policy_objects = self.send_api_request(endpoint, 'GET')
     return(agent_policy_objects)
 
-  def create_agent_policy(self, check_mode=False):
-    agent_policy_action = Kibana(self.module)
-    self.agent_policy_id = self.module.params.get('agent_policy_id')
-    self.agent_policy_name = self.module.params.get('agent_policy_name')
-    self.agent_policy_desc = self.module.params.get('agent_policy_desc')
+  def create_agent_policy(self):
     if self.agent_policy_id:
-      agent_policy_object = agent_policy_action.get_agent_policy_byid()
+      agent_policy_object = self.get_agent_policy_byid()
     else:
-      agent_policy_object = agent_policy_action.get_agent_policy_byname()
+      agent_policy_object = self.get_agent_policy_byname()
       
     if not agent_policy_object:
       body = {
@@ -253,10 +247,8 @@ class Kibana(object):
     return(agent_policy_object)
 
   def get_agent_policy_byname(self):
-    agent_policy_action = Kibana(self.module)
     agent_policy_object = ""
-    self.agent_policy_name=self.module.params.get('agent_policy_name')
-    agent_policy_objects = agent_policy_action.get_all_agent_policys()
+    agent_policy_objects = self.get_all_agent_policys()
     for agent_policy in agent_policy_objects['items']:
         if agent_policy['name'] == self.agent_policy_name:
             agent_policy_object = agent_policy
@@ -267,7 +259,6 @@ class Kibana(object):
       return
   
   def get_agent_policy_byid(self):
-    self.agent_policy_id = self.module.params.get('agent_policy_id')
     endpoint  = 'fleet/agent_policies/' + self.agent_policy_id
     agent_policy_object = self.send_api_request(endpoint, 'GET')
     return(agent_policy_object['item'])

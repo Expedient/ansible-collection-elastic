@@ -29,12 +29,12 @@ results = {}
 def main():
 
     module_args=dict(    
-        host=dict(type='str',Required=True),
+        host=dict(type='str',required=True),
         port=dict(type='int', default=9243),
         username=dict(type='str', Required=True),
-        password=dict(type='str', no_log=True, Required=True),   
+        password=dict(type='str', no_log=True, required=True),   
         verify_ssl_cert=dict(type='bool', default=True),
-        agent_policy_name=dict(type='str', Required=True),
+        agent_policy_name=dict(type='str', required=True),
         agent_policy_desc=dict(type='str', default='None'),
         state=dict(type='str', default='present')
     )
@@ -43,7 +43,10 @@ def main():
         #('state', 'present', ('enabled', 'alert_type', 'conditions', 'actions')),
         #('alert-type', 'metrics_threshold', ('conditions'))
     
-    module = AnsibleModule(argument_spec=module_args, required_if=argument_dependencies, supports_check_mode=True)
+    module = AnsibleModule(argument_spec=module_args, supports_check_mode=True,
+                            mutually_exclusive=[('agent_policy_name', 'agent_policy_id')],
+                            required_one_of=[('agent_policy_name', 'agent_policy_id')])
+    
     kibana = Kibana(module)
     state = module.params.get('state')
 

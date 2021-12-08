@@ -30,10 +30,10 @@ results = {}
 def main():
 
     module_args=dict(    
-        host=dict(type='str',Required=True),
+        host=dict(type='str',required=True),
         port=dict(type='int', default=9243),
-        username=dict(type='str', Required=True),
-        password=dict(type='str', no_log=True, Required=True),   
+        username=dict(type='str', required=True),
+        password=dict(type='str', no_log=True, required=True),   
         verify_ssl_cert=dict(type='bool', default=True)
     )
     

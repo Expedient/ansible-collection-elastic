@@ -16,17 +16,6 @@
 from ansible.module_utils.basic import _ANSIBLE_ARGS, AnsibleModule
 #from ansible.module_utils.basic import *
 
-import json
-  
-try:
-  from ansible_collections.expedient.elastic.plugins.module_utils.ece import ECE
-except:
-  import sys
-  import os
-  util_path = new_path = f'{os.getcwd()}/plugins/module_utils'
-  sys.path.append(util_path)
-  from ece import ECE
-
 try:
   from ansible_collections.expedient.elastic.plugins.module_utils.kibana import Kibana
 except:
@@ -41,21 +30,24 @@ results = {}
 def main():
 
     module_args=dict(   
-        host=dict(type='str',Required=True),
+        host=dict(type='str',required=True),
         port=dict(type='int', default=9243),
-        username=dict(type='str', Required=True),
-        password=dict(type='str', no_log=True, Required=True),   
+        username=dict(type='str', required=True),
+        password=dict(type='str', no_log=True, required=True),   
         verify_ssl_cert=dict(type='bool', default=True),
         agent_policy_name=dict(type='str'),
         agent_policy_id=dict(type='str'),
-        integration_name=dict(type='str', Required=True),
-        pkg_policy_name=dict(type='str', Required=True)
+        integration_name=dict(type='str', required=True),
+        pkg_policy_name=dict(type='str', required=True)
     )
     argument_dependencies = []
         #('state', 'present', ('enabled', 'alert_type', 'conditions', 'actions')),
         #('alert-type', 'metrics_threshold', ('conditions'))
     
-    module = AnsibleModule(argument_spec=module_args, required_if=argument_dependencies, supports_check_mode=True)
+    module = AnsibleModule(argument_spec=module_args, supports_check_mode=True,
+                            mutually_exclusive=[('agent_policy_name', 'agent_policy_id')],
+                            required_one_of=[('agent_policy_name', 'agent_policy_id')])
+
 
     results['changed'] = False
     kibana = Kibana(module)
