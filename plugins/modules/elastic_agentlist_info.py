@@ -1,12 +1,13 @@
 ##################################################################
 #
-#   Script to create Elastic Agent Policy in Deployment
+#   Script to get Elastic Agent list
 #
-#   Version 1.0 - 11/17/2021 - Ian Scott - Initial Draft
+#   Version 1.0 - 12/8/2021 - Ian Scott - Initial Draft
 #
 ##################################################################
 
 from ansible.module_utils.basic import _ANSIBLE_ARGS, AnsibleModule
+import json
 
 try:
   from ansible_collections.expedient.elastic.plugins.module_utils.kibana import Kibana
@@ -26,10 +27,7 @@ def main():
         port=dict(type='int', default=9243),
         username=dict(type='str', Required=True),
         password=dict(type='str', no_log=True, Required=True),   
-        verify_ssl_cert=dict(type='bool', default=True),
-        agent_policy_name=dict(type='str', Required=True),
-        agent_policy_desc=dict(type='str', default='None'),
-        state=dict(type='str', default='present')
+        verify_ssl_cert=dict(type='bool', default=True)
     )
     
     argument_dependencies = []
@@ -38,24 +36,12 @@ def main():
     
     module = AnsibleModule(argument_spec=module_args, required_if=argument_dependencies, supports_check_mode=True)
     kibana = Kibana(module)
-    state = module.params.get('state')
+    results['changed'] = False
 
-    if module.check_mode:
-        results['changed'] = False
-    else:
-        results['changed'] = True
+    agent_list = kibana.get_agent_list()
     
-    if state == "present":
-      agent_policy_object = kibana.get_agent_policy_byname()
-      if agent_policy_object:
-        results['agent_policy_status'] = "Agent Policy already exists"
-        results['changed'] = False
-      else:
-        agent_policy_object = kibana.create_agent_policy()
-        results['agent_policy_status'] = "Creating Agent Policy"
-      results['agent_policy_object'] = agent_policy_object
-    else:
-      results['agent_policy_status'] = "A valid state was not passed"
+    results['agent_list_status'] = "Getting Agent List"
+    results['agent_list_object'] = agent_list
     
     module.exit_json(**results)
 

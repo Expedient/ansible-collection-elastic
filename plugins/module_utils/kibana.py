@@ -271,3 +271,10 @@ class Kibana(object):
     endpoint  = 'fleet/agent_policies/' + self.agent_policy_id
     agent_policy_object = self.send_api_request(endpoint, 'GET')
     return(agent_policy_object['item'])
+
+# Elastic Agent functions
+
+  def get_agent_list(self):
+    endpoint  = 'fleet/agents'
+    agent_list = self.send_api_request(endpoint, 'GET')
+    return(agent_list)

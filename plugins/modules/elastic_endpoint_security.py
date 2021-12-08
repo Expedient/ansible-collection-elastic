@@ -1,6 +1,6 @@
 ##################################################################
 #
-#   Script to create Elastic Agent Policy in Deployment
+#   Script to create Elastic endpoint security baseline
 #
 #   Version 1.0 - 11/17/2021 - Ian Scott - Initial Draft
 #
@@ -17,15 +17,6 @@ except:
   util_path = new_path = f'{os.getcwd()}/plugins/module_utils'
   sys.path.append(util_path)
   from ece import ECE
-  
-try:
-  from ansible_collections.expedient.elastic.plugins.module_utils.elastic import Elastic
-except:
-  import sys
-  import os
-  util_path = new_path = f'{os.getcwd()}/plugins/module_utils'
-  sys.path.append(util_path)
-  from elastic import Elastic
 
 try:
   from ansible_collections.expedient.elastic.plugins.module_utils.kibana import Kibana
@@ -53,7 +44,7 @@ class SecurityBaseline(Kibana):
         
     def create_securityctrl_baseline_settings(self,pkg_policy_object):
         ################ Checking and creating package policy associated with Integration
-        pkg_policy_action = Kibana(self.module)
+        kibana = Kibana(self.module)
         try:
           pkg_policy_object['package']
         except:
@@ -76,14 +67,13 @@ class SecurityBaseline(Kibana):
                 break
             i=+1
           pkg_policy_object_json = json.dumps(pkg_policy_object)
-          pkg_policy_update = pkg_policy_action.update_pkg_policy(pkg_policy_object_id,pkg_policy_object_json)
+          pkg_policy_update = kibana.update_pkg_policy(pkg_policy_object_id,pkg_policy_object_json)
           results['pkg_policy_update_status'] = "Updating Endpoint Security Package"
           pkg_policy_info = pkg_policy_update
         
         elif pkg_policy_object['package']['title'] == 'Prebuilt Security Detection Rules' and self.prebuilt_rules_activate == True and self.module.check_mode == False:
-              rules_action = Kibana(self.module)
               #SecurityRules = rules_action.activating_all_rules(self,50)
-              pkg_policy_info = rules_action.activate_rule(50,'Endpoint Security')
+              pkg_policy_info = kibana.activate_rule(50,'Endpoint Security')
         
         elif self.module.check_mode == True:
           results['pkg_policy_update_status'] = "Check mode is set to True, not going to update pkg policy"
@@ -119,12 +109,12 @@ def main():
     else:
         results['changed'] = True
         
-    agent_policy_action = Kibana(module)
+    kibana = Kibana(module)
     
     if not module.params.get('agent_policy_id'):
-      agency_policy_object = agent_policy_action.get_agent_policy_byname()
+      agency_policy_object = kibana.get_agent_policy_byname()
     else:
-      agency_policy_object = agent_policy_action.get_agent_policy_byid()
+      agency_policy_object = kibana.get_agent_policy_byid()
     try:
       agent_policy_id = agency_policy_object['id']
       results['agent_policy_status'] = "Agent Policy found."
@@ -133,9 +123,8 @@ def main():
       results['changed'] = False
       module.exit_json(**results)
     
-    ElasticIntegration = Kibana(module)
     if module.params.get('integration_name'):
-      integration_object = ElasticIntegration.check_integration(module.params.get('integration_name'))
+      integration_object = kibana.check_integration(module.params.get('integration_name'))
     else:
       results['integration_status'] = "No Integration Name provided to get the integration object"
       results['changed'] = False
@@ -146,16 +135,15 @@ def main():
       results['changed'] = False
       module.exit_json(**results)
     
-    pkg_policy = Kibana(module)
     if state == "present":
-      pkg_policy_object = pkg_policy.get_pkg_policy(agent_policy_id)
+      pkg_policy_object = kibana.get_pkg_policy(agent_policy_id)
       if pkg_policy_object:
         results['pkg_policy_status'] = "Integration Package found, No package created"
         results['changed'] = False
         results['pkg_policy_object'] = pkg_policy_object
       else:
         if module.check_mode == False:    
-          pkg_policy_object = pkg_policy.create_pkg_policy(agent_policy_id, integration_object)
+          pkg_policy_object = kibana.create_pkg_policy(agent_policy_id, integration_object)
           results['pkg_policy_status'] = "No Integration Package found, Package Policy created"
           results['changed'] = True
           results['pkg_policy_object'] = pkg_policy_object
