@@ -275,6 +275,19 @@ class Kibana(object):
 # Elastic Agent functions
 
   def get_agent_list(self):
-    endpoint  = 'fleet/agents'
+    page_size = 50
+    page_number = 1
+    endpoint  = "fleet/agents?page=" + str(page_number) + "&perPage=" + str(page_size)
     agent_list = self.send_api_request(endpoint, 'GET')
-    return(agent_list)
+    noOfAgents = agent_list['total']
+    #agent_list_result = agent_list['list']
+    agent_list_result = agent_list
+    while noOfAgents > page_size * (page_number - 1):
+      agent_no = 0
+      endpoint  = "fleet/agents?page=" + str(page_number) + "&perPage=" + str(page_size)
+      agent_list_page = self.send_api_request(endpoint, 'GET')
+      while agent_no < len(agent_list_page['list']):
+        agent_list_result['list'].append(agent_list_page['list'][agent_no])   
+        agent_no = agent_no + 1
+      page_number = page_number + 1
+    return(agent_list_result)
