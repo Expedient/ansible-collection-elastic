@@ -108,7 +108,7 @@ class Kibana(object):
         page_number = page_number + 1
         rules = self.get_rules(self,page_size,page_number)
         allrules = rules['data']
-    return("Rules are updated")
+    return "Rules are updated"
 
   def activate_rule(self, page_size, rule_name = 'All'):
 
@@ -128,7 +128,7 @@ class Kibana(object):
         page_number = page_number + 1
         rules = self.get_rules(page_size,page_number)
         allrules = rules['data']
-    return(rule['name'] + ": Rule not found")
+    return rule['name'] + ": Rule not found"
 
   # Elastic Integration functions
 
@@ -157,7 +157,7 @@ class Kibana(object):
           integration_object = integration
           if integration['status'] != 'installed':
             integration_install = self.install_integration(integration['name'],integration['version'])
-      return(integration_object)
+      return integration_object
 
   # Elastic Integration Package Policy functions
 
@@ -180,7 +180,7 @@ class Kibana(object):
     for pkgPolicy in pkg_policy_objects['items']:
       if pkgPolicy['package']['title'] == integration_name and pkgPolicy['policy_id'] == agent_policy_id:
         pkg_policy_object = pkgPolicy
-    return(pkg_policy_object)
+    return pkg_policy_object
   
   def create_pkg_policy(self,pkg_policy_name, pkg_policy_desc, agent_policy_id, integration_object):
     pkg_policy_object = self.get_pkg_policy(integration_object['name'],agent_policy_id)
