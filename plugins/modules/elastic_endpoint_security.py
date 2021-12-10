@@ -41,7 +41,7 @@ class SecurityBaseline(Kibana):
         
     def create_securityctrl_baseline_settings(self,pkg_policy_object):
         ################ Checking and creating package policy associated with Integration
-        kibana = Kibana(self.module)
+        
         try:
           pkg_policy_object['package']
         except:
@@ -63,13 +63,12 @@ class SecurityBaseline(Kibana):
                 pkg_policy_object.pop('updated_by')
                 break
             i=+1
-          pkg_policy_update = kibana.update_pkg_policy(pkg_policy_object_id,pkg_policy_object)
+          pkg_policy_update = self.update_pkg_policy(pkg_policy_object_id,pkg_policy_object)
           results['pkg_policy_update_status'] = "Updating Endpoint Security Package"
           pkg_policy_info = pkg_policy_update
         
         elif pkg_policy_object['package']['title'] == 'Prebuilt Security Detection Rules' and self.prebuilt_rules_activate == True and self.module.check_mode == False:
-              #SecurityRules = rules_action.activating_all_rules(self,50)
-              pkg_policy_info = kibana.activate_rule(50,'Endpoint Security')
+              pkg_policy_info = self.activate_rule(50,'Endpoint Security')
         
         elif self.module.check_mode == True:
           results['pkg_policy_update_status'] = "Check mode is set to True, not going to update pkg policy"
@@ -81,7 +80,7 @@ def main():
     module_args=dict(   
         host=dict(type='str',required=True),
         port=dict(type='int', default=9243),
-        username=dict(type='str', Required=True),
+        username=dict(type='str', required=True),
         password=dict(type='str', no_log=True, required=True),   
         verify_ssl_cert=dict(type='bool', default=True),
         agent_policy_id=dict(type='str'),
@@ -150,9 +149,8 @@ def main():
           results['pkg_policy_status'] = "No Integration Package found, Package Policy not created becans check_mode is set to true"
           results['changed'] = False
               
-    ElasticSecurityBaseline = SecurityBaseline(module)
     if integration_object['title'] == 'Endpoint Security' or integration_object['title'] == 'Prebuilt Security Detection Rules':
-      updated_pkg_policy_object = ElasticSecurityBaseline.create_securityctrl_baseline_settings(pkg_policy_object)
+      updated_pkg_policy_object = kibana.create_securityctrl_baseline_settings(pkg_policy_object)
       results['updated_pkg_policy_info'] = updated_pkg_policy_object
     
     results['pkg_policy_object'] = pkg_policy_object

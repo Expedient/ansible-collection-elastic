@@ -28,10 +28,16 @@ results = {}
                 
 def main():
 
+    def __init__(self, module):
+
+      self.agent_policy_id = self.module.params.get('agent_policy_id')
+      self.agent_policy_name = self.module.params.get('agent_policy_name')
+      self.agent_policy_desc = self.module.params.get('agent_policy_desc')
+
     module_args=dict(    
         host=dict(type='str',required=True),
         port=dict(type='int', default=9243),
-        username=dict(type='str', Required=True),
+        username=dict(type='str', required=True),
         password=dict(type='str', no_log=True, required=True),   
         verify_ssl_cert=dict(type='bool', default=True),
         agent_policy_name=dict(type='str', required=True),
