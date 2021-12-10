@@ -213,7 +213,7 @@ class Kibana(object):
   def get_all_agent_policys(self):
     endpoint  = 'fleet/agent_policies'
     agent_policy_objects = self.send_api_request(endpoint, 'GET')
-    return(agent_policy_objects)
+    return agent_policy_objects
 
   def create_agent_policy(self, agent_policy_id, agent_policy_name, agent_policy_desc):
     if agent_policy_id:
@@ -236,9 +236,7 @@ class Kibana(object):
         agent_policy_object = agent_policy_object['item']
       else:
         agent_policy_object = "Cannot proceed with check_mode set to " + self.module.check_mode
-    else:
-      return
-    return(agent_policy_object)
+    return agent_policy_object
 
   def get_agent_policy_byname(self, agent_policy_name):
     agent_policy_object = ""
@@ -247,15 +245,13 @@ class Kibana(object):
         if agent_policy['name'] == agent_policy_name:
             agent_policy_object = agent_policy
             continue
-    if agent_policy_object:
-      return(agent_policy_object)
-    else:
-      return
+    return agent_policy_object
+ 
   
   def get_agent_policy_byid(self, agent_policy_id):
     endpoint  = 'fleet/agent_policies/' + agent_policy_id
     agent_policy_object = self.send_api_request(endpoint, 'GET')
-    return(agent_policy_object['item'])
+    return agent_policy_object['item']
 
 # Elastic Agent functions
 
@@ -275,4 +271,4 @@ class Kibana(object):
         agent_list_result['list'].append(agent_list_page['list'][agent_no])   
         agent_no = agent_no + 1
       page_number = page_number + 1
-    return(agent_list_result)
+    return agent_list_result 
