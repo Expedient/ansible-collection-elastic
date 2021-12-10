@@ -138,22 +138,20 @@ def main():
       if pkg_policy_object:
         results['pkg_policy_status'] = "Integration Package found, No package created"
         results['changed'] = False
-        results['pkg_policy_object'] = pkg_policy_object
       else:
         if module.check_mode == False:    
           pkg_policy_object = kibana.create_pkg_policy(agent_policy_id, integration_object)
           results['pkg_policy_status'] = "No Integration Package found, Package Policy created"
           results['changed'] = True
-          results['pkg_policy_object'] = pkg_policy_object
         else:
           results['pkg_policy_status'] = "No Integration Package found, Package Policy not created becans check_mode is set to true"
           results['changed'] = False
               
-    if integration_object['title'] == 'Endpoint Security' or integration_object['title'] == 'Prebuilt Security Detection Rules':
-      updated_pkg_policy_object = kibana.create_securityctrl_baseline_settings(pkg_policy_object)
-      results['updated_pkg_policy_info'] = updated_pkg_policy_object
+      if integration_object['title'] == 'Endpoint Security' or integration_object['title'] == 'Prebuilt Security Detection Rules':
+        updated_pkg_policy_object = kibana.create_securityctrl_baseline_settings(pkg_policy_object)
+        results['updated_pkg_policy_info'] = updated_pkg_policy_object
     
-    results['pkg_policy_object'] = pkg_policy_object
+      results['pkg_policy_object'] = pkg_policy_object
     module.exit_json(**results)
 
 if __name__ == "__main__":

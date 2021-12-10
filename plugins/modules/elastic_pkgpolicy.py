@@ -87,11 +87,10 @@ def main():
       if pkg_policy_object:
         results['pkg_policy_status'] = "Integration Package found, No package created"
         results['changed'] = False
-        results['pkg_policy_object'] = pkg_policy_object
       else:    
         pkg_policy_object = kibana.create_pkg_policy(agent_policy_id, integration_object)
         results['pkg_policy_status'] = "No Integration Package found, Package Policy created"
-        results['pkg_policy_object'] = pkg_policy_object
+      results['pkg_policy_object'] = pkg_policy_object
     else:
       results['pkg_policy_object'] = "A valid state was not passed"
       
