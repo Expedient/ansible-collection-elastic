@@ -183,7 +183,7 @@ class Kibana(object):
     return(pkg_policy_object)
   
   def create_pkg_policy(self,pkg_policy_name, pkg_policy_desc, agent_policy_id, integration_object):
-    pkg_policy_object = self.get_pkg_policy(agent_policy_id)
+    pkg_policy_object = self.get_pkg_policy(integration_object['name'],agent_policy_id)
     if not pkg_policy_object:
       body = {
         "name": pkg_policy_name,

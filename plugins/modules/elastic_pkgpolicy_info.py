@@ -49,6 +49,7 @@ def main():
                             required_one_of=[('agent_policy_name', 'agent_policy_id')])
 
     results['changed'] = False
+    
     agent_policy_name = module.params.get('agent_policy_name')
     agent_policy_id = module.params.get('agent_policy_id')
     pkg_policy_name = module.params.get('pkg_policy_name')
