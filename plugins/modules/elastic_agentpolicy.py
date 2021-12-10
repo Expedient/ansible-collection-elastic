@@ -28,11 +28,7 @@ results = {}
                 
 def main():
 
-    def __init__(self, module):
-
-      self.agent_policy_id = self.module.params.get('agent_policy_id')
-      self.agent_policy_name = self.module.params.get('agent_policy_name')
-      self.agent_policy_desc = self.module.params.get('agent_policy_desc')
+    
 
     module_args=dict(    
         host=dict(type='str',required=True),
@@ -55,19 +51,22 @@ def main():
     
     kibana = Kibana(module)
     state = module.params.get('state')
-
+    agent_policy_name = module.params.get('agent_policy_name')
+    agent_policy_desc = module.params.get('agent_policy_desc')
+    agent_policy_id = module.params.get('agent_policy_id')
+    
     if module.check_mode:
         results['changed'] = False
     else:
         results['changed'] = True
     
     if state == "present":
-      agent_policy_object = kibana.get_agent_policy_byname()
+      agent_policy_object = kibana.get_agent_policy_byname(agent_policy_name)
       if agent_policy_object:
         results['agent_policy_status'] = "Agent Policy already exists"
         results['changed'] = False
       else:
-        agent_policy_object = kibana.create_agent_policy()
+        agent_policy_object = kibana.create_agent_policy(agent_policy_id, agent_policy_name, agent_policy_desc)
         results['agent_policy_status'] = "Creating Agent Policy"
       results['agent_policy_object'] = agent_policy_object
     else:

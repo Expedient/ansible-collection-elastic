@@ -29,11 +29,7 @@ results = {}
                 
 def main():
 
-    def __init__(self, module):
 
-      self.agent_policy_id = self.module.params.get('agent_policy_id')
-      self.agent_policy_name = self.module.params.get('agent_policy_name')
-      self.agent_policy_desc = self.module.params.get('agent_policy_desc')
 
     module_args=dict(    
         host=dict(type='str',required=True),
@@ -55,11 +51,13 @@ def main():
     
     kibana = Kibana(module)
     results['changed'] = False
+    agent_policy_id = module.params.get('agent_policy_id')
+    agent_policy_name = module.params.get('agent_policy_name')
 
     if module.params.get('agent_policy_name'):
-      agent_policy_object = kibana.get_agent_policy_byname()
+      agent_policy_object = kibana.get_agent_policy_byname(agent_policy_name)
     else:
-      agent_policy_object = kibana.get_agent_policy_byid()
+      agent_policy_object = kibana.get_agent_policy_byid(agent_policy_id)
       
     results['agent_policy_status'] = "Getting Agent Policy"
     results['agent_policy_object'] = agent_policy_object
