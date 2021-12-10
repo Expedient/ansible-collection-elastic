@@ -28,12 +28,6 @@ class Kibana(object):
     self.validate_certs = module.params.get('verify_ssl_cert')
     self.version = None # this is a hack to make it so that we can run the first request to get the clutser version without erroring out
     self.version = self.get_cluster_version()
-    self.integration_name = self.module.params.get('integration_name')
-    self.agent_policy_id = self.module.params.get('agent_policy_id')
-    self.agent_policy_name = self.module.params.get('agent_policy_name')
-    self.agent_policy_desc = self.module.params.get('agent_policy_desc')
-    self.pkg_policy_name = self.module.params.get('pkg_policy_name')
-    self.pkg_policy_desc = self.module.params.get('pkg_policy_desc')
 
   def send_api_request(self, endpoint, method, data=None):
     url = f'https://{self.host}:{self.port}/api/{endpoint}'
