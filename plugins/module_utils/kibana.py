@@ -182,12 +182,12 @@ class Kibana(object):
         pkg_policy_object = pkgPolicy
     return pkg_policy_object
   
-  def create_pkg_policy(self,pkg_policy_name, pkg_policy_desc, agent_policy_id, integration_object):
+  def create_pkg_policy(self,pkg_policy_name, pkg_policy_desc, agent_policy_id, integration_object, namespace="default"):
     pkg_policy_object = self.get_pkg_policy(integration_object['name'],agent_policy_id)
     if not pkg_policy_object:
       body = {
         "name": pkg_policy_name,
-        "namespace": "default",
+        "namespace": namespace.lower(),
         "description": pkg_policy_desc,
         "enabled": True,
         "policy_id": agent_policy_id,
@@ -215,7 +215,7 @@ class Kibana(object):
     agent_policy_objects = self.send_api_request(endpoint, 'GET')
     return agent_policy_objects
 
-  def create_agent_policy(self, agent_policy_id, agent_policy_name, agent_policy_desc):
+  def create_agent_policy(self, agent_policy_id, agent_policy_name, agent_policy_desc, namespace="default"):
     if agent_policy_id:
       agent_policy_object = self.get_agent_policy_byid(agent_policy_id)
     else:
@@ -224,7 +224,7 @@ class Kibana(object):
     if not agent_policy_object:
       body = {
           "name": agent_policy_name,
-          "namespace": "default",
+          "namespace": namespace.lower(),
           "description": agent_policy_desc,
           "monitoring_enabled": []
       }

@@ -59,9 +59,12 @@ def main():
     else:
       agent_policy_object = kibana.get_agent_policy_byid(agent_policy_id)
       
-    results['agent_policy_status'] = "Getting Agent Policy"
-    results['agent_policy_object'] = agent_policy_object
-    
+    if agent_policy_object:
+      results['agent_policy_status'] = "Agent Policy Found"
+      results['agent_policy_object'] = agent_policy_object
+    else:
+      results['agent_policy_status'] = "No Agent Policy was returned, check your Agent Policy Name"
+      
     module.exit_json(**results)
 
 if __name__ == "__main__":
