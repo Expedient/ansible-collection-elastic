@@ -1,0 +1,9 @@
+{
+	"folders": [
+		{
+			"name": "ansible-collection-elastic",
+			"path": "."
+		}
+	],
+	"settings": {}
+}

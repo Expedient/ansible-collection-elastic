@@ -178,7 +178,7 @@ class Kibana(object):
     pkg_policy_objects = self.get_all_pkg_policies()
     pkg_policy_object = None
     for pkgPolicy in pkg_policy_objects['items']:
-      if pkgPolicy['package']['title'] == integration_name and pkgPolicy['policy_id'] == agent_policy_id:
+      if pkgPolicy['package']['title'].upper() == integration_name.upper() and pkgPolicy['policy_id'] == agent_policy_id:
         pkg_policy_object = pkgPolicy
         continue
     return pkg_policy_object
