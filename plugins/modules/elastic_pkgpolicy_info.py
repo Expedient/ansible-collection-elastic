@@ -69,7 +69,7 @@ def main():
       results['changed'] = False
       module.exit_json(**results)
       
-    if module.params.get('integration_name'):
+    if integration_name:
       integration_object = kibana.check_integration(integration_name)
     else:
       results['integration_status'] = "No Integration Name provided to get the integration object"

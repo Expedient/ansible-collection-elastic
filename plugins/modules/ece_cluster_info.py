@@ -52,15 +52,21 @@ def main():
     #results['deployment_kibana_info'] = deployment_kibana_info
 
     if not deployment_kibana_info:
+      results['deployment_kibana_endpoint'] = None
+      results['deployment_kibana_url'] = None
       results['deployment_kibana_info'] = "No deployment kibana was returned, check your deployment name"
     else:
-      try:
-        results['deployment_kibana_endpoint'] = deployment_kibana_info['info']['metadata']['aliased_endpoint']
-        results['deployment_kibana_url'] = deployment_kibana_info['info']['metadata']['aliased_url']
-      except:
-        results['deployment_kibana_endpoint'] = deployment_kibana_info['info']['metadata']['endpoint']
-        #results['deployment_kibana_service_url'] = deployment_kibana_info['info']['metadata']['service_url']
-        results['deployment_kibana_url'] = deployment_kibana_info['info']['metadata']['aliased_url']
+      results['deployment_kibana_endpoint'] = deployment_kibana_info['info']['metadata'].get('aliased_endpoint') or deployment_kibana_info['info']['metadata']['endpoint']
+      results['deployment_kibana_url'] = deployment_kibana_info['info']['metadata']['aliased_url'] 
+      results['deployment_kibana_info'] = "Deployment kibana was returned sucessfully"
+      
+      #try:
+      #  results['deployment_kibana_endpoint'] = deployment_kibana_info['info']['metadata']['aliased_endpoint']
+      #  results['deployment_kibana_url'] = deployment_kibana_info['info']['metadata']['aliased_url']
+      #except:
+      #  results['deployment_kibana_endpoint'] = deployment_kibana_info['info']['metadata']['endpoint']
+      #  results['deployment_kibana_service_url'] = deployment_kibana_info['info']['metadata']['service_url']
+      #  results['deployment_kibana_url'] = deployment_kibana_info['info']['metadata']['aliased_url']
         
       
     results['changed'] = False

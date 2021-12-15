@@ -64,6 +64,7 @@ def main():
       results['agent_policy_object'] = agent_policy_object
     else:
       results['agent_policy_status'] = "No Agent Policy was returned, check your Agent Policy Name"
+      results['agent_policy_object'] = None
       
     module.exit_json(**results)
 

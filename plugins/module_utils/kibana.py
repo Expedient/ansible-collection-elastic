@@ -151,7 +151,7 @@ class Kibana(object):
   
   def check_integration(self, integration_name):
       integration_objects = self.get_integrations()
-      integration_object = ""
+      integration_object = None
       for integration in integration_objects['response']:
         if integration['title'] in integration_name:
           integration_object = integration
@@ -176,10 +176,11 @@ class Kibana(object):
   
   def get_pkg_policy(self,integration_name, agent_policy_id):
     pkg_policy_objects = self.get_all_pkg_policies()
-    pkg_policy_object = ""
+    pkg_policy_object = None
     for pkgPolicy in pkg_policy_objects['items']:
       if pkgPolicy['package']['title'] == integration_name and pkgPolicy['policy_id'] == agent_policy_id:
         pkg_policy_object = pkgPolicy
+        continue
     return pkg_policy_object
   
   def create_pkg_policy(self,pkg_policy_name, pkg_policy_desc, agent_policy_id, integration_object, namespace="default"):
@@ -239,7 +240,7 @@ class Kibana(object):
     return agent_policy_object
 
   def get_agent_policy_byname(self, agent_policy_name):
-    agent_policy_object = ""
+    agent_policy_object = None
     agent_policy_objects = self.get_all_agent_policys()
     for agent_policy in agent_policy_objects['items']:
         if agent_policy['name'] == agent_policy_name:

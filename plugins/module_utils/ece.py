@@ -110,7 +110,7 @@ class ECE(object):
     return next(filter(lambda x: x['repository_name'] == repo_name, repos), None)
 
   def get_deployment_kibana_info(self,deployment_name):
-      deployment_object = ''
+      deployment_object = None
       endpoint  = 'deployments'
       deployment_objects = self.send_api_request(endpoint, 'GET')
       for deployment in deployment_objects['deployments']:
