@@ -243,12 +243,11 @@ class Kibana(object):
     agent_policy_object = None
     agent_policy_objects = self.get_all_agent_policys()
     for agent_policy in agent_policy_objects['items']:
-        if agent_policy['name'] == agent_policy_name:
+        if agent_policy['name'].upper() == agent_policy_name.upper():
             agent_policy_object = agent_policy
             continue
     return agent_policy_object
  
-  
   def get_agent_policy_byid(self, agent_policy_id):
     endpoint  = 'fleet/agent_policies/' + agent_policy_id
     agent_policy_object = self.send_api_request(endpoint, 'GET')
