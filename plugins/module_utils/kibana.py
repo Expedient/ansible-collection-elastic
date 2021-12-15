@@ -151,7 +151,7 @@ class Kibana(object):
   
   def check_integration(self, integration_name):
       integration_objects = self.get_integrations()
-      integration_object = ""
+      integration_object = None
       for integration in integration_objects['response']:
         if integration['title'] in integration_name:
           integration_object = integration
@@ -176,18 +176,19 @@ class Kibana(object):
   
   def get_pkg_policy(self,integration_name, agent_policy_id):
     pkg_policy_objects = self.get_all_pkg_policies()
-    pkg_policy_object = ""
+    pkg_policy_object = None
     for pkgPolicy in pkg_policy_objects['items']:
       if pkgPolicy['package']['title'] == integration_name and pkgPolicy['policy_id'] == agent_policy_id:
         pkg_policy_object = pkgPolicy
+        continue
     return pkg_policy_object
   
-  def create_pkg_policy(self,pkg_policy_name, pkg_policy_desc, agent_policy_id, integration_object):
+  def create_pkg_policy(self,pkg_policy_name, pkg_policy_desc, agent_policy_id, integration_object, namespace="default"):
     pkg_policy_object = self.get_pkg_policy(integration_object['name'],agent_policy_id)
     if not pkg_policy_object:
       body = {
         "name": pkg_policy_name,
-        "namespace": "default",
+        "namespace": namespace.lower(),
         "description": pkg_policy_desc,
         "enabled": True,
         "policy_id": agent_policy_id,
@@ -215,7 +216,7 @@ class Kibana(object):
     agent_policy_objects = self.send_api_request(endpoint, 'GET')
     return agent_policy_objects
 
-  def create_agent_policy(self, agent_policy_id, agent_policy_name, agent_policy_desc):
+  def create_agent_policy(self, agent_policy_id, agent_policy_name, agent_policy_desc, namespace="default"):
     if agent_policy_id:
       agent_policy_object = self.get_agent_policy_byid(agent_policy_id)
     else:
@@ -224,7 +225,7 @@ class Kibana(object):
     if not agent_policy_object:
       body = {
           "name": agent_policy_name,
-          "namespace": "default",
+          "namespace": namespace.lower(),
           "description": agent_policy_desc,
           "monitoring_enabled": []
       }
@@ -239,7 +240,7 @@ class Kibana(object):
     return agent_policy_object
 
   def get_agent_policy_byname(self, agent_policy_name):
-    agent_policy_object = ""
+    agent_policy_object = None
     agent_policy_objects = self.get_all_agent_policys()
     for agent_policy in agent_policy_objects['items']:
         if agent_policy['name'] == agent_policy_name:

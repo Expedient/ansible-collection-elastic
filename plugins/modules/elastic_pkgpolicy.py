@@ -40,7 +40,8 @@ def main():
         integration_name=dict(type='str', required=True),
         pkg_policy_name=dict(type='str', required=True),
         pkg_policy_desc=dict(type='str'),
-        state=dict(type='str', default='present')
+        state=dict(type='str', default='present'),
+        namespace=dict(type='str', default='default')
     )
     argument_dependencies = []
         #('state', 'present', ('enabled', 'alert_type', 'conditions', 'actions')),
@@ -56,6 +57,7 @@ def main():
     pkg_policy_name = module.params.get('pkg_policy_name')
     pkg_policy_desc = module.params.get('pkg_policy_desc')
     integration_name = module.params.get('integration_name')
+    namespace = module.params.get('namespace')
     
     if module.check_mode:
         results['changed'] = False
@@ -93,7 +95,7 @@ def main():
         results['pkg_policy_status'] = "Integration Package found, No package created"
         results['changed'] = False
       else:    
-        pkg_policy_object = kibana.create_pkg_policy(pkg_policy_name, pkg_policy_desc, agent_policy_id, integration_object)
+        pkg_policy_object = kibana.create_pkg_policy(pkg_policy_name, pkg_policy_desc, agent_policy_id, integration_object, namespace)
         results['pkg_policy_status'] = "No Integration Package found, Package Policy created"
       results['pkg_policy_object'] = pkg_policy_object
     else:

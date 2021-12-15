@@ -58,9 +58,9 @@ def main():
     kibana = Kibana(module)
 
     if module.params.get('agent_policy_id'):
-      agency_policy_object = kibana.get_agent_policy_byid()
+      agency_policy_object = kibana.get_agent_policy_byid(agent_policy_id)
     else:
-      agency_policy_object = kibana.get_agent_policy_byname()
+      agency_policy_object = kibana.get_agent_policy_byname(agent_policy_name)
     try:
       agent_policy_id = agency_policy_object['id']
       results['agent_policy_status'] = "Agent Policy found."
@@ -69,8 +69,8 @@ def main():
       results['changed'] = False
       module.exit_json(**results)
       
-    if module.params.get('integration_name'):
-      integration_object = kibana.check_integration(module.params.get('integration_name'))
+    if integration_name:
+      integration_object = kibana.check_integration(integration_name)
     else:
       results['integration_status'] = "No Integration Name provided to get the integration object"
       results['changed'] = False
@@ -81,14 +81,16 @@ def main():
       results['changed'] = False
       module.exit_json(**results)
     
-    pkg_policy_object = kibana.get_pkg_policy(agent_policy_id)
+    pkg_policy_object = kibana.get_pkg_policy(integration_name, agent_policy_id)
     
     if pkg_policy_object:
       results['pkg_policy_status'] = "Integration Package found"
       results['pkg_policy_object'] = pkg_policy_object
     else:
       results['pkg_policy_status'] = "Integration Package NOT found"
-      
+    
+    results['pkg_policy_object'] = pkg_policy_object
+    
     module.exit_json(**results)
 
 if __name__ == "__main__":

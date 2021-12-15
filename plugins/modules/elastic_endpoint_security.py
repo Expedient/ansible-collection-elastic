@@ -88,6 +88,7 @@ def main():
         integration_name=dict(type='str', required=True),
         pkg_policy_name=dict(type='str', required=True),
         pkg_policy_desc=dict(type='str'),
+        namespace=dict(type='str', default='default'),
         endpoint_security_antivirus=dict(type='bool', default=True),
         prebuilt_rules_activate=dict(type='bool', default=True),
         state=dict(type='str', default='present')
@@ -106,6 +107,8 @@ def main():
     integration_name = module.params.get('integration_name')
     pkg_policy_name = module.params.get('pkg_policy_name')
     pkg_policy_desc = module.params.get('pkg_policy_desc')
+    pkg_policy_desc = module.params.get('pkg_policy_desc')
+    namespace = module.params.get('namespace')
     
     if module.check_mode:
         results['changed'] = False
@@ -145,7 +148,7 @@ def main():
         results['changed'] = False
       else:
         if module.check_mode == False:    
-          pkg_policy_object = kibana.create_pkg_policy(pkg_policy_name, pkg_policy_desc, agent_policy_id, integration_object)
+          pkg_policy_object = kibana.create_pkg_policy(pkg_policy_name, pkg_policy_desc, agent_policy_id, integration_object, namespace)
           results['pkg_policy_status'] = "No Integration Package found, Package Policy created"
           results['changed'] = True
         else:
