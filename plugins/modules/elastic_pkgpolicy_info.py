@@ -37,8 +37,7 @@ def main():
         verify_ssl_cert=dict(type='bool', default=True),
         agent_policy_name=dict(type='str'),
         agent_policy_id=dict(type='str'),
-        integration_name=dict(type='str', required=True),
-        pkg_policy_name=dict(type='str', required=True)
+        integration_name=dict(type='str', required=True)
     )
     argument_dependencies = []
         #('state', 'present', ('enabled', 'alert_type', 'conditions', 'actions')),
@@ -52,7 +51,6 @@ def main():
     
     agent_policy_name = module.params.get('agent_policy_name')
     agent_policy_id = module.params.get('agent_policy_id')
-    pkg_policy_name = module.params.get('pkg_policy_name')
     integration_name = module.params.get('integration_name')
     
     kibana = Kibana(module)

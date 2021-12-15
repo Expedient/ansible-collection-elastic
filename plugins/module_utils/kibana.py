@@ -153,7 +153,7 @@ class Kibana(object):
       integration_objects = self.get_integrations()
       integration_object = None
       for integration in integration_objects['response']:
-        if integration['title'] in integration_name:
+        if integration['title'].upper() in integration_name.upper():
           integration_object = integration
           if integration['status'] != 'installed':
             integration_install = self.install_integration(integration['name'],integration['version'])
