@@ -66,10 +66,15 @@ def main():
         "url": connector_url,
         "headers": headers
       }
-      connector_info = kibana.create_connector(connector_name, connector_type, config)
-    
-      results['connector_status'] = "Create Webhook Connector"
-      results['connector_object'] = connector_info
+      connector_exists = kibana.get_connector_byname(connector_name)
+      
+      if not connector_exists:
+        connector_info = kibana.create_connector(connector_name, connector_type, config)
+        results['connector_status'] = "Create Webhook Connector"
+        results['connector_object'] = connector_info
+      else:
+        results['connector_status'] = "Connector already exists by that name"
+        results['connector_object'] = connector_exists
     else:
       results['connector_status'] = "Create Webhook Connector Failed, set connector_type to webhook"
       results['connector_object'] = connector_info

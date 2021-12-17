@@ -50,7 +50,10 @@ def main():
     connector_info = kibana.get_connector_byname(connector_name)
     
     results['connector_status'] = "Getting Connector"
-    results['connector_object'] = connector_info
+    if connector_info:
+      results['connector_object'] = connector_info
+    else:
+      results['connector_object'] = "No connector found, check connector name"
     
     module.exit_json(**results)
 
