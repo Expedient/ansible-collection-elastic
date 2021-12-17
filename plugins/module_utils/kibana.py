@@ -271,4 +271,31 @@ class Kibana(object):
         agent_list_result['list'].append(agent_list_page['list'][agent_no])   
         agent_no = agent_no + 1
       page_number = page_number + 1
-    return agent_list_result 
+    return agent_list_result
+
+# Elastic Connector functions
+
+  def get_connector_list(self):
+    endpoint  = "actions/connectors"
+    connector_list = self.send_api_request(endpoint, 'GET')
+    return connector_list
+
+  def get_connector_byname(self, connector_name):
+    connector_objects = self.get_connector_list()
+    target_connector = None
+    for connector_object in connector_objects:
+        if connector_object['name'].upper() == connector_name.upper():
+            target_connector = connector_object
+            break
+    return target_connector
+  
+  def create_connector(self, name, type, config , typenamespace="default"):
+    #endpoint  = "s/" + namespace + "/api/actions/connector"
+    body = {
+      "name": name,
+      "connector_type_id": "." + type,
+      "config": config
+    }
+    endpoint  = "actions/connector"
+    connector_create = self.send_api_request(endpoint, 'POST', body)
+    return connector_create
