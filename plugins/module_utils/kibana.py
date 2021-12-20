@@ -92,6 +92,28 @@ class Kibana(object):
     }
     update_rule = self.update_rule(self, body)
     return update_rule
+  
+  def enable_rule_action(self, rule_id, action_id, action_type, body, action_group = 'default', replace_or_append = 'replace', existing_actions = ''):
+    if replace_or_append == 'replace':
+      params = {
+        'body': body
+      }
+      action_def = {
+        'action_type_id': action_type,
+        'id': action_id,
+        'group': action_group,
+        'params': {
+          params
+        }
+      }
+      body = {
+        'id': rule_id,
+        'actions': { 
+          action_def
+        }
+      }
+    update_rule = self.update_rule(self, body)
+    return update_rule
 
   def activating_all_rules(self, page_size):
     #### Getting first page of rules

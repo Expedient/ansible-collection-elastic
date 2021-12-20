@@ -37,14 +37,20 @@ def main():
         verify_ssl_cert=dict(type='bool', default=True),
         connector_name=dict(type='str', required=True),
         connector_type=dict(type='str', required=True),
-        connector_url=dict(type='str', required=True),
-        connector_headers=dict(type='str')
-    )
+        connector_url=dict(type='str'),
+        connector_headers=dict(type='str'),
+        connector_sender=dict(type='str'),
+        connector_host=dict(type='str'),
+        connector_port=dict(type='str')
+    ) 
+    
     argument_dependencies = []
         #('state', 'present', ('enabled', 'alert_type', 'conditions', 'actions')),
         #('alert-type', 'metrics_threshold', ('conditions'))
     
-    module = AnsibleModule(argument_spec=module_args, required_if=argument_dependencies, supports_check_mode=True)
+    module = AnsibleModule(argument_spec=module_args, required_if=argument_dependencies, supports_check_mode=True,                            mutually_exclusive=[('agent_policy_name', 'agent_policy_id')],
+                            required_together=[['connector_url'],
+                            ['connector_sender', 'connector_host', 'connector_port']])
     kibana = Kibana(module)
     results['changed'] = True
     connector_name = module.params.get('connector_name')
@@ -73,14 +79,13 @@ def main():
       else:
         results['connector_status'] = "Connector already exists by that name"
         results['connector_object'] = connector_exists
-            
-
+        
     elif connector_type == "webhook":
+      headers = {
+        "Content-Type": "application/json"
+      }
       if connector_headers:
-        headers = {
-          "Content-Type": "application/json"
-        }
-      headers.update(connector_headers)
+        headers.update(connector_headers)
       
       config = {
         "method": "post",
