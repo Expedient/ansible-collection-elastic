@@ -51,15 +51,37 @@ def main():
     connector_type = module.params.get('connector_type')
     connector_url = module.params.get('connector_url')
     connector_headers = module.params.get('connector_headers')
+    connector_sender = module.params.get('connector_sender')
+    connector_host = module.params.get('connector_host')
+    connector_port = module.params.get('connector_port')
     
-    headers = {
-      "Content-Type": "application/json"
-    }
-    if connector_headers:
+    connector_info = None
+    
+    if connector_type == "email":
+      config = {
+        "hasAuth": False,
+        "from": connector_sender,
+        "host": connector_host,
+        "port": connector_port
+      }
+      connector_exists = kibana.get_connector_byname(connector_name)
+      
+      if not connector_exists:
+        connector_info = kibana.create_connector(connector_name, connector_type, config)
+        results['connector_status'] = "Create Email Connector"
+        results['connector_object'] = connector_info
+      else:
+        results['connector_status'] = "Connector already exists by that name"
+        results['connector_object'] = connector_exists
+            
+
+    elif connector_type == "webhook":
+      if connector_headers:
+        headers = {
+          "Content-Type": "application/json"
+        }
       headers.update(connector_headers)
       
-    connector_info = None
-    if connector_type == "webhook":
       config = {
         "method": "post",
         "hasAuth": False,
@@ -76,7 +98,7 @@ def main():
         results['connector_status'] = "Connector already exists by that name"
         results['connector_object'] = connector_exists
     else:
-      results['connector_status'] = "Create Webhook Connector Failed, set connector_type to webhook"
+      results['connector_status'] = "Create Connector Failed, set connector_type to a valid string"
       results['connector_object'] = connector_info
       
     module.exit_json(**results)
