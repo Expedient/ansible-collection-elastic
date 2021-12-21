@@ -68,7 +68,7 @@ class SecurityBaseline(Kibana):
           pkg_policy_info = pkg_policy_update
         
         elif pkg_policy_object['package']['title'] == 'Prebuilt Security Detection Rules' and self.prebuilt_rules_activate == True and self.module.check_mode == False:
-              pkg_policy_info = self.activate_rule(50,'Endpoint Security')
+              pkg_policy_info = self.activate_security_rule('Endpoint Security')
         
         elif self.module.check_mode == True:
           results['pkg_policy_update_status'] = "Check mode is set to True, not going to update pkg policy"
@@ -157,7 +157,7 @@ def main():
               
       if integration_object['title'] == 'Endpoint Security' or integration_object['title'] == 'Prebuilt Security Detection Rules':
         updated_pkg_policy_object = kibana.create_securityctrl_baseline_settings(pkg_policy_object)
-        results['updated_pkg_policy_info'] = updated_pkg_policy_object
+        #results['updated_pkg_policy_info'] = updated_pkg_policy_object
     
       results['pkg_policy_object'] = pkg_policy_object
     module.exit_json(**results)

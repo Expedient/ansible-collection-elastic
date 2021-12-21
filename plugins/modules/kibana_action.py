@@ -47,9 +47,7 @@ class KibanaAction(Kibana):
     self.action_type_id = self.get_alert_connector_type_by_name(self.action_type)['id']
     self.config = self.module.params.get('config')
     self.secrets = self.module.params.get('secrets')
-
     self.action = self.get_alert_connector_by_name(self.action_name)
-
 
   def format_config(self):
     if self.action_type == 'Webhook':
@@ -59,14 +57,20 @@ class KibanaAction(Kibana):
         'url': self.config['url'],
         'headers': self.config['headers']
       }
-
+    if self.action_type == 'Email':
+      return {
+        'from': self.config['sender'],
+        'hasAuth': self.config['auth'],
+        'host': self.config['host'],
+        'port': self.config['port']
+      }
+    
   def format_secrets(self):
     secrets = {}
     if self.action_type == 'webhook' and 'user' in self.secrets:
       secrets['user'] = self.secrets['user']
       secrets['password'] = self.secrets['password']
     return secrets
-
 
   def create_action(self):
     endpoint = 'actions/connector'
@@ -81,8 +85,6 @@ class KibanaAction(Kibana):
   def delete_action(self):
     endpoint = f'actions/connector/{self.action["id"]}'
     return self.send_api_request(endpoint, 'DELETE')
-
-
 
 def main():
   module_args=dict(
@@ -112,6 +114,7 @@ def main():
   if state =='present':
     if kibana_action.action:
       results['msg'] = f'action named {kibana_action.action_name} exists'
+      results['action'] = kibana_action.action
       module.exit_json(**results)
     results['changed'] = True
     results['msg'] = f'action named {kibana_action.action_name} will be created'
