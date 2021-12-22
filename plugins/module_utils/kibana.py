@@ -73,61 +73,80 @@ class Kibana(object):
     connector_types = self.send_api_request(endpoint, 'GET')
     return next(filter(lambda x: x['name'] == connector_type_name, connector_types), None)
   
-  # Elastic Rules functions
+  # Elastic Security Rules functions
 
-  def update_rule(self, body):
+  def update_security_rule(self, body):
     endpoint = "detection_engine/rules"
-    update_rule = self.send_api_request(endpoint,'PATCH',data=body)
+    update_rule = self.send_api_request(endpoint, 'PATCH', data=body)
     return update_rule
 
-  def get_rules(self,page_size,page_no):
+  def get_security_rules(self, page_size, page_no):
     endpoint = "detection_engine/rules/_find?page=" + str(page_no) + "&per_page=" + str(page_size)
     rules = self.send_api_request(endpoint, 'GET')
     return rules
+
+  def get_security_rules_byfilter(self, rule_name):
+    page_no = 1
+    page_size = 100
+    filter_scrubbed = urllib.parse.quote(str(rule_name))
+    endpoint = "detection_engine/rules/_find?page=" + str(page_no) + "&per_page=" + str(page_size) + "&filter=alert.attributes.name:" + filter_scrubbed
+    rules = self.send_api_request(endpoint, 'GET')
+    return rules
   
-  def enable_rule(self,rule_id):
+  def enable_security_rule(self,rule_id):
     body={
       'enabled': True,
       'id': rule_id
     }
-    update_rule = self.update_rule(self, body)
+    update_rule = self.update_security_rule(body)
+    return update_rule
+  
+  def enable_security_rule_action(self, rule_id, action_id, action_type, body, replace_or_append, existing_actions, action_group = 'default'):
+    params = {
+      'body': str(body)
+    }
+    action_def = {
+      'action_type_id': action_type,
+      'id': action_id,
+      'group': action_group,
+      'params': params
+    }
+    if replace_or_append == 'replace':
+      body = {
+        'id': rule_id,
+        'throttle': "rule",
+        'actions': [ action_def ]
+      }  
+    elif replace_or_append == 'append':
+      action_def.append(existing_actions)
+      body = {
+        'id': rule_id,
+        'actions': [ action_def ]
+      } 
+
+    #body_JSON = dumps(body)
+    update_rule = self.update_security_rule(body)
     return update_rule
 
-  def activating_all_rules(self, page_size):
-    #### Getting first page of rules
-    page_number = 1
-    rules = self.get_rules(self,page_size,page_number)
-    noOfRules = rules['total']
-    allrules = rules['data']
-    #### Going through each rule page by page and enabling each rule that isn't enabled.
-    while noOfRules > page_size * (page_number - 1):
-        for rule in allrules:
-          if rule['enabled'] == False:
-            enable_rule = self.enable_rule(self,rule['id'])
-            return(rule['id'] + ": Rule is updated")
-        page_number = page_number + 1
-        rules = self.get_rules(self,page_size,page_number)
-        allrules = rules['data']
-    return "Rules are updated"
-
-  def activate_rule(self, page_size, rule_name = 'All'):
+  def activate_security_rule(self, rule_name):
 
     #### Getting first page of rules
     page_number = 1
-    rules = self.get_rules(page_size,page_number)
+    page_size = 100
+    rules = self.get_security_rules_byfilter(rule_name)
     noOfRules = rules['total']
     allrules = rules['data']
     #### Going through each rule page by page and enabling each rule that isn't enabled.
     while noOfRules > page_size * (page_number - 1):
         for rule in allrules:
           if rule['enabled'] == False and rule_name == rule['name']:
-            enable_rule = self.enable_rule(self,rule['id'])
+            enable_rule = self.enable_security_rule(rule['id'])
             return(rule['name'] + ": Rule is updated")
           elif rule['enabled'] == True and rule_name == rule['name']:
             return(rule['name'] + ": Rule is already enabled")
-        page_number = page_number + 1
-        rules = self.get_rules(page_size,page_number)
-        allrules = rules['data']
+        #page_number = page_number + 1
+        #rules = self.get_security_rules(page_size,page_number)
+        #allrules = rules['data']
     return rule['name'] + ": Rule not found"
 
   # Elastic Integration functions
@@ -153,7 +172,7 @@ class Kibana(object):
       integration_objects = self.get_integrations()
       integration_object = None
       for integration in integration_objects['response']:
-        if integration['title'] in integration_name:
+        if integration['title'].upper() in integration_name.upper():
           integration_object = integration
           if integration['status'] != 'installed':
             integration_install = self.install_integration(integration['name'],integration['version'])
@@ -178,7 +197,7 @@ class Kibana(object):
     pkg_policy_objects = self.get_all_pkg_policies()
     pkg_policy_object = None
     for pkgPolicy in pkg_policy_objects['items']:
-      if pkgPolicy['package']['title'] == integration_name and pkgPolicy['policy_id'] == agent_policy_id:
+      if pkgPolicy['package']['title'].upper() == integration_name.upper() and pkgPolicy['policy_id'] == agent_policy_id:
         pkg_policy_object = pkgPolicy
         continue
     return pkg_policy_object
@@ -243,12 +262,11 @@ class Kibana(object):
     agent_policy_object = None
     agent_policy_objects = self.get_all_agent_policys()
     for agent_policy in agent_policy_objects['items']:
-        if agent_policy['name'] == agent_policy_name:
+        if agent_policy['name'].upper() == agent_policy_name.upper():
             agent_policy_object = agent_policy
             continue
     return agent_policy_object
  
-  
   def get_agent_policy_byid(self, agent_policy_id):
     endpoint  = 'fleet/agent_policies/' + agent_policy_id
     agent_policy_object = self.send_api_request(endpoint, 'GET')
@@ -272,4 +290,4 @@ class Kibana(object):
         agent_list_result['list'].append(agent_list_page['list'][agent_no])   
         agent_no = agent_no + 1
       page_number = page_number + 1
-    return agent_list_result 
+    return agent_list_result
