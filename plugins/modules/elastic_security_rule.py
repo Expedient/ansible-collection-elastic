@@ -39,7 +39,8 @@ def main():
         rule_name=dict(type='str', required=True),
         action_body=dict(type='str'),
         action_group=dict(type='str'),
-        replace_or_append=dict(type='str'), 
+        replace_or_append=dict(type='str'),
+        state=dict(type='str', default='present'),
         existing_actions=dict(type='str')
     ) 
     
@@ -56,36 +57,41 @@ def main():
     action_body = module.params.get('action_body')
     action_group = module.params.get('action_group')
     replace_or_append = module.params.get('replace_or_append')
-    
-    connector_exists = kibana.get_alert_connector_by_name(connector_name)
-      
-    if not connector_exists:
-      results['connector_status'] = "Connector does not exist, exiting"
-      results['connector_object'] = connector_exists
-      module.exit_json(**results)
-    else:
-      results['connector_status'] = "Connector exists by that name"
-      results['connector_object'] = connector_exists
-    
-    rule_exists = kibana.get_security_rules_byfilter(rule_name)
-    target_rule = ""
-    for rule in rule_exists['data']:
-      if str(rule['name']).upper() == str(rule_name).upper():
-        target_rule = rule
-        break
+    state = module.params.get('state')    
 
-    if not target_rule:
-      results['rule_status'] = "Rule does not exist, exiting"
-      results['rule_object'] = target_rule
-      module.exit_json(**results)
-    else:
-      results['rule_status'] = "Rule exists by that name"
-      results['rule_object'] = target_rule
-          
-    existing_actions = target_rule['actions']
-    rule_action_object = kibana.enable_security_rule_action(target_rule['id'],connector_exists['id'],connector_exists['connector_type_id'], action_body, replace_or_append, existing_actions, action_group,)
-    results['rule_action_status'] = "Created Rule Action Connector"
-    results['rule_action_object'] = rule_action_object
+    if state =='present':
+      connector_exists = kibana.get_alert_connector_by_name(connector_name)
+      if not connector_exists:
+        results['msg'] = f'action named {connector_name} does not exist'
+        results['connector_status'] = "Connector does not exist, exiting"
+        results['connector_object'] = connector_exists
+        module.exit_json(**results)
+      else:
+        results['msg'] = f'action named {connector_name} exists'
+        results['connector_status'] = "Connector exists by that name"
+        results['connector_object'] = connector_exists
+      
+      rule_exists = kibana.get_security_rules_byfilter(rule_name)
+      target_rule = ""
+      for rule in rule_exists['data']:
+        if str(rule['name']).upper() == str(rule_name).upper():
+          target_rule = rule
+          break
+
+      if not target_rule:
+        results['msg'] = f'rule named {rule_name} does not exist'
+        results['rule_status'] = "Rule does not exist, exiting"
+        results['rule_object'] = target_rule
+        module.exit_json(**results)
+      else:
+        results['msg'] = f'rule named {rule_name} exists'
+        results['rule_status'] = "Rule exists by that name"
+        results['rule_object'] = target_rule
+      
+      existing_actions = target_rule['actions']
+      rule_action_object = kibana.enable_security_rule_action(target_rule['id'],connector_exists['id'],connector_exists['connector_type_id'], action_body, replace_or_append, existing_actions, action_group,)
+      results['rule_action_status'] = "Created Rule Action Connector"
+      results['rule_action_object'] = rule_action_object
       
     module.exit_json(**results)
 
