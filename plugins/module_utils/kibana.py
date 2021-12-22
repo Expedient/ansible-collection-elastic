@@ -88,7 +88,7 @@ class Kibana(object):
   def get_security_rules_byfilter(self, rule_name):
     page_no = 1
     page_size = 100
-    filter_scrubbed = str(rule_name).replace(" ", "%20")
+    filter_scrubbed = urllib.parse.quote(str(rule_name))
     endpoint = "detection_engine/rules/_find?page=" + str(page_no) + "&per_page=" + str(page_size) + "&filter=alert.attributes.name:" + filter_scrubbed
     rules = self.send_api_request(endpoint, 'GET')
     return rules
