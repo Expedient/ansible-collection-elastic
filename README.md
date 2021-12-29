@@ -66,4 +66,5 @@ Name | Description
 
 <!--end collection content-->
 
-
+## Contributing to this collection
+If you want to develop new content for this collection or improve what is already here, please see the [contributing instructions](CONTRIBUTING.md).
