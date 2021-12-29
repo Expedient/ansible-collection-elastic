@@ -26,6 +26,20 @@ You can also include it in a `requirements.yml` file and install it via `ansible
 collections:
 - name: expedient.elastic
 ```
+
+### Required Python libraries
+
+VMware community collection depends upon following third party libraries:
+
+* [`PyYAML`](https://pyyaml.org/wiki/PyYAMLDocumentation)
+
+### Installing required libraries and SDK
+
+Installing collection does not install any required third party Python libraries or SDKs. You need to install the required Python libraries using following command:
+
+    pip install -r ~/.ansible/collections/ansible_collections/expedient/elastic/requirements.txt
+
+
 ## Included content
 
 <!--start collection content-->
@@ -33,9 +47,20 @@ collections:
 Name | Description
 --- | ---
 [expedient.elastic.ece_cluster](https://github.com/Expedient/ansible-collection-elastic/blob/main/docs/expedient.elastic.ece_cluster_module.rst)|Create modify or delete Elasticsearch clusters in ECE
+[expedient.elastic.ece_cluster_info](https://github.com/Expedient/ansible-collection-elastic/blob/main/docs/expedient.elastic.ece_cluster_info_module.rst)|Return ECE cluster information
+[expedient.elastic.ece_facts](https://github.com/Expedient/ansible-collection-elastic/blob/main/docs/expedient.elastic.ece_facts_module.rst)|Return ECE cluster information for all clusters
 [expedient.elastic.ece_snapshot_repo](https://github.com/Expedient/ansible-collection-elastic/blob/main/docs/expedient.elastic.ece_snapshot_repo_module.rst)|Create or delete a snapshot repository
-[expedient.elastic.ece_traffic_ruleset](https://github.com/Expedient/ansible-collection-elastic/blob/main/docs/expedient.elastic.ece_traffic_ruleset_module.rst)|placeholder
+[expedient.elastic.ece_traffic_ruleset](https://github.com/Expedient/ansible-collection-elastic/blob/main/docs/expedient.elastic.ece_traffic_ruleset_module.rst)|Placeholder
+[expedient.elastic.elastic_agentlist_info](https://github.com/Expedient/ansible-collection-elastic/blob/main/docs/expedient.elastic.elastic_agentlist_info_module.rst)|Returns Elastic agent list information
+[expedient.elastic.elastic_agentpolicy](https://github.com/Expedient/ansible-collection-elastic/blob/main/docs/expedient.elastic.elastic_agentpolicy_module.rst)|Configures Elastic agent policy
+[expedient.elastic.elastic_agentpolicy_info](https://github.com/Expedient/ansible-collection-elastic/blob/main/docs/expedient.elastic.elastic_agentpolicy_info_module.rst)|Returns Elastic agent policy information by id or name
+[expedient.elastic.elastic_endpoint_security](https://github.com/Expedient/ansible-collection-elastic/blob/main/docs/expedient.elastic.elastic_endpoint_security_module.rst)|Configure Elastic Endpoint Security
+[expedient.elastic.elastic_pkgpolicy](https://github.com/Expedient/ansible-collection-elastic/blob/main/docs/expedient.elastic.elastic_pkgpolicy_module.rst)|Configure Elastic package policy
+[expedient.elastic.elastic_pkgpolicy_info](https://github.com/Expedient/ansible-collection-elastic/blob/main/docs/expedient.elastic.elastic_pkgpolicy_info_module.rst)|Returns Elastic package policy information by name
+[expedient.elastic.elastic_role_mapping](https://github.com/Expedient/ansible-collection-elastic/blob/main/docs/expedient.elastic.elastic_role_mapping_module.rst)|Elastic role mapping
+[expedient.elastic.elastic_security_rule](https://github.com/Expedient/ansible-collection-elastic/blob/main/docs/expedient.elastic.elastic_security_rule_module.rst)|Elastic security rule
 [expedient.elastic.elastic_user](https://github.com/Expedient/ansible-collection-elastic/blob/main/docs/expedient.elastic.elastic_user_module.rst)|elastic user management
+[expedient.elastic.kibana_action](https://github.com/Expedient/ansible-collection-elastic/blob/main/docs/expedient.elastic.kibana_action_module.rst)|Configure Kibana action
 [expedient.elastic.kibana_alert](https://github.com/Expedient/ansible-collection-elastic/blob/main/docs/expedient.elastic.kibana_alert_module.rst)|Create or delete alerts in Kibana
 [expedient.elastic.kibana_alert_facts](https://github.com/Expedient/ansible-collection-elastic/blob/main/docs/expedient.elastic.kibana_alert_facts_module.rst)|get info on a kibana alert
 

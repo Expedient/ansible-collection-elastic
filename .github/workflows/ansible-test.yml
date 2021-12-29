@@ -1,0 +1,22 @@
+---
+name: ansible-test
+on:
+  push:
+    branches: main
+  pull_request:
+jobs:
+  sanity:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        ansible-core:
+        - stable-2.10
+        - stable-2.11
+        - stable-2.12
+    steps:
+    - name: Perform sanity testing with ansible-test
+      uses: ansible-community/ansible-test-gh-action@release/v1.3
+      with:
+        ansible-core-version: ${{ matrix.ansible-core }}
+        testing-type: sanity
