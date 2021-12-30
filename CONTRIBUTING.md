@@ -121,3 +121,8 @@ Do NOT mix several bugfixes or features that are not tightly-related in one pull
 21. If the pull request looks good to the community, committers will merge it.
 
 For details, refer to the [Ansible developer guide](https://docs.ansible.com/ansible/latest/dev_guide/index.html).
+
+
+# Additional Tools
+* For generating the documentation RST files, use [`collection_prep_add_docs -p .`](https://github.com/ansible-network/collection_prep) inside the collection directory. This step should be performed after running `ansible-test` to ensure documentation is up-to-date.
+  * When updating `doc_fragments` for `module_utils`, you may need to run the above command twice or install the collection if you are not developing in your `COLLECTIONS_PATH`. 
