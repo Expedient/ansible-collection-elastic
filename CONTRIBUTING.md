@@ -47,7 +47,7 @@ We assume that you use Linux as a work environment (you can use a virtual machin
     ```
 9. Add the `upstream` repository:
     ```
-    git remote add upstream https://github.com/ansible-collections/COLLECTION_REPO.git
+    git remote add upstream https://github.com/Expedient/COLLECTION_REPO.git
     ```
     This is the repository where you forked from.
 
@@ -95,7 +95,7 @@ Do NOT mix several bugfixes or features that are not tightly-related in one pull
     ```
     git push origin name_of_my_branch
     ```
-17. In a browser, navigate to the `upstream` repository (http://github.com/ansible-collections/COLLECTION_REPO).
+17. In a browser, navigate to the `upstream` repository (http://github.com/Expedient/COLLECTION_REPO).
 
 18. Click the `Pull requests` tab.
 
