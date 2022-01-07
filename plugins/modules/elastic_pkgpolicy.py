@@ -94,8 +94,8 @@ def main():
       if pkg_policy_object:
         results['pkg_policy_status'] = "Integration Package found, No package created"
         results['changed'] = False
-      else:    
-        pkg_policy_object = kibana.create_pkg_policy(pkg_policy_name, pkg_policy_desc, agent_policy_id, integration_object, namespace)
+      else:
+        pkg_policy_object = kibana.create_pkg_policy(pkg_policy_name, pkg_policy_desc, agent_policy_id, integration_object['response'], namespace)
         results['pkg_policy_status'] = "No Integration Package found, Package Policy created"
       results['pkg_policy_object'] = pkg_policy_object
     else:
