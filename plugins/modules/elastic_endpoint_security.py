@@ -14,6 +14,7 @@
 # limitations under the License.
 
 from ansible.module_utils.basic import _ANSIBLE_ARGS, AnsibleModule
+from json import loads, dumps
 
 try:
   from ansible_collections.expedient.elastic.plugins.module_utils.kibana import Kibana
@@ -38,16 +39,36 @@ class SecurityBaseline(Kibana):
         self.agent_policy_desc = self.module.params.get('agent_policy_desc')
         self.pkg_policy_name = self.module.params.get('pkg_policy_name')
         self.pkg_policy_desc = self.module.params.get('pkg_policy_desc')
+        self.integration_settings = self.module.params.get('integration_settings')
     
-    def create_securityctrl_baseline_settings(self,pkg_policy_object):
+    def create_securityctrl_baseline_settings(self, pkg_policy_object):
         ################ Checking and creating package policy associated with Integration
         
         try:
           pkg_policy_object['package']
         except:
           pkg_policy_object = pkg_policy_object['item']
+        pkg_policy_object_id = pkg_policy_object['id']  
+        
+        if self.integration_settings:
+          integration_settings_json = loads(self.integration_settings)
+          if not 'name' in integration_settings_json:
+            integration_settings_json['name'] = pkg_policy_object['name']
+          if not 'policy_id' in integration_settings_json:
+            integration_settings_json['policy_id'] = pkg_policy_object['policy_id']
+          if not 'enabled' in integration_settings_json:
+            integration_settings_json['enabled'] = pkg_policy_object['enabled']
+          if not 'namespace' in integration_settings_json:
+            integration_settings_json['namespace'] = pkg_policy_object['namespace']
+          if not 'package' in integration_settings_json:
+            integration_settings_json['package'] = pkg_policy_object['package']
+          if not 'output_id' in integration_settings_json:
+            integration_settings_json['output_id'] = pkg_policy_object['output_id']
+          if not 'inputs' in integration_settings_json:
+            integration_settings_json['inputs'] = pkg_policy_object['inputs']
+          pkg_policy_info = self.update_pkg_policy(pkg_policy_object_id,integration_settings_json)
           
-        if pkg_policy_object['package']['title'] == 'Endpoint Security' and self.module.check_mode == False and self.endpoint_security_antivirus == True:
+        elif pkg_policy_object['package']['title'] == 'Endpoint Security' and self.module.check_mode == False and self.endpoint_security_antivirus == True:
           i=0
           for input in pkg_policy_object['inputs']:
             if input['type'] == 'endpoint':
@@ -63,9 +84,8 @@ class SecurityBaseline(Kibana):
         
         elif pkg_policy_object['package']['title'] == 'Prebuilt Security Detection Rules' and self.prebuilt_rules_activate == True and self.module.check_mode == False:
               pkg_policy_info = self.activate_security_rule('Endpoint Security')
-        
+
         elif pkg_policy_object['package']['title'] == 'Linux':
-          pkg_policy_object_id = pkg_policy_object['id']
           pkg_policy_object = self.toggle_pkg_policy_input_onoff(pkg_policy_object, 'system/metrics', True)
           pkg_policy_object = self.toggle_pkg_policy_input_onoff(pkg_policy_object, 'linux/metrics', True)
           pkg_policy_object = self.toggle_pkg_policy_stream_onoff(pkg_policy_object, 'linux.entropy', False)
@@ -82,16 +102,14 @@ class SecurityBaseline(Kibana):
           pkg_policy_info = self.update_pkg_policy(pkg_policy_object_id,pkg_policy_object)
           
         elif pkg_policy_object['package']['title'] == 'Windows':
-          pkg_policy_object_id = pkg_policy_object['id']
           pkg_policy_object = self.toggle_pkg_policy_input_onoff(pkg_policy_object, 'winlog', False)
           pkg_policy_object = self.toggle_pkg_policy_input_onoff(pkg_policy_object, 'httpjson', False)
           pkg_policy_object = self.toggle_pkg_policy_input_onoff(pkg_policy_object, 'windows/metrics', True)
           pkg_policy_object = self.toggle_pkg_policy_stream_onoff(pkg_policy_object, 'windows.perfmon', False)
           pkg_policy_object = self.toggle_pkg_policy_stream_onoff(pkg_policy_object, 'windows.service', True)
           pkg_policy_info = self.update_pkg_policy(pkg_policy_object_id,pkg_policy_object)
-          
+
         elif pkg_policy_object['package']['title'] == 'System':
-          pkg_policy_object_id = pkg_policy_object['id']
           pkg_policy_object = self.toggle_pkg_policy_input_onoff(pkg_policy_object, 'logfile', False)
           pkg_policy_object = self.toggle_pkg_policy_input_onoff(pkg_policy_object, 'winlog', False)
           pkg_policy_object = self.toggle_pkg_policy_input_onoff(pkg_policy_object, 'system/metrics', True)
@@ -131,7 +149,8 @@ def main():
         namespace=dict(type='str', default='default'),
         endpoint_security_antivirus=dict(type='bool', default=True),
         prebuilt_rules_activate=dict(type='bool', default=True),
-        state=dict(type='str', default='present')
+        state=dict(type='str', default='present'),
+        integration_settings=dict(type='str')
     )
     argument_dependencies = []
         #('state', 'present', ('enabled', 'alert_type', 'conditions', 'actions')),
@@ -189,18 +208,13 @@ def main():
       else:
         if module.check_mode == False:    
           pkg_policy_object = kibana.create_pkg_policy(pkg_policy_name, pkg_policy_desc, agent_policy_id, integration_object, namespace)
+          updated_pkg_policy_object = kibana.create_securityctrl_baseline_settings(pkg_policy_object)
           results['pkg_policy_status'] = "No Integration Package found, Package Policy created"
           results['changed'] = True
         else:
           results['pkg_policy_status'] = "No Integration Package found, Package Policy not created becans check_mode is set to true"
           results['changed'] = False
-              
-      #if integration_object['title'] == 'Endpoint Security' or \
-      #  integration_object['title'] == 'Prebuilt Security Detection Rules' or \
-      #  integration_object['title'] == 'Linux'  :
-      updated_pkg_policy_object = kibana.create_securityctrl_baseline_settings(pkg_policy_object)
-        #results['updated_pkg_policy_info'] = updated_pkg_policy_object
-    
+        
       results['pkg_policy_object'] = pkg_policy_object
     module.exit_json(**results)
 

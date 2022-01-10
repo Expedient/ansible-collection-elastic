@@ -12,13 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from re import I
-from sys import version
 from ansible.module_utils.urls import open_url, urllib_error
 from json import loads, dumps
 from urllib.error import HTTPError
 import urllib.parse
-
 
 class Kibana(object):
   def __init__(self, module):
@@ -177,7 +174,7 @@ class Kibana(object):
           if integration['status'] != 'installed':
             integration_install = self.install_integration(integration['name'],integration['version'])
           integration_detail_object = self.get_integration(integration['name'],integration['version'])
-          continue
+          break
       return integration_detail_object['response']
   
   def get_integration(self, integration_name, version):
@@ -259,9 +256,9 @@ class Kibana(object):
                     inputs_body_stream_entry['data_stream'] = inputs_body_streams_datastream
                     input_body_stream_var = {}
                     for integration_stream_var in integration_input_stream['vars']:
-                      try: 
+                      if 'default' in integration_stream_var:
                         input_body_stream_var[integration_stream_var['name']] = { "type": integration_stream_var['type'], "value": integration_stream_var['default']}
-                      except:
+                      else:
                         input_body_stream_var[integration_stream_var['name']] = { "type": integration_stream_var['type'], "value": ""}
                     inputs_body_stream_entry['vars'] = input_body_stream_var
                     inputs_body_streams.append(inputs_body_stream_entry)
