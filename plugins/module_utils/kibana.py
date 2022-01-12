@@ -230,15 +230,15 @@ class Kibana(object):
               inputs_body_entry = {}
               inputs_body_entry['policy_template'] = policy_template['name']
               inputs_body_entry['enabled'] = True
-              inputs_body_entry['type'] = policy_input['type']
-              inputs_body_entry['config'] = {}
+              inputs_body_entry['type'] = policy_input['type']                
+              inputs_body_entry['config'] = policy_input['config']
               input_body_template_var = {}
               if 'vars' in policy_input:
                 for policy_template_var in policy_input['vars']:
                   if 'value' in policy_template_var:
-                    input_body_template_var[policy_template_var['name']] = { "type": policy_template_var['type'], "value": policy_template_var['value']}
+                    input_body_template_var[policy_template_var['name']] = { "type": policy_template_var['type'], "value": policy_template_var['value'] }
                   else:
-                    input_body_template_var[policy_template_var['name']] = { "type": policy_template_var['type']}
+                    input_body_template_var[policy_template_var['name']] = { "type": policy_template_var['type'] }
               inputs_body_entry['vars'] = input_body_template_var
               inputs_body_streams = []
               for integration_object_input in integration_object['data_streams']:

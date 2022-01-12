@@ -51,7 +51,9 @@ class SecurityBaseline(Kibana):
         pkg_policy_object_id = pkg_policy_object['id']  
         
         if self.integration_settings:
-          integration_settings_json = loads(self.integration_settings)
+          #integration_settings_json = loads(self.integration_settings)
+          integration_settings_json = self.integration_settings
+          results['passed_integration_settings'] = integration_settings_json
           if not 'name' in integration_settings_json:
             integration_settings_json['name'] = pkg_policy_object['name']
           if not 'policy_id' in integration_settings_json:
@@ -67,66 +69,9 @@ class SecurityBaseline(Kibana):
           if not 'inputs' in integration_settings_json:
             integration_settings_json['inputs'] = pkg_policy_object['inputs']
           pkg_policy_info = self.update_pkg_policy(pkg_policy_object_id,integration_settings_json)
-          
-        elif pkg_policy_object['package']['title'] == 'Endpoint Security' and self.module.check_mode == False and self.endpoint_security_antivirus == True:
-          i=0
-          for input in pkg_policy_object['inputs']:
-            if input['type'] == 'endpoint':
-                ########## Updating configuration
-                pkg_policy_object['inputs'][i]['config']['policy']['value']['windows']['antivirus_registration']['enabled'] = self.endpoint_security_antivirus
-                ########## Removing values to reapply the JSON with the above values changed
-                pkg_policy_object_id = pkg_policy_object['id'] 
-                break
-            i=+1
-          pkg_policy_update = self.update_pkg_policy(pkg_policy_object_id,pkg_policy_object)
-          results['pkg_policy_update_status'] = "Updating Endpoint Security Package"
-          pkg_policy_info = pkg_policy_update
         
         elif pkg_policy_object['package']['title'] == 'Prebuilt Security Detection Rules' and self.prebuilt_rules_activate == True and self.module.check_mode == False:
               pkg_policy_info = self.activate_security_rule('Endpoint Security')
-
-        elif pkg_policy_object['package']['title'] == 'Linux':
-          pkg_policy_object = self.toggle_pkg_policy_input_onoff(pkg_policy_object, 'system/metrics', True)
-          pkg_policy_object = self.toggle_pkg_policy_input_onoff(pkg_policy_object, 'linux/metrics', True)
-          pkg_policy_object = self.toggle_pkg_policy_stream_onoff(pkg_policy_object, 'linux.entropy', False)
-          pkg_policy_object = self.toggle_pkg_policy_stream_onoff(pkg_policy_object, 'linux.network_summary', True)
-          pkg_policy_object = self.toggle_pkg_policy_stream_onoff(pkg_policy_object, 'linux.raid', False)
-          pkg_policy_object = self.toggle_pkg_policy_stream_onoff(pkg_policy_object, 'linux.service', True)
-          pkg_policy_object = self.toggle_pkg_policy_stream_onoff(pkg_policy_object, 'linux.socket', True)
-          pkg_policy_object = self.toggle_pkg_policy_stream_onoff(pkg_policy_object, 'linux.users', True)
-          pkg_policy_object = self.toggle_pkg_policy_stream_onoff(pkg_policy_object, 'linux.conntrack', False)
-          pkg_policy_object = self.toggle_pkg_policy_stream_onoff(pkg_policy_object, 'linux.iostat', False)
-          pkg_policy_object = self.toggle_pkg_policy_stream_onoff(pkg_policy_object, 'linux.ksm', False)
-          pkg_policy_object = self.toggle_pkg_policy_stream_onoff(pkg_policy_object, 'linux.memory', False)
-          pkg_policy_object = self.toggle_pkg_policy_stream_onoff(pkg_policy_object, 'linux.pageinfo', False)
-          pkg_policy_info = self.update_pkg_policy(pkg_policy_object_id,pkg_policy_object)
-          
-        elif pkg_policy_object['package']['title'] == 'Windows':
-          pkg_policy_object = self.toggle_pkg_policy_input_onoff(pkg_policy_object, 'winlog', False)
-          pkg_policy_object = self.toggle_pkg_policy_input_onoff(pkg_policy_object, 'httpjson', False)
-          pkg_policy_object = self.toggle_pkg_policy_input_onoff(pkg_policy_object, 'windows/metrics', True)
-          pkg_policy_object = self.toggle_pkg_policy_stream_onoff(pkg_policy_object, 'windows.perfmon', False)
-          pkg_policy_object = self.toggle_pkg_policy_stream_onoff(pkg_policy_object, 'windows.service', True)
-          pkg_policy_info = self.update_pkg_policy(pkg_policy_object_id,pkg_policy_object)
-
-        elif pkg_policy_object['package']['title'] == 'System':
-          pkg_policy_object = self.toggle_pkg_policy_input_onoff(pkg_policy_object, 'logfile', False)
-          pkg_policy_object = self.toggle_pkg_policy_input_onoff(pkg_policy_object, 'winlog', False)
-          pkg_policy_object = self.toggle_pkg_policy_input_onoff(pkg_policy_object, 'system/metrics', True)
-          pkg_policy_object = self.toggle_pkg_policy_input_onoff(pkg_policy_object, 'httpjson', False)
-          pkg_policy_object = self.toggle_pkg_policy_stream_onoff(pkg_policy_object, 'system.load', True)
-          pkg_policy_object = self.toggle_pkg_policy_stream_onoff(pkg_policy_object, 'system.core', False)
-          pkg_policy_object = self.toggle_pkg_policy_stream_onoff(pkg_policy_object, 'system.process.summary', True)
-          pkg_policy_object = self.toggle_pkg_policy_stream_onoff(pkg_policy_object, 'system.socket_summary', True)  
-          pkg_policy_object = self.toggle_pkg_policy_stream_onoff(pkg_policy_object, 'system.uptime', True)
-          pkg_policy_object = self.toggle_pkg_policy_stream_onoff(pkg_policy_object, 'system.network', True)  
-          pkg_policy_object = self.toggle_pkg_policy_stream_onoff(pkg_policy_object, 'system.cpu', True)
-          pkg_policy_object = self.toggle_pkg_policy_stream_onoff(pkg_policy_object, 'system.filesystem', True)  
-          pkg_policy_object = self.toggle_pkg_policy_stream_onoff(pkg_policy_object, 'system.fstat', True)
-          pkg_policy_object = self.toggle_pkg_policy_stream_onoff(pkg_policy_object, 'system.process', True)  
-          pkg_policy_object = self.toggle_pkg_policy_stream_onoff(pkg_policy_object, 'system.memory', True)
-          pkg_policy_object = self.toggle_pkg_policy_stream_onoff(pkg_policy_object, 'system.diskio', True)  
-          pkg_policy_info = self.update_pkg_policy(pkg_policy_object_id,pkg_policy_object)
 
         elif self.module.check_mode == True:
           results['pkg_policy_update_status'] = "Check mode is set to True, not going to update pkg policy"
@@ -150,7 +95,7 @@ def main():
         endpoint_security_antivirus=dict(type='bool', default=True),
         prebuilt_rules_activate=dict(type='bool', default=True),
         state=dict(type='str', default='present'),
-        integration_settings=dict(type='str')
+        integration_settings=dict(type='dict')
     )
     argument_dependencies = []
         #('state', 'present', ('enabled', 'alert_type', 'conditions', 'actions')),
