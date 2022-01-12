@@ -33,7 +33,6 @@ class SecurityBaseline(Kibana):
         self.module = module
         self.integration_pkg_name = module.params.get('integration_pkg_name')
         self.integration_pkg_desc = module.params.get('integration_pkg_desc')
-        self.endpoint_security_antivirus = module.params.get('endpoint_security_antivirus')
         self.prebuilt_rules_activate = module.params.get('prebuilt_rules_activate')
         self.agent_policy_name = self.module.params.get('agent_policy_name')
         self.agent_policy_desc = self.module.params.get('agent_policy_desc')
@@ -92,7 +91,6 @@ def main():
         pkg_policy_name=dict(type='str', required=True),
         pkg_policy_desc=dict(type='str'),
         namespace=dict(type='str', default='default'),
-        endpoint_security_antivirus=dict(type='bool', default=True),
         prebuilt_rules_activate=dict(type='bool', default=True),
         state=dict(type='str', default='present'),
         integration_settings=dict(type='dict')
