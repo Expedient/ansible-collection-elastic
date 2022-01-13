@@ -49,12 +49,7 @@ def main():
     
     kibana = Kibana(module)
       
-    if integration_name:
-      integration_object = kibana.check_integration(integration_name)
-    else:
-      results['integration_status'] = "No Integration Name provided to get the integration object"
-      results['changed'] = False
-      module.exit_json(**results)
+    integration_object = kibana.check_integration(integration_name)
     
     if not integration_object:
       results['integration_status'] = 'Integration name is not a valid'
@@ -67,7 +62,7 @@ def main():
       results['integration_status'] = "Integration Package found"
       results['integration_object'] = integration_object
     else:
-      results['pkg_policy_status'] = "Integration Package NOT found"
+      results['integration_status'] = "Integration Package NOT found"
     
     results['integration_object'] = integration_object
     
