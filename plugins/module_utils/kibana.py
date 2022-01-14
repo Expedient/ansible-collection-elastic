@@ -230,8 +230,11 @@ class Kibana(object):
               inputs_body_entry = {}
               inputs_body_entry['policy_template'] = policy_template['name']
               inputs_body_entry['enabled'] = True
-              inputs_body_entry['type'] = policy_input['type']                
-              inputs_body_entry['config'] = policy_input['config']
+              inputs_body_entry['type'] = policy_input['type']
+              if 'config' in policy_input:                 
+                inputs_body_entry['config'] = policy_input['config']
+              else:
+                inputs_body_entry['config'] = {}
               input_body_template_var = {}
               if 'vars' in policy_input:
                 for policy_template_var in policy_input['vars']:
