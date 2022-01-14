@@ -17,7 +17,6 @@ from json import loads, dumps
 from urllib.error import HTTPError
 import urllib.parse
 
-
 class Kibana(object):
   def __init__(self, module):
     self.module = module
@@ -170,14 +169,19 @@ class Kibana(object):
   
   def check_integration(self, integration_name):
       integration_objects = self.get_integrations()
-      integration_object = None
       for integration in integration_objects['response']:
         if integration['title'].upper() in integration_name.upper():
-          integration_object = integration
           if integration['status'] != 'installed':
             integration_install = self.install_integration(integration['name'],integration['version'])
+          integration_detail_object = self.get_integration(integration['name'],integration['version'])
+          break
+      return integration_detail_object['response']
+  
+  def get_integration(self, integration_name, version):
+      endpoint  = 'fleet/epm/packages/' + integration_name + "-" + version
+      integration_object = self.send_api_request(endpoint, 'GET')
       return integration_object
-
+    
   # Elastic Integration Package Policy functions
 
   def get_all_pkg_policies(self):
@@ -186,8 +190,21 @@ class Kibana(object):
       return pkgpolicy_objects
   
   def update_pkg_policy(self,pkgpolicy_id,body):
-      endpoint = "fleet/package_policies/" + pkgpolicy_id
+      if 'id' in body:
+        pkgpolicy_id = body['id']
+        body.pop('id')
+      if 'revision' in body:
+        body.pop('revision')
+      if 'created_at' in body:
+        body.pop('created_at')
+      if 'created_by' in body:
+        body.pop('created_by')
+      if 'updated_at' in body:
+        body.pop('updated_at')
+      if 'updated_by' in body:
+        body.pop('updated_by')
       if not self.module.check_mode:
+        endpoint = "fleet/package_policies/" + pkgpolicy_id
         pkg_policy_update = self.send_api_request(endpoint, 'PUT', data=body)
       else:
         pkg_policy_update = "Cannot proceed with check_mode set to " + self.module.check_mode
@@ -195,7 +212,7 @@ class Kibana(object):
   
   def get_pkg_policy(self,integration_name, agent_policy_id):
     pkg_policy_objects = self.get_all_pkg_policies()
-    pkg_policy_object = None
+    pkg_policy_object = ""
     for pkgPolicy in pkg_policy_objects['items']:
       if pkgPolicy['package']['title'].upper() == integration_name.upper() and pkgPolicy['policy_id'] == agent_policy_id:
         pkg_policy_object = pkgPolicy
@@ -204,6 +221,51 @@ class Kibana(object):
   
   def create_pkg_policy(self,pkg_policy_name, pkg_policy_desc, agent_policy_id, integration_object, namespace="default"):
     pkg_policy_object = self.get_pkg_policy(integration_object['name'],agent_policy_id)
+    inputs_body = []
+    if 'policy_templates' in integration_object:
+      for policy_template in integration_object['policy_templates']:
+        if 'inputs' in policy_template:
+          if policy_template['inputs'] != None:
+            for policy_input in policy_template['inputs']:
+              inputs_body_entry = {}
+              inputs_body_entry['policy_template'] = policy_template['name']
+              inputs_body_entry['enabled'] = True
+              inputs_body_entry['type'] = policy_input['type']                
+              inputs_body_entry['config'] = policy_input['config']
+              input_body_template_var = {}
+              if 'vars' in policy_input:
+                for policy_template_var in policy_input['vars']:
+                  if 'value' in policy_template_var:
+                    input_body_template_var[policy_template_var['name']] = { "type": policy_template_var['type'], "value": policy_template_var['value'] }
+                  else:
+                    input_body_template_var[policy_template_var['name']] = { "type": policy_template_var['type'] }
+              inputs_body_entry['vars'] = input_body_template_var
+              inputs_body_streams = []
+              for integration_object_input in integration_object['data_streams']:
+                inputs_body_stream_entry = {}
+                #inputs_body_stream_entry['enabled'] = True
+                for integration_input_stream in integration_object_input['streams']:
+                  if 'enabled' in integration_input_stream:
+                    inputs_body_stream_entry['enabled'] = integration_input_stream['enabled']
+                  else:
+                    inputs_body_stream_entry['enabled'] = False
+                  if integration_input_stream['input'] == policy_input['type']:
+                    inputs_body_streams_datastream = {}
+                    inputs_body_streams_datastream['dataset'] = integration_object_input['dataset']
+                    inputs_body_streams_datastream['type'] = integration_object_input['type']
+                    inputs_body_stream_entry['data_stream'] = inputs_body_streams_datastream
+                    input_body_stream_var = {}
+                    for integration_stream_var in integration_input_stream['vars']:
+                      if 'default' in integration_stream_var:
+                        input_body_stream_var[integration_stream_var['name']] = { "type": integration_stream_var['type'], "value": integration_stream_var['default']}
+                      else:
+                        input_body_stream_var[integration_stream_var['name']] = { "type": integration_stream_var['type'], "value": ""}
+                    inputs_body_stream_entry['vars'] = input_body_stream_var
+                    inputs_body_streams.append(inputs_body_stream_entry)
+                  
+                inputs_body_entry['streams'] = inputs_body_streams
+              inputs_body.append(inputs_body_entry)
+
     if not pkg_policy_object:
       body = {
         "name": pkg_policy_name,
@@ -212,7 +274,7 @@ class Kibana(object):
         "enabled": True,
         "policy_id": agent_policy_id,
         "output_id": "",
-        "inputs": [],
+        "inputs": inputs_body,
         'package': {
           'name': integration_object['name'],
           'title': integration_object['title'],
@@ -227,6 +289,28 @@ class Kibana(object):
         pkg_policy_object = "Cannot proceed with check_mode set to " + self.module.check_mode
     return pkg_policy_object
 
+  def toggle_pkg_policy_input_onoff(self, pkg_policy_object, type, onoff):
+    pkg_policy_object_updated = pkg_policy_object
+    i = 0
+    for input in pkg_policy_object['inputs']:
+      if input['type'] == type:
+        pkg_policy_object_updated['inputs'][i]['enabled'] = onoff
+      i= i + 1
+    return pkg_policy_object_updated
+  
+  def toggle_pkg_policy_stream_onoff(self, pkg_policy_object, dataset, onoff):
+    pkg_policy_object_updated = pkg_policy_object
+    i = 0
+    for input in pkg_policy_object_updated['inputs']:
+      j=0
+      for streams in input['streams']:
+        if 'compiled_stream' in streams:
+          pkg_policy_object_updated['inputs'][i]['streams'][j].pop('compiled_stream')
+        if streams['data_stream']['dataset'] == dataset:
+          pkg_policy_object_updated['inputs'][i]['streams'][j]['enabled'] = onoff
+        j = j + 1
+      i = i + 1
+    return pkg_policy_object_updated
     
 # Elastic Agent Policy functions
 
