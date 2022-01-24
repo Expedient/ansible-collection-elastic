@@ -238,6 +238,8 @@ class ECE_Cluster(ECE):
 
   def get_matching_clusters(self):
     clusters = self.get_cluster_by_name(self.cluster_name)
+    if not clusters:
+      clusters = []
     return clusters
 
   def create_cluster(self):
