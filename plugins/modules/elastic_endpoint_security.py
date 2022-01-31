@@ -46,8 +46,11 @@ class SecurityBaseline(Kibana):
         if not 'package' in pkg_policy_object:
           pkg_policy_object = pkg_policy_object['item']
         pkg_policy_object_id = pkg_policy_object['id']  
-        
-        if self.integration_settings:
+      
+        if self.module.check_mode == True:
+          results['pkg_policy_update_status'] = "Check mode is set to True, not going to update pkg policy"
+          
+        elif self.integration_settings:
           #integration_settings_json = loads(self.integration_settings)
           integration_settings_json = self.integration_settings
           results['passed_integration_settings'] = integration_settings_json
@@ -70,9 +73,6 @@ class SecurityBaseline(Kibana):
         elif pkg_policy_object['package']['title'] == 'Prebuilt Security Detection Rules' and self.prebuilt_rules_activate == True and self.module.check_mode == False:
               pkg_policy_info = self.activate_security_rule('Endpoint Security')
 
-        elif self.module.check_mode == True:
-          results['pkg_policy_update_status'] = "Check mode is set to True, not going to update pkg policy"
-          
         else:
           pkg_policy_info = None
         
@@ -152,8 +152,7 @@ def main():
       else:
         if module.check_mode == False:    
           pkg_policy_object = kibana.create_pkg_policy(pkg_policy_name, pkg_policy_desc, agent_policy_id, integration_object, namespace)
-          if integration_settings:
-            updated_pkg_policy_object = kibana.create_securityctrl_baseline_settings(pkg_policy_object)
+          updated_pkg_policy_object = kibana.create_securityctrl_baseline_settings(pkg_policy_object)
           results['pkg_policy_status'] = "No Integration Package found, Package Policy created"
           results['changed'] = True
         else:
