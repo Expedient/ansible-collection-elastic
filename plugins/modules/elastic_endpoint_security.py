@@ -43,13 +43,14 @@ class SecurityBaseline(Kibana):
     def create_securityctrl_baseline_settings(self, pkg_policy_object):
         ################ Checking and creating package policy associated with Integration
         
-        try:
-          pkg_policy_object['package']
-        except:
+        if not 'package' in pkg_policy_object:
           pkg_policy_object = pkg_policy_object['item']
         pkg_policy_object_id = pkg_policy_object['id']  
-        
-        if self.integration_settings:
+      
+        if self.module.check_mode == True:
+          results['pkg_policy_update_status'] = "Check mode is set to True, not going to update pkg policy"
+          
+        elif self.integration_settings:
           #integration_settings_json = loads(self.integration_settings)
           integration_settings_json = self.integration_settings
           results['passed_integration_settings'] = integration_settings_json
@@ -72,8 +73,8 @@ class SecurityBaseline(Kibana):
         elif pkg_policy_object['package']['title'] == 'Prebuilt Security Detection Rules' and self.prebuilt_rules_activate == True and self.module.check_mode == False:
               pkg_policy_info = self.activate_security_rule('Endpoint Security')
 
-        elif self.module.check_mode == True:
-          results['pkg_policy_update_status'] = "Check mode is set to True, not going to update pkg policy"
+        else:
+          pkg_policy_info = None
         
         return pkg_policy_info
 
@@ -109,8 +110,8 @@ def main():
     integration_name = module.params.get('integration_name')
     pkg_policy_name = module.params.get('pkg_policy_name')
     pkg_policy_desc = module.params.get('pkg_policy_desc')
-    pkg_policy_desc = module.params.get('pkg_policy_desc')
     namespace = module.params.get('namespace')
+    integration_settings = module.params.get('integration_settings')
     
     if module.check_mode:
         results['changed'] = False
