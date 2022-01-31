@@ -43,9 +43,7 @@ class SecurityBaseline(Kibana):
     def create_securityctrl_baseline_settings(self, pkg_policy_object):
         ################ Checking and creating package policy associated with Integration
         
-        try:
-          pkg_policy_object['package']
-        except:
+        if not 'package' in pkg_policy_object:
           pkg_policy_object = pkg_policy_object['item']
         pkg_policy_object_id = pkg_policy_object['id']  
         
@@ -74,6 +72,9 @@ class SecurityBaseline(Kibana):
 
         elif self.module.check_mode == True:
           results['pkg_policy_update_status'] = "Check mode is set to True, not going to update pkg policy"
+          
+        else:
+          pkg_policy_info = None
         
         return pkg_policy_info
 
@@ -109,8 +110,8 @@ def main():
     integration_name = module.params.get('integration_name')
     pkg_policy_name = module.params.get('pkg_policy_name')
     pkg_policy_desc = module.params.get('pkg_policy_desc')
-    pkg_policy_desc = module.params.get('pkg_policy_desc')
     namespace = module.params.get('namespace')
+    integration_settings = module.params.get('integration_settings')
     
     if module.check_mode:
         results['changed'] = False
@@ -151,7 +152,8 @@ def main():
       else:
         if module.check_mode == False:    
           pkg_policy_object = kibana.create_pkg_policy(pkg_policy_name, pkg_policy_desc, agent_policy_id, integration_object, namespace)
-          updated_pkg_policy_object = kibana.create_securityctrl_baseline_settings(pkg_policy_object)
+          if integration_settings:
+            updated_pkg_policy_object = kibana.create_securityctrl_baseline_settings(pkg_policy_object)
           results['pkg_policy_status'] = "No Integration Package found, Package Policy created"
           results['changed'] = True
         else:
