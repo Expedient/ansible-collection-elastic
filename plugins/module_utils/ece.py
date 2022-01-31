@@ -115,12 +115,11 @@ class ECE(object):
       deployment_objects = self.send_api_request(endpoint, 'GET')
       for deployment in deployment_objects['deployments']:
         if str(deployment['name']).upper() == str(deployment_name).upper():
-          try:
-            endpoint  = 'deployments/' + deployment['id'] + '/kibana/main-kibana'
-            deployment_object = self.send_api_request(endpoint, 'GET')
-          except:
-            endpoint  = 'deployments/' + deployment['id'] + '/kibana/kibana'
-            deployment_object = self.send_api_request(endpoint, 'GET')
+          for resources in deployment['resources']:
+              if resources['kind'] == "kibana":
+                resource_name = resources['ref_id']
+                endpoint  = 'deployments/' + deployment['id'] + '/kibana/' + resource_name
+                deployment_object = self.send_api_request(endpoint, 'GET')
           break
       return deployment_object
 
