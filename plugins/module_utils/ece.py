@@ -121,6 +121,6 @@ class ECE(object):
           except:
             endpoint  = 'deployments/' + deployment['id'] + '/kibana/kibana'
             deployment_object = self.send_api_request(endpoint, 'GET')
-            continue
+          break
       return deployment_object
 
