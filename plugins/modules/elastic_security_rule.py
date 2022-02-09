@@ -140,7 +140,7 @@ def main():
             results["connector_object"] = connector_exists
 
         rule_exists = kibana.get_security_rules_byfilter(rule_name)
-        target_rule = ""
+        target_rule = None
         for rule in rule_exists["data"]:
             if str(rule["name"]).upper() == str(rule_name).upper():
                 target_rule = rule

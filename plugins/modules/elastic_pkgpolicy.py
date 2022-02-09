@@ -194,8 +194,6 @@ def main():
             )
             results["pkg_policy_status"] = "No Integration Package found, Package Policy created"
         results["pkg_policy_object"] = pkg_policy_object
-    else:
-        results["pkg_policy_object"] = "A valid state was not passed"
 
     module.exit_json(**results)
 
