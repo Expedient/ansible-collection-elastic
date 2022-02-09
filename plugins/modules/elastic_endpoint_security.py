@@ -65,11 +65,10 @@ options:
     - The namespace for the agent policy
     type: str
     default: default
-  endpoint_security_antivirus:
+  integration_settings:
     description:
-    - Endpoint security antivirus
-    type: bool
-    default: true
+    - Integration Settings
+    type: dict
   prebuilt_rules_activate:
     description:
     - Prebuild rules activate
@@ -142,38 +141,33 @@ class SecurityBaseline(Kibana):
         self.integration_settings = self.module.params.get("integration_settings")
 
     def create_securityctrl_baseline_settings(self, pkg_policy_object):
-        ################ Checking and creating package policy associated with Integration
+        # Checking and creating package policy associated with Integration
 
-        if not "package" in pkg_policy_object:
+        if "package" not in pkg_policy_object:
             pkg_policy_object = pkg_policy_object["item"]
         pkg_policy_object_id = pkg_policy_object["id"]
 
-        if self.module.check_mode == True:
+        if self.module.check_mode:
             results["pkg_policy_update_status"] = "Check mode is set to True, not going to update pkg policy"
         elif self.integration_settings:
-            # integration_settings_json = loads(self.integration_settings)
             integration_settings_json = self.integration_settings
             results["passed_integration_settings"] = integration_settings_json
-            if not "name" in integration_settings_json:
+            if "name" not in integration_settings_json:
                 integration_settings_json["name"] = pkg_policy_object["name"]
-            if not "policy_id" in integration_settings_json:
+            if "policy_id" not in integration_settings_json:
                 integration_settings_json["policy_id"] = pkg_policy_object["policy_id"]
-            if not "enabled" in integration_settings_json:
+            if "enabled" not in integration_settings_json:
                 integration_settings_json["enabled"] = pkg_policy_object["enabled"]
-            if not "namespace" in integration_settings_json:
+            if "namespace" not in integration_settings_json:
                 integration_settings_json["namespace"] = pkg_policy_object["namespace"]
-            if not "package" in integration_settings_json:
+            if "package" not in integration_settings_json:
                 integration_settings_json["package"] = pkg_policy_object["package"]
-            if not "output_id" in integration_settings_json:
+            if "output_id" not in integration_settings_json:
                 integration_settings_json["output_id"] = pkg_policy_object["output_id"]
-            if not "inputs" in integration_settings_json:
+            if "inputs" not in integration_settings_json:
                 integration_settings_json["inputs"] = pkg_policy_object["inputs"]
             pkg_policy_info = self.update_pkg_policy(pkg_policy_object_id, integration_settings_json)
-        elif (
-            pkg_policy_object["package"]["title"] == "Prebuilt Security Detection Rules"
-            and self.prebuilt_rules_activate == True
-            and self.module.check_mode == False
-        ):
+        elif pkg_policy_object["package"]["title"] == "Prebuilt Security Detection Rules" and self.prebuilt_rules_activate and not self.module.check_mode:
             pkg_policy_info = self.activate_security_rule("Endpoint Security")
         else:
             pkg_policy_info = None

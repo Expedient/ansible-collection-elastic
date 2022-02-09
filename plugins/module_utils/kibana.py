@@ -228,7 +228,7 @@ class Kibana(object):
         if "policy_templates" in integration_object:
             for policy_template in integration_object["policy_templates"]:
                 if "inputs" in policy_template:
-                    if policy_template["inputs"] != None:
+                    if policy_template["inputs"] is not None:
                         for policy_input in policy_template["inputs"]:
                             inputs_body_entry = {}
                             inputs_body_entry["policy_template"] = policy_template["name"]

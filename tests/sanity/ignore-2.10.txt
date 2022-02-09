@@ -141,3 +141,10 @@ plugins/modules/elastic_security_rule.py import-2.6!skip
 plugins/modules/elastic_security_rule.py import-2.7!skip
 plugins/modules/elastic_security_rule.py import-3.5!skip
 plugins/modules/elastic_security_rule.py validate-modules:missing-gplv3-license
+plugins/modules/elastic_integration_info.py compile-2.6!skip
+plugins/modules/elastic_integration_info.py compile-2.7!skip
+plugins/modules/elastic_integration_info.py compile-3.5!skip
+plugins/modules/elastic_integration_info.py import-2.6!skip
+plugins/modules/elastic_integration_info.py import-2.7!skip
+plugins/modules/elastic_integration_info.py import-3.5!skip
+plugins/modules/elastic_integration_info.py validate-modules:missing-gplv3-license
