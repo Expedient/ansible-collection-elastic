@@ -29,7 +29,7 @@ collections:
 
 ### Required Python libraries
 
-VMware community collection depends upon following third party libraries:
+Expedient Elastic collection depends upon following third party libraries:
 
 * [`PyYAML`](https://pyyaml.org/wiki/PyYAMLDocumentation)
 
