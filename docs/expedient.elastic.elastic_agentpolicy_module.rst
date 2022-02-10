@@ -1,11 +1,11 @@
-.. _expedient.elastic.elastic_user_module:
+.. _expedient.elastic.elastic_agentpolicy_module:
 
 
-******************************
-expedient.elastic.elastic_user
-******************************
+*************************************
+expedient.elastic.elastic_agentpolicy
+*************************************
 
-**elastic user management**
+**Configures Elastic agent policy**
 
 
 Version added: 1.0.0
@@ -17,8 +17,7 @@ Version added: 1.0.0
 
 Synopsis
 --------
-- This module creates or deletes users with elastic
-- Update state not yet implemented
+- Configures Elastic agent policy.
 
 
 
@@ -43,7 +42,23 @@ Parameters
             <tr>
                 <td colspan="1">
                     <div class="ansibleOptionAnchor" id="parameter-"></div>
-                    <b>elastic_password</b>
+                    <b>agent_policy_desc</b>
+                    <a class="ansibleOptionLink" href="#parameter-" title="Permalink to this option"></a>
+                    <div style="font-size: small">
+                        <span style="color: purple">string</span>
+                    </div>
+                </td>
+                <td>
+                        <b>Default:</b><br/><div style="color: blue">"None"</div>
+                </td>
+                <td>
+                        <div>The description for the agent policy</div>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="1">
+                    <div class="ansibleOptionAnchor" id="parameter-"></div>
+                    <b>agent_policy_id</b>
                     <a class="ansibleOptionLink" href="#parameter-" title="Permalink to this option"></a>
                     <div style="font-size: small">
                         <span style="color: purple">string</span>
@@ -52,30 +67,14 @@ Parameters
                 <td>
                 </td>
                 <td>
-                        <div>Password for the user</div>
-                        <div>Required when creating a new user</div>
+                        <div>The id of the agent policy</div>
+                        <div>Required if <code>agent_policy_name</code> is not provided</div>
                 </td>
             </tr>
             <tr>
                 <td colspan="1">
                     <div class="ansibleOptionAnchor" id="parameter-"></div>
-                    <b>elastic_user</b>
-                    <a class="ansibleOptionLink" href="#parameter-" title="Permalink to this option"></a>
-                    <div style="font-size: small">
-                        <span style="color: purple">string</span>
-                         / <span style="color: red">required</span>
-                    </div>
-                </td>
-                <td>
-                </td>
-                <td>
-                        <div>The name of the user to create or delete</div>
-                </td>
-            </tr>
-            <tr>
-                <td colspan="1">
-                    <div class="ansibleOptionAnchor" id="parameter-"></div>
-                    <b>email</b>
+                    <b>agent_policy_name</b>
                     <a class="ansibleOptionLink" href="#parameter-" title="Permalink to this option"></a>
                     <div style="font-size: small">
                         <span style="color: purple">string</span>
@@ -84,41 +83,8 @@ Parameters
                 <td>
                 </td>
                 <td>
-                        <div>email address to associate with the user</div>
-                </td>
-            </tr>
-            <tr>
-                <td colspan="1">
-                    <div class="ansibleOptionAnchor" id="parameter-"></div>
-                    <b>enabled</b>
-                    <a class="ansibleOptionLink" href="#parameter-" title="Permalink to this option"></a>
-                    <div style="font-size: small">
-                        <span style="color: purple">boolean</span>
-                    </div>
-                </td>
-                <td>
-                        <ul style="margin: 0; padding: 0"><b>Choices:</b>
-                                    <li>no</li>
-                                    <li><div style="color: blue"><b>yes</b>&nbsp;&larr;</div></li>
-                        </ul>
-                </td>
-                <td>
-                        <div>whether to enable the newly created user</div>
-                </td>
-            </tr>
-            <tr>
-                <td colspan="1">
-                    <div class="ansibleOptionAnchor" id="parameter-"></div>
-                    <b>full_name</b>
-                    <a class="ansibleOptionLink" href="#parameter-" title="Permalink to this option"></a>
-                    <div style="font-size: small">
-                        <span style="color: purple">string</span>
-                    </div>
-                </td>
-                <td>
-                </td>
-                <td>
-                        <div>full name of the user</div>
+                        <div>The name of the agent policy</div>
+                        <div>Required if <code>agent_policy_id</code> is not provided</div>
                 </td>
             </tr>
             <tr>
@@ -134,24 +100,23 @@ Parameters
                 <td>
                 </td>
                 <td>
-                        <div>DNS name of the the Elasticsearch instance</div>
+                        <div>DNS name of the the Kibana instance</div>
                 </td>
             </tr>
             <tr>
                 <td colspan="1">
                     <div class="ansibleOptionAnchor" id="parameter-"></div>
-                    <b>metadata</b>
+                    <b>namespace</b>
                     <a class="ansibleOptionLink" href="#parameter-" title="Permalink to this option"></a>
                     <div style="font-size: small">
-                        <span style="color: purple">dictionary</span>
+                        <span style="color: purple">string</span>
                     </div>
                 </td>
                 <td>
-                        <b>Default:</b><br/><div style="color: blue">{}</div>
+                        <b>Default:</b><br/><div style="color: blue">"default"</div>
                 </td>
                 <td>
-                        <div>metadata object to associate with the user</div>
-                        <div>can contain any arbitrary key:value pairs</div>
+                        <div>The namespace for the agent policy</div>
                 </td>
             </tr>
             <tr>
@@ -167,7 +132,7 @@ Parameters
                 <td>
                 </td>
                 <td>
-                        <div>Password to use when connecting to Elasticsearch</div>
+                        <div>Password to use when connecting to Kibana</div>
                 </td>
             </tr>
             <tr>
@@ -180,27 +145,10 @@ Parameters
                     </div>
                 </td>
                 <td>
-                        <b>Default:</b><br/><div style="color: blue">12443</div>
+                        <b>Default:</b><br/><div style="color: blue">9243</div>
                 </td>
                 <td>
-                        <div>Port number of the Elasticsearch instance</div>
-                </td>
-            </tr>
-            <tr>
-                <td colspan="1">
-                    <div class="ansibleOptionAnchor" id="parameter-"></div>
-                    <b>roles</b>
-                    <a class="ansibleOptionLink" href="#parameter-" title="Permalink to this option"></a>
-                    <div style="font-size: small">
-                        <span style="color: purple">list</span>
-                         / <span style="color: purple">elements=string</span>
-                    </div>
-                </td>
-                <td>
-                </td>
-                <td>
-                        <div>list of roles to assign to the user</div>
-                        <div>Required when creating a new user</div>
+                        <div>Port number of the Kibana instance</div>
                 </td>
             </tr>
             <tr>
@@ -215,11 +163,10 @@ Parameters
                 <td>
                         <ul style="margin: 0; padding: 0"><b>Choices:</b>
                                     <li><div style="color: blue"><b>present</b>&nbsp;&larr;</div></li>
-                                    <li>absent</li>
                         </ul>
                 </td>
                 <td>
-                        <div>The desired state for the user</div>
+                        <div>The desired state for the module</div>
                 </td>
             </tr>
             <tr>
@@ -235,7 +182,7 @@ Parameters
                 <td>
                 </td>
                 <td>
-                        <div>Username to use when connecting to Elasticsearch</div>
+                        <div>Username to use when connecting to Kibana</div>
                 </td>
             </tr>
             <tr>
@@ -254,7 +201,7 @@ Parameters
                         </ul>
                 </td>
                 <td>
-                        <div>Set whether to verify the SSL cert of the Elasticsearch cluster when connecting</div>
+                        <div>Set whether to verify the SSL cert of the Kibana cluster when connecting</div>
                         <div>Should always be True in prod</div>
                         <div style="font-size: small; color: darkgreen"><br/>aliases: verify_ssl_cert</div>
                 </td>
@@ -270,21 +217,15 @@ Examples
 
 .. code-block:: yaml
 
-    - name: Elastic User
-      expedient.elastic.elastic_user:
-        host: '{{ elastic_host }}'
+    - name: Create Agent Policy
+      expedient.elastic.elastic_agentpolicy:
+        host: '{{ kibana_endpoint }}'
         username: '{{ elastic_username }}'
         password: '{{ elastic_password }}'
         state: present
-        elastic_user: test_user
-        elastic_password: super_secret_password
-        roles:
-        - super_user
-        full_name: Test User for Example
-        email: fake_email@email.com
-        metadata:
-          fake_metadata: need_real_data_here
-        enabled: yes
+        agent_policy_name: '{{ agent_policy_name }}'
+        agent_policy_desc: '{{ agent_policy_desc }}'
+        namespace: '{{ namespace }}'
 
 
 
@@ -303,7 +244,7 @@ Common return values are documented `here <https://docs.ansible.com/ansible/late
             <tr>
                 <td colspan="1">
                     <div class="ansibleOptionAnchor" id="return-"></div>
-                    <b>msg</b>
+                    <b>agent_policy_status</b>
                     <a class="ansibleOptionLink" href="#return-" title="Permalink to this return value"></a>
                     <div style="font-size: small">
                       <span style="color: purple">string</span>
@@ -311,10 +252,10 @@ Common return values are documented `here <https://docs.ansible.com/ansible/late
                 </td>
                 <td>always</td>
                 <td>
-                            <div>Summary of changes made</div>
+                            <div>Agent policy status.</div>
                     <br/>
                         <div style="font-size: smaller"><b>Sample:</b></div>
-                        <div style="font-size: smaller; color: blue; word-wrap: break-word; word-break: break-all;">User Test exists</div>
+                        <div style="font-size: smaller; color: blue; word-wrap: break-word; word-break: break-all;">Agent Policy created</div>
                 </td>
             </tr>
     </table>
@@ -328,4 +269,4 @@ Status
 Authors
 ~~~~~~~
 
-- Mike Garuccio (@mgaruccio)
+- Ian R Scott (@ianrscottexp)

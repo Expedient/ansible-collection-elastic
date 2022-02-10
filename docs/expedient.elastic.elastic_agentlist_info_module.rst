@@ -1,11 +1,11 @@
-.. _expedient.elastic.kibana_alert_facts_module:
+.. _expedient.elastic.elastic_agentlist_info_module:
 
 
-************************************
-expedient.elastic.kibana_alert_facts
-************************************
+****************************************
+expedient.elastic.elastic_agentlist_info
+****************************************
 
-**get info on a kibana alert**
+**Returns Elastic agent list information**
 
 
 Version added: 1.0.0
@@ -17,7 +17,7 @@ Version added: 1.0.0
 
 Synopsis
 --------
-- This module gets facts about kibana alerts
+- Returns Elastic agent list information.
 
 
 
@@ -39,22 +39,6 @@ Parameters
             <th>Choices/<font color="blue">Defaults</font></th>
             <th width="100%">Comments</th>
         </tr>
-            <tr>
-                <td colspan="1">
-                    <div class="ansibleOptionAnchor" id="parameter-"></div>
-                    <b>alert_name</b>
-                    <a class="ansibleOptionLink" href="#parameter-" title="Permalink to this option"></a>
-                    <div style="font-size: small">
-                        <span style="color: purple">string</span>
-                         / <span style="color: red">required</span>
-                    </div>
-                </td>
-                <td>
-                </td>
-                <td>
-                        <div>name of the alert to create</div>
-                </td>
-            </tr>
             <tr>
                 <td colspan="1">
                     <div class="ansibleOptionAnchor" id="parameter-"></div>
@@ -151,13 +135,11 @@ Examples
 
 .. code-block:: yaml
 
-    - name: Get Elastic Info for Test Deployment
-      expedient.elastic.kibana_alert_facts:
+    - name: Agent List
+      expedient.elastic.elastic_agentlist_info:
         host: '{{ kibana_endpoint }}'
         username: '{{ elastic_username }}'
         password: '{{ elastic_password }}'
-        alert_name: test
-      delegate_to: localhost
 
 
 
@@ -176,16 +158,18 @@ Common return values are documented `here <https://docs.ansible.com/ansible/late
             <tr>
                 <td colspan="1">
                     <div class="ansibleOptionAnchor" id="return-"></div>
-                    <b>alert_config</b>
+                    <b>agent_list_status</b>
                     <a class="ansibleOptionLink" href="#return-" title="Permalink to this return value"></a>
                     <div style="font-size: small">
-                      <span style="color: purple">dictionary</span>
+                      <span style="color: purple">string</span>
                     </div>
                 </td>
                 <td>always</td>
                 <td>
-                            <div>Alert Configuration</div>
+                            <div>Agent List status.</div>
                     <br/>
+                        <div style="font-size: smaller"><b>Sample:</b></div>
+                        <div style="font-size: smaller; color: blue; word-wrap: break-word; word-break: break-all;">Getting Agent List</div>
                 </td>
             </tr>
     </table>
@@ -199,4 +183,4 @@ Status
 Authors
 ~~~~~~~
 
-- Mike Garuccio (@mgaruccio)
+- Ian R Scott (@ianrscottexp)

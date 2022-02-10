@@ -1,11 +1,11 @@
-.. _expedient.elastic.elastic_user_module:
+.. _expedient.elastic.kibana_action_module:
 
 
-******************************
-expedient.elastic.elastic_user
-******************************
+*******************************
+expedient.elastic.kibana_action
+*******************************
 
-**elastic user management**
+**Configure Kibana action**
 
 
 Version added: 1.0.0
@@ -17,8 +17,7 @@ Version added: 1.0.0
 
 Synopsis
 --------
-- This module creates or deletes users with elastic
-- Update state not yet implemented
+- Configure Kibana action.
 
 
 
@@ -43,7 +42,7 @@ Parameters
             <tr>
                 <td colspan="1">
                     <div class="ansibleOptionAnchor" id="parameter-"></div>
-                    <b>elastic_password</b>
+                    <b>action_name</b>
                     <a class="ansibleOptionLink" href="#parameter-" title="Permalink to this option"></a>
                     <div style="font-size: small">
                         <span style="color: purple">string</span>
@@ -52,73 +51,41 @@ Parameters
                 <td>
                 </td>
                 <td>
-                        <div>Password for the user</div>
-                        <div>Required when creating a new user</div>
+                        <div>Action name</div>
                 </td>
             </tr>
             <tr>
                 <td colspan="1">
                     <div class="ansibleOptionAnchor" id="parameter-"></div>
-                    <b>elastic_user</b>
+                    <b>action_type</b>
                     <a class="ansibleOptionLink" href="#parameter-" title="Permalink to this option"></a>
                     <div style="font-size: small">
                         <span style="color: purple">string</span>
-                         / <span style="color: red">required</span>
-                    </div>
-                </td>
-                <td>
-                </td>
-                <td>
-                        <div>The name of the user to create or delete</div>
-                </td>
-            </tr>
-            <tr>
-                <td colspan="1">
-                    <div class="ansibleOptionAnchor" id="parameter-"></div>
-                    <b>email</b>
-                    <a class="ansibleOptionLink" href="#parameter-" title="Permalink to this option"></a>
-                    <div style="font-size: small">
-                        <span style="color: purple">string</span>
-                    </div>
-                </td>
-                <td>
-                </td>
-                <td>
-                        <div>email address to associate with the user</div>
-                </td>
-            </tr>
-            <tr>
-                <td colspan="1">
-                    <div class="ansibleOptionAnchor" id="parameter-"></div>
-                    <b>enabled</b>
-                    <a class="ansibleOptionLink" href="#parameter-" title="Permalink to this option"></a>
-                    <div style="font-size: small">
-                        <span style="color: purple">boolean</span>
                     </div>
                 </td>
                 <td>
                         <ul style="margin: 0; padding: 0"><b>Choices:</b>
-                                    <li>no</li>
-                                    <li><div style="color: blue"><b>yes</b>&nbsp;&larr;</div></li>
+                                    <li>Email</li>
+                                    <li>Webhook</li>
                         </ul>
                 </td>
                 <td>
-                        <div>whether to enable the newly created user</div>
+                        <div>Action type</div>
                 </td>
             </tr>
             <tr>
                 <td colspan="1">
                     <div class="ansibleOptionAnchor" id="parameter-"></div>
-                    <b>full_name</b>
+                    <b>config</b>
                     <a class="ansibleOptionLink" href="#parameter-" title="Permalink to this option"></a>
                     <div style="font-size: small">
-                        <span style="color: purple">string</span>
+                        <span style="color: purple">dictionary</span>
                     </div>
                 </td>
                 <td>
                 </td>
                 <td>
-                        <div>full name of the user</div>
+                        <div>Config</div>
                 </td>
             </tr>
             <tr>
@@ -134,24 +101,7 @@ Parameters
                 <td>
                 </td>
                 <td>
-                        <div>DNS name of the the Elasticsearch instance</div>
-                </td>
-            </tr>
-            <tr>
-                <td colspan="1">
-                    <div class="ansibleOptionAnchor" id="parameter-"></div>
-                    <b>metadata</b>
-                    <a class="ansibleOptionLink" href="#parameter-" title="Permalink to this option"></a>
-                    <div style="font-size: small">
-                        <span style="color: purple">dictionary</span>
-                    </div>
-                </td>
-                <td>
-                        <b>Default:</b><br/><div style="color: blue">{}</div>
-                </td>
-                <td>
-                        <div>metadata object to associate with the user</div>
-                        <div>can contain any arbitrary key:value pairs</div>
+                        <div>DNS name of the the Kibana instance</div>
                 </td>
             </tr>
             <tr>
@@ -167,7 +117,7 @@ Parameters
                 <td>
                 </td>
                 <td>
-                        <div>Password to use when connecting to Elasticsearch</div>
+                        <div>Password to use when connecting to Kibana</div>
                 </td>
             </tr>
             <tr>
@@ -180,27 +130,25 @@ Parameters
                     </div>
                 </td>
                 <td>
-                        <b>Default:</b><br/><div style="color: blue">12443</div>
+                        <b>Default:</b><br/><div style="color: blue">9243</div>
                 </td>
                 <td>
-                        <div>Port number of the Elasticsearch instance</div>
+                        <div>Port number of the Kibana instance</div>
                 </td>
             </tr>
             <tr>
                 <td colspan="1">
                     <div class="ansibleOptionAnchor" id="parameter-"></div>
-                    <b>roles</b>
+                    <b>secrets</b>
                     <a class="ansibleOptionLink" href="#parameter-" title="Permalink to this option"></a>
                     <div style="font-size: small">
-                        <span style="color: purple">list</span>
-                         / <span style="color: purple">elements=string</span>
+                        <span style="color: purple">dictionary</span>
                     </div>
                 </td>
                 <td>
                 </td>
                 <td>
-                        <div>list of roles to assign to the user</div>
-                        <div>Required when creating a new user</div>
+                        <div>Secrets</div>
                 </td>
             </tr>
             <tr>
@@ -219,7 +167,7 @@ Parameters
                         </ul>
                 </td>
                 <td>
-                        <div>The desired state for the user</div>
+                        <div>The desired state for the module</div>
                 </td>
             </tr>
             <tr>
@@ -235,7 +183,7 @@ Parameters
                 <td>
                 </td>
                 <td>
-                        <div>Username to use when connecting to Elasticsearch</div>
+                        <div>Username to use when connecting to Kibana</div>
                 </td>
             </tr>
             <tr>
@@ -254,7 +202,7 @@ Parameters
                         </ul>
                 </td>
                 <td>
-                        <div>Set whether to verify the SSL cert of the Elasticsearch cluster when connecting</div>
+                        <div>Set whether to verify the SSL cert of the Kibana cluster when connecting</div>
                         <div>Should always be True in prod</div>
                         <div style="font-size: small; color: darkgreen"><br/>aliases: verify_ssl_cert</div>
                 </td>
@@ -270,21 +218,34 @@ Examples
 
 .. code-block:: yaml
 
-    - name: Elastic User
-      expedient.elastic.elastic_user:
-        host: '{{ elastic_host }}'
+    - name: Create Alert action
+      expedient.elastic.kibana_action:
+        host: '{{ kibana_endpoint }}'
         username: '{{ elastic_username }}'
         password: '{{ elastic_password }}'
         state: present
-        elastic_user: test_user
-        elastic_password: super_secret_password
-        roles:
-        - super_user
-        full_name: Test User for Example
-        email: fake_email@email.com
-        metadata:
-          fake_metadata: need_real_data_here
-        enabled: yes
+        action_name: Alert
+        action_type: Webhook
+        config:
+        method: post
+        auth: no
+        url: '{{ alert_mgr_url }}/alert/{{ client_id }}'
+        headers:
+          Content-Type: application/json
+    - name: Create Heartbeat Alert action
+      expedient.elastic.kibana_action:
+        host: '{{ kibana_endpoint }}'
+        username: '{{ elastic_username }}'
+        password: '{{ elastic_password }}'
+        state: present
+        action_name: Heatbeat Alert
+        action_type: Webhook
+        config:
+        method: post
+        auth: no
+        url: '{{ alert_mgr_url }}/elastic-alert'
+        headers:
+          Content-Type: application/json
 
 
 
@@ -314,7 +275,7 @@ Common return values are documented `here <https://docs.ansible.com/ansible/late
                             <div>Summary of changes made</div>
                     <br/>
                         <div style="font-size: smaller"><b>Sample:</b></div>
-                        <div style="font-size: smaller; color: blue; word-wrap: break-word; word-break: break-all;">User Test exists</div>
+                        <div style="font-size: smaller; color: blue; word-wrap: break-word; word-break: break-all;">action named Test-name will be created</div>
                 </td>
             </tr>
     </table>
@@ -329,3 +290,4 @@ Authors
 ~~~~~~~
 
 - Mike Garuccio (@mgaruccio)
+- Ian R Scott (@ianrscottexp)

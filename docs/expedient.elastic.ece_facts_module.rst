@@ -1,11 +1,11 @@
-.. _expedient.elastic.kibana_alert_facts_module:
+.. _expedient.elastic.ece_facts_module:
 
 
-************************************
-expedient.elastic.kibana_alert_facts
-************************************
+***************************
+expedient.elastic.ece_facts
+***************************
 
-**get info on a kibana alert**
+**Return ECE cluster information for all clusters**
 
 
 Version added: 1.0.0
@@ -17,7 +17,7 @@ Version added: 1.0.0
 
 Synopsis
 --------
-- This module gets facts about kibana alerts
+- Return ECE cluster information for all clusters.
 
 
 
@@ -42,22 +42,6 @@ Parameters
             <tr>
                 <td colspan="1">
                     <div class="ansibleOptionAnchor" id="parameter-"></div>
-                    <b>alert_name</b>
-                    <a class="ansibleOptionLink" href="#parameter-" title="Permalink to this option"></a>
-                    <div style="font-size: small">
-                        <span style="color: purple">string</span>
-                         / <span style="color: red">required</span>
-                    </div>
-                </td>
-                <td>
-                </td>
-                <td>
-                        <div>name of the alert to create</div>
-                </td>
-            </tr>
-            <tr>
-                <td colspan="1">
-                    <div class="ansibleOptionAnchor" id="parameter-"></div>
                     <b>host</b>
                     <a class="ansibleOptionLink" href="#parameter-" title="Permalink to this option"></a>
                     <div style="font-size: small">
@@ -68,7 +52,7 @@ Parameters
                 <td>
                 </td>
                 <td>
-                        <div>DNS name of the the Kibana instance</div>
+                        <div>DNS name of the ECE cluster&#x27;s admin console</div>
                 </td>
             </tr>
             <tr>
@@ -84,7 +68,7 @@ Parameters
                 <td>
                 </td>
                 <td>
-                        <div>Password to use when connecting to Kibana</div>
+                        <div>Password to use when connecting to ECE</div>
                 </td>
             </tr>
             <tr>
@@ -97,10 +81,10 @@ Parameters
                     </div>
                 </td>
                 <td>
-                        <b>Default:</b><br/><div style="color: blue">9243</div>
+                        <b>Default:</b><br/><div style="color: blue">12443</div>
                 </td>
                 <td>
-                        <div>Port number of the Kibana instance</div>
+                        <div>Port number of ECE cluster admin console</div>
                 </td>
             </tr>
             <tr>
@@ -116,7 +100,7 @@ Parameters
                 <td>
                 </td>
                 <td>
-                        <div>Username to use when connecting to Kibana</div>
+                        <div>Username to use when connecting to ECE</div>
                 </td>
             </tr>
             <tr>
@@ -135,7 +119,7 @@ Parameters
                         </ul>
                 </td>
                 <td>
-                        <div>Set whether to verify the SSL cert of the Kibana cluster when connecting</div>
+                        <div>Set whether to verify the SSL cert of the ECE cluster when connecting</div>
                         <div>Should always be True in prod</div>
                         <div style="font-size: small; color: darkgreen"><br/>aliases: verify_ssl_cert</div>
                 </td>
@@ -151,12 +135,11 @@ Examples
 
 .. code-block:: yaml
 
-    - name: Get Elastic Info for Test Deployment
-      expedient.elastic.kibana_alert_facts:
-        host: '{{ kibana_endpoint }}'
+    - name: Get Elastic Facts
+      expedient.elastic.ece_facts:
+        host: '{{ ece_host }}'
         username: '{{ elastic_username }}'
         password: '{{ elastic_password }}'
-        alert_name: test
       delegate_to: localhost
 
 
@@ -176,7 +159,7 @@ Common return values are documented `here <https://docs.ansible.com/ansible/late
             <tr>
                 <td colspan="1">
                     <div class="ansibleOptionAnchor" id="return-"></div>
-                    <b>alert_config</b>
+                    <b>clusters</b>
                     <a class="ansibleOptionLink" href="#return-" title="Permalink to this return value"></a>
                     <div style="font-size: small">
                       <span style="color: purple">dictionary</span>
@@ -184,7 +167,7 @@ Common return values are documented `here <https://docs.ansible.com/ansible/late
                 </td>
                 <td>always</td>
                 <td>
-                            <div>Alert Configuration</div>
+                            <div>Clusters info</div>
                     <br/>
                 </td>
             </tr>

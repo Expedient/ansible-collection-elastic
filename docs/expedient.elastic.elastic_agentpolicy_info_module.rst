@@ -1,11 +1,11 @@
-.. _expedient.elastic.kibana_alert_facts_module:
+.. _expedient.elastic.elastic_agentpolicy_info_module:
 
 
-************************************
-expedient.elastic.kibana_alert_facts
-************************************
+******************************************
+expedient.elastic.elastic_agentpolicy_info
+******************************************
 
-**get info on a kibana alert**
+**Returns Elastic agent policy information by id or name**
 
 
 Version added: 1.0.0
@@ -17,7 +17,7 @@ Version added: 1.0.0
 
 Synopsis
 --------
-- This module gets facts about kibana alerts
+- Returns Elastic agent policy information by id or name.
 
 
 
@@ -42,17 +42,33 @@ Parameters
             <tr>
                 <td colspan="1">
                     <div class="ansibleOptionAnchor" id="parameter-"></div>
-                    <b>alert_name</b>
+                    <b>agent_policy_id</b>
                     <a class="ansibleOptionLink" href="#parameter-" title="Permalink to this option"></a>
                     <div style="font-size: small">
                         <span style="color: purple">string</span>
-                         / <span style="color: red">required</span>
                     </div>
                 </td>
                 <td>
                 </td>
                 <td>
-                        <div>name of the alert to create</div>
+                        <div>The id of the agent policy to return</div>
+                        <div>Required if <code>agent_policy_name</code> is not provided</div>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="1">
+                    <div class="ansibleOptionAnchor" id="parameter-"></div>
+                    <b>agent_policy_name</b>
+                    <a class="ansibleOptionLink" href="#parameter-" title="Permalink to this option"></a>
+                    <div style="font-size: small">
+                        <span style="color: purple">string</span>
+                    </div>
+                </td>
+                <td>
+                </td>
+                <td>
+                        <div>The name of the agent policy to return</div>
+                        <div>Required if <code>agent_policy_id</code> is not provided</div>
                 </td>
             </tr>
             <tr>
@@ -151,13 +167,18 @@ Examples
 
 .. code-block:: yaml
 
-    - name: Get Elastic Info for Test Deployment
-      expedient.elastic.kibana_alert_facts:
+    - name: Get Agent Policy by Name
+      expedient.elastic.elastic_agentpolicy_info:
         host: '{{ kibana_endpoint }}'
         username: '{{ elastic_username }}'
         password: '{{ elastic_password }}'
-        alert_name: test
-      delegate_to: localhost
+        agent_policy_name: '{{ agent_policy_name }}'
+    - name: Get Agent Policy by ID
+      expedient.elastic.elastic_agentpolicy_info:
+        host: '{{ kibana_endpoint }}'
+        username: '{{ elastic_username }}'
+        password: '{{ elastic_password }}'
+        agent_policy_id: '{{ agent_policy_id }}'
 
 
 
@@ -176,16 +197,18 @@ Common return values are documented `here <https://docs.ansible.com/ansible/late
             <tr>
                 <td colspan="1">
                     <div class="ansibleOptionAnchor" id="return-"></div>
-                    <b>alert_config</b>
+                    <b>agent_policy_status</b>
                     <a class="ansibleOptionLink" href="#return-" title="Permalink to this return value"></a>
                     <div style="font-size: small">
-                      <span style="color: purple">dictionary</span>
+                      <span style="color: purple">string</span>
                     </div>
                 </td>
                 <td>always</td>
                 <td>
-                            <div>Alert Configuration</div>
+                            <div>Agent policy status.</div>
                     <br/>
+                        <div style="font-size: smaller"><b>Sample:</b></div>
+                        <div style="font-size: smaller; color: blue; word-wrap: break-word; word-break: break-all;">Agent Policy found.</div>
                 </td>
             </tr>
     </table>
@@ -199,4 +222,4 @@ Status
 Authors
 ~~~~~~~
 
-- Mike Garuccio (@mgaruccio)
+- Ian R Scott (@ianrscottexp)

@@ -1,11 +1,11 @@
-.. _expedient.elastic.elastic_user_module:
+.. _expedient.elastic.elastic_role_mapping_module:
 
 
-******************************
-expedient.elastic.elastic_user
-******************************
+**************************************
+expedient.elastic.elastic_role_mapping
+**************************************
 
-**elastic user management**
+**Elastic role mapping**
 
 
 Version added: 1.0.0
@@ -17,8 +17,7 @@ Version added: 1.0.0
 
 Synopsis
 --------
-- This module creates or deletes users with elastic
-- Update state not yet implemented
+- Elastic role mapping.
 
 
 
@@ -43,53 +42,6 @@ Parameters
             <tr>
                 <td colspan="1">
                     <div class="ansibleOptionAnchor" id="parameter-"></div>
-                    <b>elastic_password</b>
-                    <a class="ansibleOptionLink" href="#parameter-" title="Permalink to this option"></a>
-                    <div style="font-size: small">
-                        <span style="color: purple">string</span>
-                    </div>
-                </td>
-                <td>
-                </td>
-                <td>
-                        <div>Password for the user</div>
-                        <div>Required when creating a new user</div>
-                </td>
-            </tr>
-            <tr>
-                <td colspan="1">
-                    <div class="ansibleOptionAnchor" id="parameter-"></div>
-                    <b>elastic_user</b>
-                    <a class="ansibleOptionLink" href="#parameter-" title="Permalink to this option"></a>
-                    <div style="font-size: small">
-                        <span style="color: purple">string</span>
-                         / <span style="color: red">required</span>
-                    </div>
-                </td>
-                <td>
-                </td>
-                <td>
-                        <div>The name of the user to create or delete</div>
-                </td>
-            </tr>
-            <tr>
-                <td colspan="1">
-                    <div class="ansibleOptionAnchor" id="parameter-"></div>
-                    <b>email</b>
-                    <a class="ansibleOptionLink" href="#parameter-" title="Permalink to this option"></a>
-                    <div style="font-size: small">
-                        <span style="color: purple">string</span>
-                    </div>
-                </td>
-                <td>
-                </td>
-                <td>
-                        <div>email address to associate with the user</div>
-                </td>
-            </tr>
-            <tr>
-                <td colspan="1">
-                    <div class="ansibleOptionAnchor" id="parameter-"></div>
                     <b>enabled</b>
                     <a class="ansibleOptionLink" href="#parameter-" title="Permalink to this option"></a>
                     <div style="font-size: small">
@@ -103,22 +55,7 @@ Parameters
                         </ul>
                 </td>
                 <td>
-                        <div>whether to enable the newly created user</div>
-                </td>
-            </tr>
-            <tr>
-                <td colspan="1">
-                    <div class="ansibleOptionAnchor" id="parameter-"></div>
-                    <b>full_name</b>
-                    <a class="ansibleOptionLink" href="#parameter-" title="Permalink to this option"></a>
-                    <div style="font-size: small">
-                        <span style="color: purple">string</span>
-                    </div>
-                </td>
-                <td>
-                </td>
-                <td>
-                        <div>full name of the user</div>
+                        <div>Role mapping enabled</div>
                 </td>
             </tr>
             <tr>
@@ -147,11 +84,25 @@ Parameters
                     </div>
                 </td>
                 <td>
-                        <b>Default:</b><br/><div style="color: blue">{}</div>
                 </td>
                 <td>
-                        <div>metadata object to associate with the user</div>
-                        <div>can contain any arbitrary key:value pairs</div>
+                        <div>Metadata</div>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="1">
+                    <div class="ansibleOptionAnchor" id="parameter-"></div>
+                    <b>name</b>
+                    <a class="ansibleOptionLink" href="#parameter-" title="Permalink to this option"></a>
+                    <div style="font-size: small">
+                        <span style="color: purple">string</span>
+                         / <span style="color: red">required</span>
+                    </div>
+                </td>
+                <td>
+                </td>
+                <td>
+                        <div>Name of the role mapping</div>
                 </td>
             </tr>
             <tr>
@@ -194,13 +145,29 @@ Parameters
                     <div style="font-size: small">
                         <span style="color: purple">list</span>
                          / <span style="color: purple">elements=string</span>
+                         / <span style="color: red">required</span>
                     </div>
                 </td>
                 <td>
                 </td>
                 <td>
-                        <div>list of roles to assign to the user</div>
-                        <div>Required when creating a new user</div>
+                        <div>Roles</div>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="1">
+                    <div class="ansibleOptionAnchor" id="parameter-"></div>
+                    <b>rules</b>
+                    <a class="ansibleOptionLink" href="#parameter-" title="Permalink to this option"></a>
+                    <div style="font-size: small">
+                        <span style="color: purple">dictionary</span>
+                         / <span style="color: red">required</span>
+                    </div>
+                </td>
+                <td>
+                </td>
+                <td>
+                        <div>Rules</div>
                 </td>
             </tr>
             <tr>
@@ -215,11 +182,10 @@ Parameters
                 <td>
                         <ul style="margin: 0; padding: 0"><b>Choices:</b>
                                     <li><div style="color: blue"><b>present</b>&nbsp;&larr;</div></li>
-                                    <li>absent</li>
                         </ul>
                 </td>
                 <td>
-                        <div>The desired state for the user</div>
+                        <div>The desired state for the module</div>
                 </td>
             </tr>
             <tr>
@@ -270,21 +236,20 @@ Examples
 
 .. code-block:: yaml
 
-    - name: Elastic User
-      expedient.elastic.elastic_user:
+    - name: Elastic Role Mapping
+      expedient.elastic.elastic_role_mapping:
         host: '{{ elastic_host }}'
         username: '{{ elastic_username }}'
         password: '{{ elastic_password }}'
         state: present
-        elastic_user: test_user
-        elastic_password: super_secret_password
-        roles:
-        - super_user
-        full_name: Test User for Example
-        email: fake_email@email.com
-        metadata:
-          fake_metadata: need_real_data_here
+        name: Example
         enabled: yes
+        roles:
+        - example_list
+        rules:
+          example_rule: need_real_data_here
+        metadata:
+          example_metadata: need_real_data_here
 
 
 
@@ -314,7 +279,7 @@ Common return values are documented `here <https://docs.ansible.com/ansible/late
                             <div>Summary of changes made</div>
                     <br/>
                         <div style="font-size: smaller"><b>Sample:</b></div>
-                        <div style="font-size: smaller; color: blue; word-wrap: break-word; word-break: break-all;">User Test exists</div>
+                        <div style="font-size: smaller; color: blue; word-wrap: break-word; word-break: break-all;">role mapping test exists</div>
                 </td>
             </tr>
     </table>
@@ -328,4 +293,4 @@ Status
 Authors
 ~~~~~~~
 
-- Mike Garuccio (@mgaruccio)
+- Ian R Scott (@ianrscottexp)
