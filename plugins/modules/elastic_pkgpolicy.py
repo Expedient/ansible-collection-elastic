@@ -98,7 +98,7 @@ def main():
         'title': integration_title,
         'version': integration_ver
       }
-    elif not integration_object and not ( integration_name and integration_ver and integration_name):
+    elif not integration_object and not ( integration_title and integration_ver and integration_name):
       results['integration_status'] = 'Integration Title is not valid and integration name and integration version are not found'
       results['changed'] = False
       module.exit_json(**results) 
