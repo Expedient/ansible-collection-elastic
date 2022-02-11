@@ -35,35 +35,33 @@ def main():
         username=dict(type='str', required=True),
         password=dict(type='str', no_log=True, required=True),   
         verify_ssl_cert=dict(type='bool', default=True),
-        integration_title=dict(type='str', required=True)
+        state=dict(type='str', default='present'),
+        active=dict(type='bool', default=True),
+        security_rule_name=dict(type='str')
     )
     argument_dependencies = []
         #('state', 'present', ('enabled', 'alert_type', 'conditions', 'actions')),
         #('alert-type', 'metrics_threshold', ('conditions'))
     
     module = AnsibleModule(argument_spec=module_args, supports_check_mode=True)
-
-    results['changed'] = False
     
-    integration_title = module.params.get('integration_title')
-  
-    kibana = Kibana(module)
-      
-    integration_object = kibana.check_integration(integration_title)
+    state = module.params.get('state')
+    security_rule_name = module.params.get('security_rule_name')
+    active = module.params.get('active')
     
-    if not integration_object:
-      results['integration_status'] = 'Integration name is not a valid'
-      results['changed'] = False
-      module.exit_json(**results)
-    
-    if integration_object:
-      results['integration_status'] = "Integration Package found"
-      results['integration_object'] = integration_object
+    if module.check_mode:
+        results['changed'] = False
     else:
-      results['integration_status'] = "Integration Package NOT found"
-    
-    results['integration_object'] = integration_object
-    
+        results['changed'] = True
+
+    kibana = Kibana(module)
+    if state == "present":
+      if active == True:
+        sec_rule_info = kibana.activate_security_rule(security_rule_name)
+        if sec_rule_info == security_rule_name + ': Rule is already enabled':
+          results['changed'] = False
+    results['sec_rule_info'] = sec_rule_info
+      
     module.exit_json(**results)
 
 if __name__ == "__main__":

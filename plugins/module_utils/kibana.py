@@ -167,21 +167,21 @@ class Kibana(object):
         integration_install = "Cannot proceed with check_mode set to " + self.module.check_mode
       return integration_install
   
-  def check_integration(self, integration_name):
+  def check_integration(self, integration_title):
       integration_objects = self.get_integrations()
-      integration_response = None
+      integration_detail_object = None
       for integration in integration_objects['response']:
-        if integration['title'].upper() in integration_name.upper():
+        if integration['title'].upper() in integration_title.upper():
           if integration['status'] != 'installed':
             integration_install = self.install_integration(integration['name'],integration['version'])
           integration_detail_object = self.get_integration(integration['name'],integration['version'])
-          integration_response = integration_detail_object['response']
           break
-      return integration_response
+      return integration_detail_object
   
   def get_integration(self, integration_name, version):
       endpoint  = 'fleet/epm/packages/' + integration_name + "-" + version
       integration_object = self.send_api_request(endpoint, 'GET')
+      integration_object = integration_object['response']
       return integration_object
     
   # Elastic Integration Package Policy functions
