@@ -35,7 +35,7 @@ def main():
         username=dict(type='str', required=True),
         password=dict(type='str', no_log=True, required=True),   
         verify_ssl_cert=dict(type='bool', default=True),
-        integration_title=dict(type='str', required=True)
+        integration_name=dict(type='str', required=True)
     )
     argument_dependencies = []
         #('state', 'present', ('enabled', 'alert_type', 'conditions', 'actions')),
@@ -45,16 +45,18 @@ def main():
 
     results['changed'] = False
     
-    integration_title = module.params.get('integration_title')
-  
+    integration_name = module.params.get('integration_name')
+    
     kibana = Kibana(module)
       
-    integration_object = kibana.check_integration(integration_title)
+    integration_object = kibana.check_integration(integration_name)
     
     if not integration_object:
       results['integration_status'] = 'Integration name is not a valid'
       results['changed'] = False
       module.exit_json(**results)
+    
+    integration_object = kibana.check_integration(integration_name)
     
     if integration_object:
       results['integration_status'] = "Integration Package found"
