@@ -122,20 +122,10 @@ def main():
       
       integration_settings_json = integration_settings
       results['passed_integration_settings'] = integration_settings_json
-      if not 'name' in integration_settings_json:
-        integration_settings_json['name'] = pkg_policy_object['name']
-      if not 'policy_id' in integration_settings_json:
-        integration_settings_json['policy_id'] = pkg_policy_object['policy_id']
-      if not 'enabled' in integration_settings_json:
-        integration_settings_json['enabled'] = pkg_policy_object['enabled']
-      if not 'namespace' in integration_settings_json:
-        integration_settings_json['namespace'] = pkg_policy_object['namespace']
-      if not 'package' in integration_settings_json:
-        integration_settings_json['package'] = pkg_policy_object['package']
-      if not 'output_id' in integration_settings_json:
-        integration_settings_json['output_id'] = pkg_policy_object['output_id']
-      if not 'inputs' in integration_settings_json:
-        integration_settings_json['inputs'] = pkg_policy_object['inputs']
+      for current_setting in ['name', 'policy_id', 'enabled', 'namespace', 'package', 'output_id', 'inputs']:
+        if current_setting not in integration_settings_json:
+          integration_settings_json[current_setting] = pkg_policy_object[current_setting]
+
       pkg_policy_info = kibana.update_pkg_policy(pkg_policy_object_id,integration_settings_json)
 
       
