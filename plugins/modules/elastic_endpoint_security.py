@@ -88,6 +88,8 @@ def main():
         verify_ssl_cert=dict(type='bool', default=True),
         agent_policy_id=dict(type='str'),
         agent_policy_name=dict(type='str'),
+        integration_title=dict(type='str', required=True),
+        integration_ver=dict(type='str', required=True),
         integration_name=dict(type='str', required=True),
         pkg_policy_name=dict(type='str', required=True),
         pkg_policy_desc=dict(type='str'),
@@ -102,17 +104,20 @@ def main():
     
     module = AnsibleModule(argument_spec=module_args, supports_check_mode=True,
                             mutually_exclusive=[('agent_policy_name', 'agent_policy_id')],
-                            required_one_of=[('agent_policy_name', 'agent_policy_id')])
+                            required_one_of=[('agent_policy_name', 'agent_policy_id')],
+                            required_together=[('integration_ver','integration_name')])
     
     state = module.params.get('state')
     agent_policy_name = module.params.get('agent_policy_name')
     agent_policy_id = module.params.get('agent_policy_id')
+    integration_title = module.params.get('integration_title')
+    integration_ver = module.params.get('integration_ver')
     integration_name = module.params.get('integration_name')
     pkg_policy_name = module.params.get('pkg_policy_name')
     pkg_policy_desc = module.params.get('pkg_policy_desc')
     namespace = module.params.get('namespace')
     integration_settings = module.params.get('integration_settings')
-    
+
     if module.check_mode:
         results['changed'] = False
     else:
@@ -132,20 +137,27 @@ def main():
       results['changed'] = False
       module.exit_json(**results)
     
-    if module.params.get('integration_name'):
-      integration_object = kibana.check_integration(integration_name)
+    if module.params.get('integration_title'):
+      integration_object = kibana.check_integration(integration_title)
     else:
-      results['integration_status'] = "No Integration Name provided to get the integration object"
+      results['integration_status'] = "No Integration Title provided to get the integration object"
       results['changed'] = False
       module.exit_json(**results)
     
-    if not integration_object:
-      results['integration_status'] = 'Integration name is not valid'
+    if ( integration_name and integration_ver and integration_name) and not integration_object:
+      results['integration_status'] = "No integration found, but Integration Name, Version, and Title found"
+      integration_object = {
+        'name': integration_name,
+        'title': integration_title,
+        'version': integration_ver
+      }
+    elif not integration_object and not ( integration_name and integration_ver and integration_name):
+      results['integration_status'] = 'Integration Title is not valid and integration name and integration version are not found'
       results['changed'] = False
-      module.exit_json(**results)
+      module.exit_json(**results)      
     
     if state == "present":
-      pkg_policy_object = kibana.get_pkg_policy(integration_name,agent_policy_id)
+      pkg_policy_object = kibana.get_pkg_policy(integration_title, agent_policy_id)
       if pkg_policy_object:
         results['pkg_policy_status'] = "Integration Package found, No package created"
         results['changed'] = False
