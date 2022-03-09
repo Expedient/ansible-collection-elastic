@@ -151,7 +151,7 @@ class Kibana(object):
   # Elastic Integration functions
 
   def get_integrations(self):
-      endpoint  = 'fleet/epm/packages'
+      endpoint  = 'fleet/epm/packages?experimental=true '
       integration_objects = self.send_api_request(endpoint, 'GET')
       return integration_objects
   
