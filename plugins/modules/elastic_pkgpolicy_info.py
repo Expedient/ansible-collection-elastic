@@ -37,7 +37,7 @@ def main():
         verify_ssl_cert=dict(type='bool', default=True),
         agent_policy_name=dict(type='str'),
         agent_policy_id=dict(type='str'),
-        integration_name=dict(type='str', required=True)
+        integration_title=dict(type='str', required=True)
     )
     argument_dependencies = []
         #('state', 'present', ('enabled', 'alert_type', 'conditions', 'actions')),
@@ -51,7 +51,7 @@ def main():
     
     agent_policy_name = module.params.get('agent_policy_name')
     agent_policy_id = module.params.get('agent_policy_id')
-    integration_name = module.params.get('integration_name')
+    integration_title = module.params.get('integration_title')
     
     kibana = Kibana(module)
 
@@ -67,8 +67,8 @@ def main():
       results['changed'] = False
       module.exit_json(**results)
       
-    if integration_name:
-      integration_object = kibana.check_integration(integration_name)
+    if integration_title:
+      integration_object = kibana.check_integration(integration_title)
     else:
       results['integration_status'] = "No Integration Name provided to get the integration object"
       results['changed'] = False
@@ -79,7 +79,7 @@ def main():
       results['changed'] = False
       module.exit_json(**results)
     
-    pkg_policy_object = kibana.get_pkg_policy(integration_name, agent_policy_id)
+    pkg_policy_object = kibana.get_pkg_policy(integration_title, agent_policy_id)
     
     if pkg_policy_object:
       results['pkg_policy_status'] = "Integration Package found"
