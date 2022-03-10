@@ -69,6 +69,13 @@ def main():
         agent_policy_object = kibana.create_agent_policy(agent_policy_id, agent_policy_name, agent_policy_desc, namespace)
         results['agent_policy_status'] = "Agent Policy created"
       results['agent_policy_object'] = agent_policy_object
+    elif state == "absent":
+      agent_policy_object = kibana.delete_agent_policy(None, agent_policy_name)
+      results['agent_policy_object'] = agent_policy_object
+      if agent_policy_object:
+        results['agent_policy_status'] = "Agent Policy deleted"
+      else:
+        results['agent_policy_status'] = "Agent Policy not found"
     else:
       results['agent_policy_status'] = "A valid state was not passed"
     
