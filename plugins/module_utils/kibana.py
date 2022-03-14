@@ -146,12 +146,12 @@ class Kibana(object):
         #page_number = page_number + 1
         #rules = self.get_security_rules(page_size,page_number)
         #allrules = rules['data']
-    return rule['name'] + ": Rule not found"
+    return rule_name + ": Rule not found"
 
   # Elastic Integration functions
 
   def get_integrations(self):
-      endpoint  = 'fleet/epm/packages'
+      endpoint  = 'fleet/epm/packages?experimental=true'
       integration_objects = self.send_api_request(endpoint, 'GET')
       return integration_objects
   
@@ -360,6 +360,22 @@ class Kibana(object):
     endpoint  = 'fleet/agent_policies/' + agent_policy_id
     agent_policy_object = self.send_api_request(endpoint, 'GET')
     return agent_policy_object['item']
+  
+  def delete_agent_policy(self, agent_policy_id = None, agent_policy_name = None):
+    if agent_policy_id:
+      agent_policy_object = self.get_agent_policy_byid(agent_policy_id)
+    else:
+      agent_policy_object = self.get_agent_policy_byname(agent_policy_name)
+    if agent_policy_object:
+      body = {
+        'agentPolicyId': str(agent_policy_object['id'])
+      }
+      body_JSON = dumps(body)
+      endpoint = 'fleet/agent_policies/delete'
+      agent_policy_object = self.send_api_request(endpoint, 'POST', body_JSON)
+    else:
+      agent_policy_object = ""
+    return agent_policy_object
 
 # Elastic Agent functions
 
