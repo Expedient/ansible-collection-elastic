@@ -146,7 +146,7 @@ class Kibana(object):
         #page_number = page_number + 1
         #rules = self.get_security_rules(page_size,page_number)
         #allrules = rules['data']
-    return rule['name'] + ": Rule not found"
+    return rule_name + ": Rule not found"
 
   # Elastic Integration functions
 
