@@ -14,14 +14,13 @@
 # limitations under the License.
 
 from ansible.module_utils.basic import _ANSIBLE_ARGS, AnsibleModule
-#from ansible.module_utils.basic import *
 
 try:
   from ansible_collections.expedient.elastic.plugins.module_utils.kibana import Kibana
 except:
   import sys
   import os
-  util_path = new_path = f'{os.getcwd()}/plugins/module_utils'
+  util_path = f'{os.getcwd()}/plugins/module_utils'
   sys.path.append(util_path)
   from kibana import Kibana
 

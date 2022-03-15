@@ -14,7 +14,6 @@
 # limitations under the License.
 
 from ansible.module_utils.basic import _ANSIBLE_ARGS, AnsibleModule
-import json
 
 try:
   from ansible_collections.expedient.elastic.plugins.module_utils.kibana import Kibana
@@ -27,9 +26,9 @@ except:
 
 results = {}
                 
+import json
+
 def main():
-
-
 
     module_args=dict(    
         host=dict(type='str',required=True),
