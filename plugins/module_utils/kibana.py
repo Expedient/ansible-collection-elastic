@@ -216,12 +216,12 @@ class Kibana(object):
     pkg_policy_objects = self.get_all_pkg_policies()
     pkg_policy_object = ""
     for pkgPolicy in pkg_policy_objects['items']:
-      if pkgPolicy['package']['title'].upper() == integration_name.upper() and pkgPolicy['policy_id'] == agent_policy_id:
+      if pkgPolicy['package']['title'].upper() == integration_name.upper():# and pkgPolicy['policy_id'] == agent_policy_id:
         pkg_policy_object = pkgPolicy
-        continue
+        break
     return pkg_policy_object
   
-  def create_pkg_policy(self,pkg_policy_name, pkg_policy_desc, agent_policy_id, integration_object, namespace="default"):
+  def create_pkg_policy(self,pkg_policy_name, pkg_policy_desc, agent_policy_id, integration_object=None, namespace="default"):
     pkg_policy_object = self.get_pkg_policy(integration_object['name'],agent_policy_id)
     inputs_body = []
     if 'policy_templates' in integration_object:
@@ -292,6 +292,7 @@ class Kibana(object):
         pkg_policy_object = self.send_api_request(endpoint, 'POST', data=body_JSON)
       else:
         pkg_policy_object = "Cannot proceed with check_mode set to " + self.module.check_mode
+      
     return pkg_policy_object
 
   def toggle_pkg_policy_input_onoff(self, pkg_policy_object, type, onoff):

@@ -20,7 +20,7 @@ try:
 except:
   import sys
   import os
-  util_path = f'{os.getcwd()}/plugins/module_utils'
+  util_path = new_path = f'{os.getcwd()}/plugins/module_utils'
   sys.path.append(util_path)
   from kibana import Kibana
 
