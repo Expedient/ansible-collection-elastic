@@ -35,51 +35,20 @@ def main():
         username=dict(type='str', required=True),
         password=dict(type='str', no_log=True, required=True),   
         verify_ssl_cert=dict(type='bool', default=True),
-        agent_policy_name=dict(type='str'),
-        agent_policy_id=dict(type='str'),
-        integration_title=dict(type='str', required=True)
+        pkg_policy_name=dict(type='str')
     )
     argument_dependencies = []
         #('state', 'present', ('enabled', 'alert_type', 'conditions', 'actions')),
         #('alert-type', 'metrics_threshold', ('conditions'))
     
-    module = AnsibleModule(argument_spec=module_args, supports_check_mode=True,
-                            mutually_exclusive=[('agent_policy_name', 'agent_policy_id')],
-                            required_one_of=[('agent_policy_name', 'agent_policy_id')])
+    module = AnsibleModule(argument_spec=module_args, supports_check_mode=True)
 
     results['changed'] = False
     
-    agent_policy_name = module.params.get('agent_policy_name')
-    agent_policy_id = module.params.get('agent_policy_id')
-    integration_title = module.params.get('integration_title')
-    
     kibana = Kibana(module)
-
-    if module.params.get('agent_policy_id'):
-      agency_policy_object = kibana.get_agent_policy_byid(agent_policy_id)
-    else:
-      agency_policy_object = kibana.get_agent_policy_byname(agent_policy_name)
-    try:
-      agent_policy_id = agency_policy_object['id']
-      results['agent_policy_status'] = "Agent Policy found."
-    except:
-      results['agent_policy_status'] = "Agent Policy was not found. Cannot continue without valid Agent Policy Name or ID"
-      results['changed'] = False
-      module.exit_json(**results)
-      
-    if integration_title:
-      integration_object = kibana.check_integration(integration_title)
-    else:
-      results['integration_status'] = "No Integration Name provided to get the integration object"
-      results['changed'] = False
-      module.exit_json(**results)
+    pkg_policy_name = module.params.get('pkg_policy_name')
     
-    if not integration_object:
-      results['integration_status'] = 'Integration name is not a valid'
-      results['changed'] = False
-      module.exit_json(**results)
-    
-    pkg_policy_object = kibana.get_pkg_policy(integration_title, agent_policy_id)
+    pkg_policy_object = kibana.get_pkg_policy(pkg_policy_name)
     
     if pkg_policy_object:
       results['pkg_policy_status'] = "Integration Package found"

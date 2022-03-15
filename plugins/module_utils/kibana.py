@@ -212,11 +212,11 @@ class Kibana(object):
         pkg_policy_update = "Cannot proceed with check_mode set to " + self.module.check_mode
       return pkg_policy_update
   
-  def get_pkg_policy(self,integration_name, agent_policy_id):
+  def get_pkg_policy(self,pkg_policy_name):
     pkg_policy_objects = self.get_all_pkg_policies()
     pkg_policy_object = ""
     for pkgPolicy in pkg_policy_objects['items']:
-      if pkgPolicy['package']['title'].upper() == integration_name.upper():# and pkgPolicy['policy_id'] == agent_policy_id:
+      if pkgPolicy['name'].upper() == pkg_policy_name.upper():
         pkg_policy_object = pkgPolicy
         break
     return pkg_policy_object
