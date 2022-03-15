@@ -221,8 +221,8 @@ class Kibana(object):
         break
     return pkg_policy_object
   
-  def create_pkg_policy(self,pkg_policy_name, pkg_policy_desc, agent_policy_id, integration_object=None, namespace="default"):
-    pkg_policy_object = self.get_pkg_policy(integration_object['name'],agent_policy_id)
+  def create_pkg_policy(self,pkg_policy_name, pkg_policy_desc, agent_policy_id, integration_object, namespace="default"):
+    pkg_policy_object = self.get_pkg_policy(pkg_policy_name)
     inputs_body = []
     if 'policy_templates' in integration_object:
       for policy_template in integration_object['policy_templates']:
