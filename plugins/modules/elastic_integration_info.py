@@ -14,7 +14,6 @@
 # limitations under the License.
 
 from ansible.module_utils.basic import _ANSIBLE_ARGS, AnsibleModule
-#from ansible.module_utils.basic import *
 
 try:
   from ansible_collections.expedient.elastic.plugins.module_utils.kibana import Kibana

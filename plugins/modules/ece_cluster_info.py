@@ -14,9 +14,6 @@
 # limitations under the License.
 
 from ansible.module_utils.basic import AnsibleModule
-#from ansible.module_utils.basic import *
-
-import json
 
 try:
   from ansible_collections.expedient.elastic.plugins.module_utils.ece import ECE
@@ -26,6 +23,8 @@ except:
   util_path = new_path = f'{os.getcwd()}/plugins/module_utils'
   sys.path.append(util_path)
   from ece import ECE
+
+import json
 
 results = {}    
     
@@ -49,15 +48,18 @@ def main():
     
     ElasticDeployments = ECE(module)
     deployment_kibana_info = ElasticDeployments.get_deployment_kibana_info(deployment_name)
+    deployment_object = ElasticDeployments.get_deployment_info(deployment_name)
     #results['deployment_kibana_info'] = deployment_kibana_info
 
     if not deployment_kibana_info:
       results['deployment_kibana_endpoint'] = None
       results['deployment_kibana_url'] = None
+      results['deployment_kibana_object'] = None
       results['deployment_kibana_info'] = "No deployment kibana was returned, check your deployment name"
     else:
       results['deployment_kibana_endpoint'] = deployment_kibana_info['info']['metadata'].get('aliased_endpoint') or deployment_kibana_info['info']['metadata']['endpoint']
-      results['deployment_kibana_url'] = deployment_kibana_info['info']['metadata']['aliased_url'] 
+      results['deployment_kibana_url'] = deployment_kibana_info['info']['metadata']['aliased_url']
+      results['deployment_kibana_object'] = deployment_object
       results['deployment_kibana_info'] = "Deployment kibana was returned sucessfully"
       
       #try:
@@ -66,8 +68,7 @@ def main():
       #except:
       #  results['deployment_kibana_endpoint'] = deployment_kibana_info['info']['metadata']['endpoint']
       #  results['deployment_kibana_service_url'] = deployment_kibana_info['info']['metadata']['service_url']
-      #  results['deployment_kibana_url'] = deployment_kibana_info['info']['metadata']['aliased_url']
-        
+      #  results['deployment_kibana_url'] = deployment_kibana_info['info']['metadata']['aliased_url']   
       
     results['changed'] = False
     module.exit_json(**results)

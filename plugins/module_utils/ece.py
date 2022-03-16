@@ -123,3 +123,26 @@ class ECE(object):
           break
       return deployment_object
 
+  def get_deployment_info(self, deployment_name):
+      deployment_object = None
+      endpoint  = 'deployments'
+      deployment_objects = self.send_api_request(endpoint, 'GET')
+      deployment_object = ""
+      for deployment in deployment_objects['deployments']:
+        if str(deployment['name']).upper() == str(deployment_name).upper():
+          endpoint  = 'deployments/' + deployment['id']
+          deployment_object = self.send_api_request(endpoint, 'GET')
+          break
+      return deployment_object
+
+  def update_deployment_info(self, deployment_name, config):
+      deployment_object = None
+      endpoint  = 'deployments'
+      deployment_objects = self.send_api_request(endpoint, 'GET')
+      deployment_object = ""
+      for deployment in deployment_objects['deployments']:
+        if str(deployment['name']).upper() == str(deployment_name).upper():
+          endpoint  = 'deployments/' + deployment['id']
+          deployment_object = self.send_api_request(endpoint, 'PUT', config)
+          break
+      return deployment_object

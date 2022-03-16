@@ -104,7 +104,7 @@ def main():
       module.exit_json(**results) 
     
     if state == "present":
-      pkg_policy_object = kibana.get_pkg_policy(integration_title,agent_policy_id)
+      pkg_policy_object = kibana.get_pkg_policy(pkg_policy_name)
       if pkg_policy_object:
         results['pkg_policy_status'] = "Integration Package found, No package created"
         results['changed'] = False
