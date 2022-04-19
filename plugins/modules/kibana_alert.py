@@ -267,16 +267,14 @@ class KibanaAlert(Kibana):
       'params': {
         'criteria': criteria,
         'alertOnNoData': self.alert_on_no_data,
+        'sourceId': 'default'  # if you don't include this, the API will throw 400 error
       },
-      'consumer': self.consumer,
-      'alertTypeId': alert_type_lookup[self.alert_type],
       'schedule': {
         'interval': self.check_every
       },
       'actions': self.format_actions(),
       'tags': self.tags,
       'name': self.alert_name,
-      'enabled': self.enabled
     }
     if self.filter:
       data['params']['filterQueryText'] = self.filter
