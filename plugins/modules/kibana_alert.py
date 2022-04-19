@@ -172,6 +172,8 @@ state_lookup = {
 notify_lookup = {
   'status_change': 'onActionGroupChange'
 }
+
+
 class KibanaAlert(Kibana):
   def __init__(self, module):
     super().__init__(module)
@@ -189,8 +191,8 @@ class KibanaAlert(Kibana):
     self.filter = self.module.params.get('filter')
     self.filter_query = self.module.params.get('filter_query')
 
-
     self.alert = self.get_alert_by_name(self.alert_name)
+
 
   def split_time_string(self, time_string):
     tail = time_string.lstrip('0123456789')
@@ -281,6 +283,11 @@ class KibanaAlert(Kibana):
       data['params']['filterQuery'] = self.filter_query
     if self.group_by:
         data['params']['groupBy'] = self.group_by
+    # Don't make changes if all values match existing values, and no new keys are added
+    if (not {key: data[key] for key, value in self.alert.items()
+             if key in data and data[key] != value}
+        and not set(data.keys()) - set(self.alert.keys())):
+      return None
     result = self.send_api_request(endpoint, 'PUT', data=data)
     return result
 
@@ -337,11 +344,15 @@ def main():
   kibana_alert = KibanaAlert(module)
   if state == 'present':
     if kibana_alert.alert:
-      results['changed'] = True
       results['msg'] = f'alert named {kibana_alert.alert_name} exists, and will be updated'
       if not module.check_mode:
-        kibana_alert.update_alert()
-        results['msg'] = f'alert named {kibana_alert.alert_name} updated'
+        update_result = kibana_alert.update_alert()
+        if update_result is not None:
+          results['msg'] = f'alert named {kibana_alert.alert_name} updated'
+          results['changed'] = True
+        else:
+          results['msg'] = f'identical to existing alert {kibana_alert.alert_name}'
+          results['changed'] = False
       module.exit_json(**results)
     results['changed'] = True
     results['msg'] = f'alert named {module.params.get("alert_name")} will be created'
