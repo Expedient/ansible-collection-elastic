@@ -259,7 +259,32 @@ class KibanaAlert(Kibana):
     endpoint = f'alerts/alert/{self.alert["id"]}'
     return self.send_api_request(endpoint, 'DELETE')
 
-
+  def update_alert(self):
+    endpoint = f'alerts/alert/{self.alert["id"]}'
+    criteria = self.format_conditions()
+    data = {
+      'notifyWhen': notify_lookup[self.notify_when],
+      'params': {
+        'criteria': criteria,
+        'alertOnNoData': self.alert_on_no_data,
+      },
+      'consumer': self.consumer,
+      'alertTypeId': alert_type_lookup[self.alert_type],
+      'schedule': {
+        'interval': self.check_every
+      },
+      'actions': self.format_actions(),
+      'tags': self.tags,
+      'name': self.alert_name,
+      'enabled': self.enabled
+    }
+    if self.filter:
+      data['params']['filterQueryText'] = self.filter
+      data['params']['filterQuery'] = self.filter_query
+    if self.group_by:
+        data['params']['groupBy'] = self.group_by
+    result = self.send_api_request(endpoint, 'PUT', data=data)
+    return result
 
 
 
@@ -314,7 +339,11 @@ def main():
   kibana_alert = KibanaAlert(module)
   if state == 'present':
     if kibana_alert.alert:
-      results['msg'] = f'alert named {kibana_alert.alert_name} exists'
+      results['changed'] = True
+      results['msg'] = f'alert named {kibana_alert.alert_name} exists, and will be updated'
+      if not module.check_mode:
+        kibana_alert.update_alert()
+        results['msg'] = f'alert named {kibana_alert.alert_name} updated'
       module.exit_json(**results)
     results['changed'] = True
     results['msg'] = f'alert named {module.params.get("alert_name")} will be created'
