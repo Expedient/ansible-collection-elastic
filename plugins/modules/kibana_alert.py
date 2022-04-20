@@ -216,11 +216,11 @@ class KibanaAlert(Kibana):
           formatted_condition['metric'] = condition['field']
         formatted_conditions.append(formatted_condition)
     return formatted_conditions
+])]
 
   def format_actions(self):
     actions = self.module.params.get('actions')
     formatted_actions = [{
-      'actionTypeId': action_type_lookup[action['action_type']],
       'group': action_group_lookup[action['run_when']],
       'params': {
         action_param_type_lookup[action['action_type']]: [action['body']] if action['body'] else dumps(action['body_json'], indent=2)
