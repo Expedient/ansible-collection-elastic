@@ -309,7 +309,7 @@ def main():
     check_every=dict(type='str', default='1m'),
     notify_on=dict(type='str', default='status_change', choices=['status_change']),
     conditions=dict(type='list', elements='dict', options=dict(
-      when=dict(type='str', required=True, choices=['max', 'min', 'avg', 'cardnality', 'rate', 'count', 'sum', '95th_percentile', '99th_percentile']),
+      when=dict(type='str', required=True, choices=['max', 'min', 'avg', 'cardinality', 'rate', 'count', 'sum', '95th_percentile', '99th_percentile']),
       field=dict(type='str', required=False),
       state=dict(type='str', required=True),
       threshold=dict(type='float', required=True),
