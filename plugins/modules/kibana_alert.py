@@ -230,17 +230,17 @@ class KibanaAlert(Kibana):
     return formatted_actions
 
   def create_alert(self):
-    endpoint = 'alerts/alert'
+    endpoint = 'alerting/rule'
     criteria = self.format_conditions()
     data = {
-      'notifyWhen': notify_lookup[self.notify_when],
+      'notify_when': notify_lookup[self.notify_when],
       'params': {
         'criteria': criteria,
         'alertOnNoData': self.alert_on_no_data,
         'sourceId': 'default' #entirely unclear what this does but it appears to be a static value so hard-coding for now
       },
       'consumer': self.consumer,
-      'alertTypeId': alert_type_lookup[self.alert_type],
+      'rule_type_id': alert_type_lookup[self.alert_type],
       'schedule': {
         'interval': self.check_every
       },
