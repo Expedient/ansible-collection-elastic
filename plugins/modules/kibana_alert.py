@@ -261,10 +261,10 @@ class KibanaAlert(Kibana):
     return self.send_api_request(endpoint, 'DELETE')
 
   def update_alert(self):
-    endpoint = f'alerts/alert/{self.alert["id"]}'
+    endpoint = f'alerting/rule/{self.alert["id"]}'
     criteria = self.format_conditions()
     data = {
-      'notifyWhen': notify_lookup[self.notify_when],
+      'notify_when': notify_lookup[self.notify_when],
       'params': {
         'criteria': criteria,
         'alertOnNoData': self.alert_on_no_data,
