@@ -216,7 +216,6 @@ class KibanaAlert(Kibana):
           formatted_condition['metric'] = condition['field']
         formatted_conditions.append(formatted_condition)
     return formatted_conditions
-])]
 
   def format_actions(self):
     actions = self.module.params.get('actions')
