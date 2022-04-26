@@ -257,7 +257,7 @@ class KibanaAlert(Kibana):
     return result
 
   def delete_alert(self):
-    endpoint = f'alerts/alert/{self.alert["id"]}'
+    endpoint = f'alerting/rule/{self.alert["id"]}'
     return self.send_api_request(endpoint, 'DELETE')
 
   def update_alert(self):
