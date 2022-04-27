@@ -27,6 +27,61 @@ except:
 
 results = {}
 
+def deep_update(original, updated):
+    """
+    Attempts to update deeply nested dictionaries + lists
+    :param original/the object to be updated:
+    :param updated/changes to be applied:
+    :return:
+    """
+
+    def match_shallow_structure(dictionary_1, dictionary_2):
+        """
+        utility function to check if all the non-dictionary keys and values in a
+        dictionary match those of the other
+        :param dictionary_1:
+        :param dictionary_2:
+        :return:
+        """
+        shallow_1 = {
+            key: value for key, value in dictionary_1.items() if
+            not isinstance(value, dict)
+        }
+        shallow_2 = {
+            key: value for key, value in dictionary_2.items() if
+            not isinstance(value, dict)
+        }
+        return shallow_1 == shallow_2
+
+    if isinstance(updated, dict):
+        for key, value in updated.items():
+            if (isinstance(value, dict) or isinstance(value, list)) and original.get(
+                key
+            ) is not None:
+                deep_update(original.get(key), updated[key])
+            else:
+                original.update({key: updated[key]})
+    elif isinstance(updated, list) and isinstance(original, list):
+        if all([isinstance(item, dict) for item in updated]):
+            for updated_dictionary_list_item in updated:
+                try:
+                    deep_update(
+                        next(
+                            original_dictionary_list_item
+                            for original_dictionary_list_item in original
+                            if match_shallow_structure(
+                                updated_dictionary_list_item,
+                                original_dictionary_list_item,
+                            )
+                        ),
+                        updated_dictionary_list_item,
+                    )
+                except StopIteration:
+                    original.append(updated_dictionary_list_item)
+        else:
+            original += [i for i in updated if i not in original]
+    return
+
 def main():
 
     module_args=dict(   
@@ -64,7 +119,7 @@ def main():
     pkg_policy_name = module.params.get('pkg_policy_name')
     pkg_policy_desc = module.params.get('pkg_policy_desc')
     namespace = module.params.get('namespace')
-    integration_settings = module.params.get('integration_settings')
+    integration_settings = module.params.get('integration_settings') # inputs policy settings only, aka Defaults
     
     if module.check_mode:
         results['changed'] = False
@@ -120,15 +175,21 @@ def main():
           pkg_policy_object = pkg_policy_object['item']
       pkg_policy_object_id = pkg_policy_object['id']  
       
-      integration_settings_json = integration_settings
-      results['passed_integration_settings'] = integration_settings_json
-      for current_setting in ['name', 'policy_id', 'enabled', 'namespace', 'package', 'output_id', 'inputs']:
-        if current_setting not in integration_settings_json:
-          integration_settings_json[current_setting] = pkg_policy_object[current_setting]
-
-      pkg_policy_info = kibana.update_pkg_policy(pkg_policy_object_id,integration_settings_json)
-
+      results['passed_integration_settings'] = integration_settings
       
+      for current_setting in integration_settings:
+        if current_setting == 'inputs':
+          for new_entry in integration_settings[current_setting]:
+            a = 0
+            for exist_entry in pkg_policy_object[current_setting]:
+              if new_entry['type'] == exist_entry['type']:
+                  #pkg_policy_object[current_setting][a]['config']['policy'] = new_entry['config']['policy']
+                  deep_update(pkg_policy_object['inputs'][a], integration_settings['inputs'][a])        
+              a = a +1
+      
+      pkg_policy_info = kibana.update_pkg_policy(pkg_policy_object_id, pkg_policy_object)
+      results['pkg_policy_object_update'] = pkg_policy_object
+
     module.exit_json(**results)
 
 if __name__ == "__main__":
