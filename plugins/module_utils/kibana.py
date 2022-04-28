@@ -206,6 +206,17 @@ class Kibana(object):
         body.pop('updated_at')
       if 'updated_by' in body:
         body.pop('updated_by')
+      input_no = 0
+      for input in body['inputs']:
+        if 'streams' in input:
+          streams_no = 0
+          for stream in input['streams']:
+            if 'id' in stream:
+              body['inputs'][input_no]['streams'][streams_no].pop('id')
+            if 'compiled_stream' in stream:
+              body['inputs'][input_no]['streams'][streams_no].pop('compiled_stream')
+            streams_no = streams_no + 1
+        input_no = input_no + 1
       if not self.module.check_mode:
         endpoint = "fleet/package_policies/" + pkgpolicy_id
         pkg_policy_update = self.send_api_request(endpoint, 'PUT', data=body)
