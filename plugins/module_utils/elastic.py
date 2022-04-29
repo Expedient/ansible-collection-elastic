@@ -63,3 +63,9 @@ class Elastic(object):
   def get_role_mapping(self, role_mapping_name):
     endpoint = f'_security/role_mapping/{role_mapping_name}'
     return self.send_api_request(endpoint, 'GET')
+
+  ## pipelines are returned as a dictionary with the pipeline names as keys, this will return the pipeline if it exists, and None if it does not
+  def get_ingest_pipeline(self, ingest_pipeline_name):
+    endpoint = '_ingest/pipeline'
+    pipelines = self.send_api_request(endpoint, 'GET')
+    return pipelines.get(ingest_pipeline_name)
