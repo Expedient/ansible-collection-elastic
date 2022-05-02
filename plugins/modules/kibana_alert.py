@@ -122,57 +122,17 @@ extends_documentation_fragment:
 
 try:
   from ansible_collections.expedient.elastic.plugins.module_utils.kibana import Kibana
+  import ansible_collections.expedient.elastic.plugins.module_utils.lookups
 except:
   import sys
   import os
   util_path = new_path = f'{os.getcwd()}/plugins/module_utils'
   sys.path.append(util_path)
   from kibana import Kibana
+  import lookups
 
 from ansible.module_utils.basic import AnsibleModule
 from json import dumps
-
-time_unit_lookup = {
-  'second': 's',
-  'seconds': 's',
-  'minute': 'm',
-  'minutes': 'm',
-  'hour': 'h',
-  'hours': 'h',
-  'day': 'd',
-  'days': 'd',
-}
-
-alert_type_lookup = {
-  'metrics_threshold': 'metrics.alert.threshold'
-}
-
-action_type_lookup = {
-  'email': '.email',
-  'index': '.index',
-  'webhook': '.webhook'
-}
-
-# Need to get warning thresholds added here too
-action_group_lookup = {
-  'alert': 'metrics.threshold.fired',
-  'recovered': 'metrics.threshold.recovered'
-}
-
-action_param_type_lookup = {
-  'index': 'documents',
-  'webhook': 'body'
-}
-
-state_lookup = {
-  'above': '>',
-  'below': '<'
-}
-
-notify_lookup = {
-  'status_change': 'onActionGroupChange'
-}
-
 
 class KibanaAlert(Kibana):
   def __init__(self, module):

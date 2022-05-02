@@ -16,6 +16,7 @@ from ansible.module_utils.urls import open_url, urllib_error
 from json import loads, dumps
 from urllib.error import HTTPError
 import urllib.parse
+import lookups
 
 class Kibana(object):
   def __init__(self, module):
