@@ -96,21 +96,14 @@ class Kibana(object):
       # Creating an alert
       method="POST"
 
-    criteria = self.format_alert_conditions()
-
     # set variables for data
     notify_when = self.module.params.get('notify_on')
-    alert_on_no_data = self.module.params.get('alert_on_no_data')
     alert_type = self.module.params.get('alert_type')
     group_by = self.module.params.get('group_by')
 
     data = {
       'notify_when': lookups.notify_lookup[notify_when],
-      'params': {
-        'criteria': criteria,
-        'alertOnNoData': alert_on_no_data,
-        'sourceId': 'default' #entirely unclear what this does but it appears to be a static value so hard-coding for now
-      },
+      'params': self.format_alert_params(),
       'schedule': {
         'interval': self.module.params.get('check_every')
       },
@@ -163,7 +156,45 @@ class Kibana(object):
           formatted_condition['metric'] = condition['field']
         formatted_conditions.append(formatted_condition)
     return formatted_conditions
+  
+  def format_alert_availability(self):
+    availability = self.module.params.get('availability')
+    formatted_availability = {}
+    if self.alert_type == 'uptime_monitor_status':
+      formatted_availability = {
+        'range': availability['range'],
+        'rangeUnit': lookups.time_unit_lookup[availability['rangeUnit']],
+        'threshold': availability['threshold']
+      }
 
+    return formatted_availability
+  
+  def format_alert_params(self):
+    formatted_params = {}
+    alert_type = self.module.params.get('alert_type')
+
+    if alert_type == 'metrics_threshold':
+      criteria = self.format_alert_conditions()
+      formatted_params = {
+        'criteria': criteria,
+        'alertOnNoData': self.module.params.get('alert_on_no_data'),
+        'sourceId': 'default' #entirely unclear what this does but it appears to be a static value so hard-coding for now
+      }
+    
+    elif alert_type == 'uptime_monitor_status':
+      availability = self.format_alert_availability()
+      formatted_params = {
+        'availability': availability,
+        'numTimes': self.module.params.get('numTimes'),
+        'search': self.module.params.get('search'),
+        'shouldCheckAvailability': self.module.params.get('shouldCheckAvailability'),
+        'shouldCheckStatus': self.module.params.get('shouldCheckStatus'),
+        'timerangeCount': self.module.params.get('timerangeCount'),
+        'timerangeUnit': lookups.time_unit_lookup[self.module.params.get('timerangeUnit')]
+      }
+
+      return formatted_params
+  
   # Elastic Security Rules functions
 
   def update_security_rule(self, body):
