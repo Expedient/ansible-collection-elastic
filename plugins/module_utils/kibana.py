@@ -73,6 +73,76 @@ class Kibana(object):
     connector_types = self.send_api_request(endpoint, 'GET')
     return next(filter(lambda x: x['name'] == connector_type_name, connector_types), None)
   
+  def ensure_alert(self, method, alert_id=None):
+    endpoint = 'alerting/rule'
+    if method.upper() == 'PUT':
+      endpoint += f"/{alert_id}"
+    criteria = self.format_alert_conditions()
+
+    # set variables for data
+    notify_when = self.module.params.get('notify_on')
+    alert_on_no_data = self.module.params.get('alert_on_no_data')
+    alert_type = self.module.params.get('alert_type')
+
+    data = {
+      'notify_when': lookups.notify_lookup[notify_when],
+      'params': {
+        'criteria': criteria,
+        'alertOnNoData': alert_on_no_data,
+        'sourceId': 'default' #entirely unclear what this does but it appears to be a static value so hard-coding for now
+      },
+      'consumer': self.consumer,
+      'schedule': {
+        'interval': self.check_every
+      },
+      'actions': self.format_alert_actions(),
+      'tags': self.tags,
+      'name': self.alert_name,
+      'enabled': self.enabled
+    }
+    if self.filter:
+      data['params']['filterQueryText'] = self.filter
+      data['params']['filterQuery'] = self.filter_query
+    if self.group_by:
+        data['params']['groupBy'] = self.group_by
+    if method.upper() == "POST":
+      data['rule_type_id'] = lookups.alert_type_lookup[alert_type]
+    result = self.send_api_request(endpoint, method, data=data)
+    return result
+  
+  def delete_alert(self, alert_id):
+    endpoint = f'alerting/rule/{alert_id}'
+    return self.send_api_request(endpoint, 'DELETE')
+
+  def format_alert_actions(self):
+    actions = self.module.params.get('actions')
+    formatted_actions = [{
+      'group': lookups.action_group_lookup[action['run_when']],
+      'params': {
+        lookups.action_param_type_lookup[action['action_type']]: [action['body']] if action['body'] else dumps(action['body_json'], indent=2)
+      },
+      'id': self.get_alert_connector_by_name(action['connector'])['id']
+    } for action in actions]
+    return formatted_actions
+  
+  def format_alert_conditions(self):
+    conditions = self.module.params.get('conditions')
+    alert_type = self.module.params.get('alert_type')
+    formatted_conditions = []
+    if alert_type == 'metrics_threshold':
+      for condition in conditions:
+        formatted_condition = {
+          'aggType': condition['when'],
+          'comparator': lookups.state_lookup[condition['state']],
+          'threshold': [condition['threshold']] if condition['threshold'] != 0.0 else [int(condition['threshold'])],
+          'timeSize': condition['time_period'],
+          'timeUnit': lookups.time_unit_lookup[condition['time_unit']],
+        }
+        if condition['field'] is not None:
+          formatted_condition['metric'] = condition['field']
+        formatted_conditions.append(formatted_condition)
+    return formatted_conditions
+
   # Elastic Security Rules functions
 
   def update_security_rule(self, body):

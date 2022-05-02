@@ -159,100 +159,6 @@ class KibanaAlert(Kibana):
     head = time_string[:len(time_string) - len(tail)]
     return head, tail
 
-  # This will defnitely need changes as we expand out functionality of the alert module, currently really only works with metrcis thresholds
-  def format_conditions(self):
-    conditions = self.module.params.get('conditions')
-    formatted_conditions = []
-    if self.alert_type == 'metrics_threshold':
-      for condition in conditions:
-        formatted_condition = {
-          'aggType': condition['when'],
-          'comparator': state_lookup[condition['state']],
-          'threshold': [condition['threshold']] if condition['threshold'] != 0.0 else [int(condition['threshold'])],
-          'timeSize': condition['time_period'],
-          'timeUnit': time_unit_lookup[condition['time_unit']],
-        }
-        if condition['field'] is not None:
-          formatted_condition['metric'] = condition['field']
-        formatted_conditions.append(formatted_condition)
-    return formatted_conditions
-
-  def format_actions(self):
-    actions = self.module.params.get('actions')
-    formatted_actions = [{
-      'group': action_group_lookup[action['run_when']],
-      'params': {
-        action_param_type_lookup[action['action_type']]: [action['body']] if action['body'] else dumps(action['body_json'], indent=2)
-      },
-      'id': self.get_alert_connector_by_name(action['connector'])['id'] ## need to actually implement this
-    } for action in actions]
-    return formatted_actions
-
-  def create_alert(self):
-    endpoint = 'alerting/rule'
-    criteria = self.format_conditions()
-    data = {
-      'notify_when': notify_lookup[self.notify_when],
-      'params': {
-        'criteria': criteria,
-        'alertOnNoData': self.alert_on_no_data,
-        'sourceId': 'default' #entirely unclear what this does but it appears to be a static value so hard-coding for now
-      },
-      'consumer': self.consumer,
-      'rule_type_id': alert_type_lookup[self.alert_type],
-      'schedule': {
-        'interval': self.check_every
-      },
-      'actions': self.format_actions(),
-      'tags': self.tags,
-      'name': self.alert_name,
-      'enabled': self.enabled
-    }
-    if self.filter:
-      data['params']['filterQueryText'] = self.filter
-      data['params']['filterQuery'] = self.filter_query
-    if self.group_by:
-        data['params']['groupBy'] = self.group_by
-    result = self.send_api_request(endpoint, 'POST', data=data)
-    return result
-
-  def delete_alert(self):
-    endpoint = f'alerting/rule/{self.alert["id"]}'
-    return self.send_api_request(endpoint, 'DELETE')
-
-  def update_alert(self):
-    endpoint = f'alerting/rule/{self.alert["id"]}'
-    criteria = self.format_conditions()
-    data = {
-      'notify_when': notify_lookup[self.notify_when],
-      'params': {
-        'criteria': criteria,
-        'alertOnNoData': self.alert_on_no_data,
-        'sourceId': 'default'  # if you don't include this, the API will throw 400 error
-      },
-      'schedule': {
-        'interval': self.check_every
-      },
-      'actions': self.format_actions(),
-      'tags': self.tags,
-      'name': self.alert_name,
-    }
-    if self.filter:
-      data['params']['filterQueryText'] = self.filter
-      data['params']['filterQuery'] = self.filter_query
-    if self.group_by:
-        data['params']['groupBy'] = self.group_by
-    # Don't make changes if all values match existing values, and no new keys are added
-    if (not {key: data[key] for key, value in self.alert.items()
-             if key in data and data[key] != value}
-        and not set(data.keys()) - set(self.alert.keys())):
-      return None
-    result = self.send_api_request(endpoint, 'PUT', data=data)
-    return result
-
-
-
-
 def main():
   module_args=dict(
     host=dict(type='str', required=True),
@@ -301,11 +207,12 @@ def main():
   module = AnsibleModule(argument_spec=module_args, required_if=argument_dependencies, supports_check_mode=True)
   state = module.params.get('state')
   kibana_alert = KibanaAlert(module)
+  alert = kibana_alert.get_alert_by_name(module.params.get('alert_name'))
   if state == 'present':
     if kibana_alert.alert:
       results['msg'] = f'alert named {kibana_alert.alert_name} exists, and will be updated'
       if not module.check_mode:
-        update_result = kibana_alert.update_alert()
+        update_result = kibana_alert.ensure_alert(method='PUT', alert_id=alert['id'])
         if update_result is not None:
           results['msg'] = f'alert named {kibana_alert.alert_name} updated'
           results['changed'] = True
@@ -316,7 +223,8 @@ def main():
     results['changed'] = True
     results['msg'] = f'alert named {module.params.get("alert_name")} will be created'
     if not module.check_mode:
-      results['alert'] = kibana_alert.create_alert()
+      notify_on = lookups.notify_lookup[module.params.get("notify_on")]
+      results['alert'] = kibana_alert.ensure_alert("POST")
       results['msg'] = f'alert named {module.params.get("alert_name")} created'
     module.exit_json(**results)
   if state == 'absent':
@@ -326,7 +234,7 @@ def main():
     results['changed'] = True
     results['msg'] = f'alert named {module.params.get("alert_name")} will be deleted'
     if not module.check_mode:
-      kibana_alert.delete_alert()
+      kibana_alert.delete_alert(alert_id=alert['id'])
     module.exit_json(**results)
 
 if __name__ == '__main__':
