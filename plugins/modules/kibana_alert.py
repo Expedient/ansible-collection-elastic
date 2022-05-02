@@ -235,7 +235,6 @@ def main():
     results['changed'] = True
     results['msg'] = f'alert named {module.params.get("alert_name")} will be created'
     if not module.check_mode:
-      notify_on = lookups.notify_lookup[module.params.get("notify_on")]
       results['alert'] = kibana_alert.ensure_alert()
       results['msg'] = f'alert named {module.params.get("alert_name")} created'
     module.exit_json(**results)
