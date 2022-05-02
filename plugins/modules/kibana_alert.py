@@ -169,7 +169,7 @@ def main():
     state=dict(type='str', default='present', choices=['present', 'absent']),
     alert_name=dict(type='str', required=True),
     enabled=dict(type='bool', default=True),
-    alert_type=dict(type='str', choices=['metrics_threshold']), #more types will be added as we gain the ability to support them
+    alert_type=dict(type='str', choices=['metrics_threshold', 'uptime_monitor_status']), #more types will be added as we gain the ability to support them
     tags=dict(type='list', elements='str', default=[]),
     check_every=dict(type='str', default='1m'),
     notify_on=dict(type='str', default='status_change', choices=['status_change']),
@@ -182,13 +182,24 @@ def main():
       time_period=dict(type='int', default=5),
       time_unit=dict(type='str', default='minute', choices=['second', 'seconds', 'minute', 'minutes', 'hour', 'hours', 'day', 'days']),
     )),
+    availability=dict(type='dict', options=dict(
+      range=dict(type='int', default=30),
+      rangeUnit=dict(type='str', default='minute', choices=['second', 'seconds', 'minute', 'minutes', 'hour', 'hours', 'day', 'days']),
+      threshold=dict(type='str', default='99')
+    )),
+    numTimes=dict(type='int', default=5),
+    search=dict(type='str', default=''),
+    shouldCheckAvailability=dict(type='bool', default=True),
+    shouldCheckStatus=dict(type='bool', default=True),
+    timerangeCount=dict(type=int, default=15),
+    timerangeUnit=dict(type='str', default='minute', choices=['second', 'seconds', 'minute', 'minutes', 'hour', 'hours', 'day', 'days']),
     filter=dict(type='str'),
     filter_query=dict(type='str'),
     alert_on_no_data=dict(type='bool', default=False),
     group_by=dict(type='list', elements='str', required=False),
     actions=dict(type='list', elements='dict', options=dict(
       action_type=dict(type='str', required=True, choices=['email', 'index', 'webhook']), #Only supporting these types for now, if we need more options later we can deal with them as-needed
-      run_when=dict(type='str', default='alert', choices=['alert', 'warning', 'recovered']),
+      run_when=dict(type='str', default='alert', choices=['alert', 'warning', 'recovered','uptime_down_monitor']),
       connector=dict(type='str', required=True),
       body=dict(type='str', required=False),
       body_json=dict(type='dict', required=False)
@@ -198,8 +209,9 @@ def main():
 
   # https://docs.ansible.com/ansible/latest/dev_guide/developing_program_flow_modules.html#argument-spec-dependencies
   argument_dependencies = [
-    ('state', 'present', ('enabled', 'alert_type', 'conditions', 'actions')),
-    ('alert-type', 'metrics_threshold', ('conditions'))
+    ('state', 'present', ('enabled', 'alert_type', 'actions')),
+    ('alert-type', 'metrics_threshold', ('conditions')),
+    ('alert-type', 'uptime_monitor_status', ('enabled','alert_type','actions','availability','numTimes', 'search', 'shouldCheckAvailability', 'shouldCheckStatus', 'timerangeCount', 'timerangeUnit'))
   ]
 
   results = {'changed': False}

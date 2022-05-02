@@ -160,7 +160,8 @@ class Kibana(object):
   def format_alert_availability(self):
     availability = self.module.params.get('availability')
     formatted_availability = {}
-    if self.alert_type == 'uptime_monitor_status':
+    alert_type = self.module.params.get('alert_type')
+    if alert_type == 'uptime_monitor_status':
       formatted_availability = {
         'range': availability['range'],
         'rangeUnit': lookups.time_unit_lookup[availability['rangeUnit']],
@@ -193,7 +194,13 @@ class Kibana(object):
         'timerangeUnit': lookups.time_unit_lookup[self.module.params.get('timerangeUnit')]
       }
 
-      return formatted_params
+    if self.module.params.get('filter'):
+      formatted_params['filterQueryText'] = self.module.params.get('filter')
+      formatted_params['filterQuery'] = self.module.params.get('filter_query')
+    if self.module.params.get('group_by'):
+      formatted_params['groupBy'] = self.module.params.get('group_by')
+
+    return formatted_params
   
   # Elastic Security Rules functions
 
