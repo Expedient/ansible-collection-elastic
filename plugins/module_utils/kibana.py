@@ -91,22 +91,22 @@ class Kibana(object):
         'alertOnNoData': alert_on_no_data,
         'sourceId': 'default' #entirely unclear what this does but it appears to be a static value so hard-coding for now
       },
-      'consumer': self.consumer,
       'schedule': {
-        'interval': self.check_every
+        'interval': self.module.params.get('check_every')
       },
       'actions': self.format_alert_actions(),
-      'tags': self.tags,
-      'name': self.alert_name,
-      'enabled': self.enabled
+      'tags': self.module.params.get('tags'),
+      'name': self.module.params.get('alert_name')
     }
-    if self.filter:
-      data['params']['filterQueryText'] = self.filter
-      data['params']['filterQuery'] = self.filter_query
+    if self.module.params.get('filter'):
+      data['params']['filterQueryText'] = self.module.params.get('filter')
+      data['params']['filterQuery'] = self.module.params.get('filter_query')
     if self.group_by:
-        data['params']['groupBy'] = self.group_by
+        data['params']['groupBy'] = self.module.params.get('group_by')
     if method.upper() == "POST":
       data['rule_type_id'] = lookups.alert_type_lookup[alert_type]
+      data['consumer'] = self.module.params.get('consumer')
+      data['enabled']= self.module.params.get('enabled')
     result = self.send_api_request(endpoint, method, data=data)
     return result
   
