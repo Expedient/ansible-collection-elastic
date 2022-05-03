@@ -83,6 +83,7 @@ class Kibana(object):
     notify_when = self.module.params.get('notify_on')
     alert_on_no_data = self.module.params.get('alert_on_no_data')
     alert_type = self.module.params.get('alert_type')
+    group_by = self.module.params.get('group_by')
 
     data = {
       'notify_when': lookups.notify_lookup[notify_when],
@@ -101,7 +102,7 @@ class Kibana(object):
     if self.module.params.get('filter'):
       data['params']['filterQueryText'] = self.module.params.get('filter')
       data['params']['filterQuery'] = self.module.params.get('filter_query')
-    if self.group_by:
+    if group_by:
         data['params']['groupBy'] = self.module.params.get('group_by')
     if method.upper() == "POST":
       data['rule_type_id'] = lookups.alert_type_lookup[alert_type]
