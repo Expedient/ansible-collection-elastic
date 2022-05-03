@@ -73,10 +73,29 @@ class Kibana(object):
     connector_types = self.send_api_request(endpoint, 'GET')
     return next(filter(lambda x: x['name'] == connector_type_name, connector_types), None)
   
-  def ensure_alert(self, method, alert_id=None):
+  def ensure_alert(self, alert_id=None):
+    """
+    This method will either make a POST request to create an alert,
+    or a PUT request to update an alert. This distinction is made based on
+    the existence of alert_id.
+
+    variables:
+      alert_id(str): Default to None. The ID of the alert that we want to update.
+                     If this variable exists, then the method will do a PUT request.
+                     Otherwise, it will do a POST and create a new alert.
+
+    Returns:
+      result(dict)
+    """
     endpoint = 'alerting/rule'
-    if method.upper() == 'PUT':
+    if alert_id:
+      # Updating an alert
       endpoint += f"/{alert_id}"
+      method = "PUT"
+    else:
+      # Creating an alert
+      method="POST"
+
     criteria = self.format_alert_conditions()
 
     # set variables for data
@@ -104,7 +123,8 @@ class Kibana(object):
       data['params']['filterQuery'] = self.module.params.get('filter_query')
     if group_by:
         data['params']['groupBy'] = self.module.params.get('group_by')
-    if method.upper() == "POST":
+    if alert_id is None:
+      # If we are creating a new alert
       data['rule_type_id'] = lookups.alert_type_lookup[alert_type]
       data['consumer'] = self.module.params.get('consumer')
       data['enabled']= self.module.params.get('enabled')

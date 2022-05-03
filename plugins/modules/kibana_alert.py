@@ -212,7 +212,7 @@ def main():
     if kibana_alert.alert:
       results['msg'] = f'alert named {kibana_alert.alert_name} exists, and will be updated'
       if not module.check_mode:
-        update_result = kibana_alert.ensure_alert(method='PUT', alert_id=alert['id'])
+        update_result = kibana_alert.ensure_alert(alert_id=alert['id'])
         if update_result is not None:
           results['msg'] = f'alert named {kibana_alert.alert_name} updated'
           results['changed'] = True
@@ -224,7 +224,7 @@ def main():
     results['msg'] = f'alert named {module.params.get("alert_name")} will be created'
     if not module.check_mode:
       notify_on = lookups.notify_lookup[module.params.get("notify_on")]
-      results['alert'] = kibana_alert.ensure_alert("POST")
+      results['alert'] = kibana_alert.ensure_alert()
       results['msg'] = f'alert named {module.params.get("alert_name")} created'
     module.exit_json(**results)
   if state == 'absent':
