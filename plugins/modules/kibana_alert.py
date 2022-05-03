@@ -85,6 +85,46 @@ options:
       - only used for metrics threshold alerts.
       - see examples for details
     type: dict
+  availability:
+    description:
+      - dictionary defining the availability of the alert
+      - only used for uptime monitor status alerts
+      - see examples for details
+    type: dict
+  numTimes:
+    description:
+      - The number of times a monitor can go down within a specified 
+        time range (timerangeCount, timerangeUnit) before an alert is 
+        triggered.
+      default: 5
+      type: int
+  search:
+    description:
+      - The default term that appears in the filter search bar
+        when manually editing the rule.
+    type: str
+    default: ""
+  shouldcheckAvailability:
+    description:
+      - whether or not the uptime monitor should check availability
+    type: bool
+    default: True
+  shouldCheckStatus:
+    description:
+      - whether or not the uptime monitor should check status
+    type: bool
+    default: True
+  timerangeCount:
+    description:
+      - The number of timerangeUnits in which a monitor can go down
+        in which a monitor can go down up to numTimes.
+    default: 15
+    type: int
+  timerangeUnit:
+    description:
+      - The unit coinciding with timerangeCount (minute, day, week, etc.)
+    default: "minute"
+    choices: ['second', 'seconds', 'minute', 'minutes', 'hour', 'hours', 'day', 'days']
   filter:
     description:
       - kql filter to apply to the conditions
