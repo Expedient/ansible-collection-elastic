@@ -20,6 +20,9 @@ Synopsis
 - This module creates or deletes alerts in kibana
 - currently supports threshold alerts
 
+Note: Kibana has updated their API. One of the major changes is that "alerts" are now called "rules".
+This can cause some confusion when using the Kibana API documentation while working on this module.
+For that reason, "alert" and "rule" are synonymous in this module.
 
 
 Requirements
