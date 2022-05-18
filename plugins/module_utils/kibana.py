@@ -40,7 +40,7 @@ class Kibana(object):
       headers['kbn-version'] = self.version
     try:
       response = open_url(url, data=payload, method=method, validate_certs=self.validate_certs, headers=headers,
-                          force_basic_auth=True, url_username=self.username, url_password=self.password, timeout=60)
+                          force_basic_auth=True, url_username=self.username, url_password=self.password, timeout=180)
     except HTTPError as e:
       raise e ## This allows errors raised during the request to be inspected while debugging
     return loads(response.read())
