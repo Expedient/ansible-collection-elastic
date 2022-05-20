@@ -10,7 +10,8 @@ time_unit_lookup = {
 }
 
 alert_type_lookup = {
-  'metrics_threshold': 'metrics.alert.threshold'
+  'metrics_threshold': 'metrics.alert.threshold',
+  'uptime_monitor_status': 'xpack.uptime.alerts.monitorStatus'
 }
 
 action_type_lookup = {
@@ -22,7 +23,8 @@ action_type_lookup = {
 # Need to get warning thresholds added here too
 action_group_lookup = {
   'alert': 'metrics.threshold.fired',
-  'recovered': 'metrics.threshold.recovered'
+  'recovered': 'metrics.threshold.recovered',
+  'uptime_down_monitor': "xpack.uptime.alerts.actionGroups.monitorStatus"
 }
 
 action_param_type_lookup = {
