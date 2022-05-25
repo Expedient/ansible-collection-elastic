@@ -16,7 +16,15 @@ from ansible.module_utils.urls import open_url, urllib_error
 from json import loads, dumps
 from urllib.error import HTTPError
 import urllib.parse
-import lookups
+
+try:
+  import ansible_collections.expedient.elastic.plugins.module_utils.lookups as lookups
+except:
+  import sys
+  import os
+  util_path = f'{os.getcwd()}/plugins/module_utils'
+  sys.path.append(util_path)
+  import lookups as lookups
 
 class Kibana(object):
   def __init__(self, module):
