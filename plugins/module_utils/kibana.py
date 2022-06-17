@@ -207,6 +207,7 @@ class Kibana(object):
       formatted_params['filterQuery'] = self.module.params.get('filter_query')
     if self.module.params.get('group_by'):
       formatted_params['groupBy'] = self.module.params.get('group_by')
+      formatted_params['alertOnGroupDisappear'] = self.module.params.get('alert_on_group_disappear')
 
     return formatted_params
   
