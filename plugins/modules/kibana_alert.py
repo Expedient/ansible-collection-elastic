@@ -139,6 +139,11 @@ options:
     description:
       whether to alert if there is no data available in the check period
     type: bool
+  alert_on_group_disappear:
+    description:
+      whether to alert if data stops being received for a group identified by the 'group_by'
+      settings
+    type: bool
   group_by:
     description:
       - defines the "alert for every" field in the Kibana alert
@@ -187,6 +192,7 @@ class KibanaAlert(Kibana):
     self.notify_when = self.module.params.get('notify_on')
     self.group_by = self.module.params.get('group_by')
     self.alert_on_no_data = self.module.params.get('alert_on_no_data')
+    self.alert_on_group_disappear = self.module.params.get('alert_on_group_disappear')
     self.consumer = self.module.params.get('consumer')
     self.filter = self.module.params.get('filter')
     self.filter_query = self.module.params.get('filter_query')
@@ -236,6 +242,7 @@ def main():
     filter=dict(type='str'),
     filter_query=dict(type='str'),
     alert_on_no_data=dict(type='bool', default=False),
+    alert_on_group_disappear=dict(type='bool', default=False),
     group_by=dict(type='list', elements='str', required=False),
     actions=dict(type='list', elements='dict', options=dict(
       action_type=dict(type='str', required=True, choices=['email', 'index', 'webhook']), #Only supporting these types for now, if we need more options later we can deal with them as-needed
