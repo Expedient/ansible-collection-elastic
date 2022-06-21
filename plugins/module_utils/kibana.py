@@ -37,7 +37,7 @@ class Kibana(object):
     self.version = None # this is a hack to make it so that we can run the first request to get the clutser version without erroring out
     self.version = self.get_cluster_version()
 
-  def send_api_request(self, endpoint, method, data=None):
+  def send_api_request(self, endpoint, method, data=None, headers={}):
     url = f'https://{self.host}:{self.port}/api/{endpoint}'
     headers = {}
     payload = None
