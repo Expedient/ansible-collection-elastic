@@ -552,3 +552,30 @@ class Kibana(object):
         agent_no = agent_no + 1
       page_number = page_number + 1
     return agent_list_result
+
+  def set_fleet_server_host(self, host):
+    endpoint = 'fleet/settings'
+    headers = {'kbn-xsrf': True}
+    body = {
+        'fleet_server_hosts': [
+          host
+        ]
+      }
+
+    body_json = dumps(body)
+
+    result = self.send_api_request(endpoint, 'PUT', headers=headers, data=body_json)
+    return result
+
+  def set_fleet_elasticsearch_host(self, host):
+    endpoint = 'fleet/outputs/fleet-default-output'
+    body = {
+      'hosts': [
+        host
+      ]
+    }
+
+    body_json = dumps(body)
+
+    result = self.send_api_request(endpoint, 'PUT', data=body_json)
+    return result
