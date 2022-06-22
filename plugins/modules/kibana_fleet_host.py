@@ -95,7 +95,7 @@ def main():
         username=dict(type='str', required=True),
         password=dict(type='str', required=True, no_log=True),
         verify_ssl_cert=dict(type='bool', default=True),
-        url_type=dict(type='str', choices=['server', 'elasticsearch'], required=True),
+        url_type=dict(type='str', choices=['fleet_server', 'elasticsearch'], required=True),
         url=dict(type='str', required=True),
     )
 
@@ -110,7 +110,7 @@ def main():
     url = module.params.get('url')
     url_type = module.params.get('url_type')
 
-    if url_type == 'server':
+    if url_type == 'fleet_server':
         current_fleet_servers = kibana_fleet.get_fleet_server_hosts()
         if url in current_fleet_servers:
             results['msg'] += f"\n{url} already exists in the fleet"
