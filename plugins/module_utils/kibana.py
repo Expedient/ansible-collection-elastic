@@ -572,6 +572,13 @@ class Kibana(object):
     result = self.send_api_request(endpoint, 'PUT', headers=headers, data=body_json)
     return result
 
+  def get_fleet_elasticsearch_hosts(self):
+    endpoint = 'fleet/outputs'
+    result = self.send_api_request(endpoint, 'GET')
+    for item in result['items']:
+      if item['id'] == "fleet-default-output" and item['type'] == 'elasticsearch':
+        return item['hosts']
+
   def set_fleet_elasticsearch_host(self, host):
     endpoint = 'fleet/outputs/fleet-default-output'
     body = {
