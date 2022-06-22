@@ -39,7 +39,6 @@ class Kibana(object):
 
   def send_api_request(self, endpoint, method, data=None, headers={}):
     url = f'https://{self.host}:{self.port}/api/{endpoint}'
-    headers = {}
     payload = None
     if data:
       headers['Content-Type'] = 'application/json'
