@@ -32,7 +32,7 @@ short_description: Add host to kibana fleet
 
 version_added: 2.3.0 # change this
 
-author: Mac Masterson (@mgaruccio)
+author: Mac Masterson (@maclin-masterson)
 
 requirements:
   - python3
