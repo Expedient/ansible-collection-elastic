@@ -553,6 +553,11 @@ class Kibana(object):
       page_number = page_number + 1
     return agent_list_result
 
+  def get_fleet_server_hosts(self):
+    endpoint = 'fleet/settings'
+    result = self.send_api_request(endpoint, 'GET')
+    return result['item']['fleet_server_hosts']
+
   def set_fleet_server_host(self, host):
     endpoint = 'fleet/settings'
     headers = {'kbn-xsrf': True}
