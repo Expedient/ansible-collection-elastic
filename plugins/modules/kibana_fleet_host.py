@@ -57,18 +57,29 @@ options:
         description:
             - Whether or not to verify SSL cert on API requests
         type: bool
-    url:
+    urls:
         description:
-            - The url that you want to apply as a fleet server host or an elasticsearch host
-        type: str
+            - List of urls that you want to apply as a fleet server host or an elasticsearch host
+        type: list
+        element type: str
     url_type:
         description:
             - The url type that you want to set for the fleet
             - 'server' sets the fleet server host
             - 'elasticsearch' sets the fleet elasticsearch host
         options:
-            - server
+            - fleet_server
             - elasticsearch
+    action:
+        description:
+            - The action that you want the module to take against the fleet server
+            - Add: Add the provided urls to the fleet
+            - Remove: Remove the provided urls from the fleet
+            - Overwrite: Replace the urls in the fleet with the provided urls
+        options:
+            - Add
+            - Remove
+            - Overwrite
 
 extends_documentation_fragment:
   - expedient.elastic.elastic_auth_options.documentation
