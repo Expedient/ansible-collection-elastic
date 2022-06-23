@@ -88,6 +88,28 @@ except:
 from ansible.module_utils.basic import AnsibleModule
 from json import dumps
 
+class KibanaFleet(Kibana):
+    def __init__(self, module):
+        super().__init__(module)
+        self.url_type = self.module.params.get('url_type')
+
+    def get_current_urls(self):
+        if self.url_type == 'fleet_server':
+            current_urls = self.get_fleet_server_hosts()
+        if self.url_type == 'elasticsearch':
+            current_urls = self.get_fleet_elasticsearch_hosts()
+        return current_urls
+
+    def send_urls(self, urls: list):
+        if self.url_type == 'fleet_server':
+            result = self.set_fleet_server_hosts(urls)
+
+        if self.url_type == 'elasticsearch':
+            result = self.set_fleet_elasticsearch_hosts(urls)
+
+        return result
+
+
 def main():
     module_args=dict(
         host=dict(type='str', required=True),
