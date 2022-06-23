@@ -128,34 +128,44 @@ def main():
         }
 
     module = AnsibleModule(argument_spec=module_args, supports_check_mode=True)
-    kibana_fleet = Kibana(module)
+    kibana_fleet = KibanaFleet(module)
+    action = module.params.get('action')
+    current_urls = kibana_fleet.get_current_urls() # The urls as they exist in kibana at start
+    provided_urls = module.params.get('urls') # Urls provided by the user
 
-    url = module.params.get('url')
-    url_type = module.params.get('url_type')
+    # final_urls is a list that gets calculated depending on the provided action.
+    final_urls = []
 
-    if url_type == 'fleet_server':
-        current_fleet_servers = kibana_fleet.get_fleet_server_hosts()
-        if url in current_fleet_servers:
-            results['msg'] += f"\n{url} already exists in the fleet"
-        else:
-            fleet_server_add = kibana_fleet.set_fleet_server_host(url)
-            if 'message' in fleet_server_add:
-                module.fail_json(msg=fleet_server_add['message'])
+    if action == 'add':
+        final_urls.extend(current_urls)
+        for item in provided_urls:
+            if item in current_urls:
+                results['msg'] += f"\n{item} already exists in Kibana"
             else:
-                results['changed'] = True
-                results['msg'] += f"Successfully set fleet server host to {url}"
+                final_urls.append(item)
 
-    if url_type == 'elasticsearch':
-        current_elasticsearch_hosts = kibana_fleet.get_fleet_elasticsearch_hosts()
-        if url in current_elasticsearch_hosts:
-            results['msg'] += f"\n{url} already exists in the fleet"
+    if action == 'overwrite':
+        final_urls.extend(provided_urls)
+
+    if action == 'remove':
+        for item in current_urls:
+            if item in provided_urls:
+                continue
+
+            final_urls.append(item)
+
+    # Converting lists to sets for comparison
+    if set(current_urls) == set(final_urls):
+        results['msg'] += "\n No action needed"
+    else:
+        send_url_result = kibana_fleet.send_urls(final_urls)
+        if 'message' in send_url_result:
+            module.fail_json(f"Unable to {action} urls. Error: {send_url_result['message']}")
         else:
-            elasticsearch_host_add = kibana_fleet.set_fleet_elasticsearch_host(url)
-            if 'message' in elasticsearch_host_add:
-                module.fail_json(msg=elasticsearch_host_add['message'])
-            else:
-                results['changed'] = True
-                results['msg'] += f"\nSuccessfully set fleet elasticsearch server host to {url}"
+            results['changed'] = True
+            results['msg'] += f"\nSuccessful {action}"
+            results['fleet_server_urls'] = kibana_fleet.get_fleet_server_hosts()
+            results['fleet_elasticsearch_urls'] = kibana_fleet.get_fleet_elasticsearch_hosts()
 
     module.exit_json(**results)
 
