@@ -557,13 +557,11 @@ class Kibana(object):
     result = self.send_api_request(endpoint, 'GET')
     return result['item']['fleet_server_hosts']
 
-  def set_fleet_server_host(self, host):
+  def set_fleet_server_hosts(self, hosts: list):
     endpoint = 'fleet/settings'
     headers = {'kbn-xsrf': True}
     body = {
-        'fleet_server_hosts': [
-          host
-        ]
+        'fleet_server_hosts': hosts
       }
 
     body_json = dumps(body)
@@ -578,12 +576,10 @@ class Kibana(object):
       if item['id'] == "fleet-default-output" and item['type'] == 'elasticsearch':
         return item['hosts']
 
-  def set_fleet_elasticsearch_host(self, host):
+  def set_fleet_elasticsearch_hosts(self, hosts: list):
     endpoint = 'fleet/outputs/fleet-default-output'
     body = {
-      'hosts': [
-        host
-      ]
+      'hosts': hosts
     }
 
     body_json = dumps(body)

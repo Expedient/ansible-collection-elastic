@@ -96,7 +96,8 @@ def main():
         password=dict(type='str', required=True, no_log=True),
         verify_ssl_cert=dict(type='bool', default=True),
         url_type=dict(type='str', choices=['fleet_server', 'elasticsearch'], required=True),
-        url=dict(type='str', required=True),
+        urls=dict(type='list', elements='str', required=True),
+        action=dict(type='str', choices=['add', 'overwrite', 'remove'], default='add')
     )
 
     results = {
