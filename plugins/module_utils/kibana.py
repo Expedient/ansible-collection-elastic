@@ -37,9 +37,8 @@ class Kibana(object):
     self.version = None # this is a hack to make it so that we can run the first request to get the clutser version without erroring out
     self.version = self.get_cluster_version()
 
-  def send_api_request(self, endpoint, method, data=None):
+  def send_api_request(self, endpoint, method, data=None, headers={}):
     url = f'https://{self.host}:{self.port}/api/{endpoint}'
-    headers = {}
     payload = None
     if data:
       headers['Content-Type'] = 'application/json'
@@ -552,3 +551,38 @@ class Kibana(object):
         agent_no = agent_no + 1
       page_number = page_number + 1
     return agent_list_result
+
+  def get_fleet_server_hosts(self):
+    endpoint = 'fleet/settings'
+    result = self.send_api_request(endpoint, 'GET')
+    return result['item']['fleet_server_hosts']
+
+  def set_fleet_server_hosts(self, hosts: list):
+    endpoint = 'fleet/settings'
+    headers = {'kbn-xsrf': True}
+    body = {
+        'fleet_server_hosts': hosts
+      }
+
+    body_json = dumps(body)
+
+    result = self.send_api_request(endpoint, 'PUT', headers=headers, data=body_json)
+    return result
+
+  def get_fleet_elasticsearch_hosts(self):
+    endpoint = 'fleet/outputs'
+    result = self.send_api_request(endpoint, 'GET')
+    for item in result['items']:
+      if item['id'] == "fleet-default-output" and item['type'] == 'elasticsearch':
+        return item['hosts']
+
+  def set_fleet_elasticsearch_hosts(self, hosts: list):
+    endpoint = 'fleet/outputs/fleet-default-output'
+    body = {
+      'hosts': hosts
+    }
+
+    body_json = dumps(body)
+
+    result = self.send_api_request(endpoint, 'PUT', data=body_json)
+    return result
