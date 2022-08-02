@@ -37,7 +37,7 @@ class Kibana(object):
     self.version = None # this is a hack to make it so that we can run the first request to get the clutser version without erroring out
     self.version = self.get_cluster_version()
 
-  def send_api_request(self, endpoint, method, data=None, headers={}):
+  def send_api_request(self, endpoint, method, data=None, headers={}, timeout=60):
     url = f'https://{self.host}:{self.port}/api/{endpoint}'
     payload = None
     if data:
@@ -47,7 +47,7 @@ class Kibana(object):
       headers['kbn-version'] = self.version
     try:
       response = open_url(url, data=payload, method=method, validate_certs=self.validate_certs, headers=headers,
-                          force_basic_auth=True, url_username=self.username, url_password=self.password, timeout=60)
+                          force_basic_auth=True, url_username=self.username, url_password=self.password, timeout=timeout)
     except HTTPError as e:
       raise e ## This allows errors raised during the request to be inspected while debugging
     return loads(response.read())
@@ -360,7 +360,7 @@ class Kibana(object):
         input_no = input_no + 1
       if not self.module.check_mode:
         endpoint = "fleet/package_policies/" + pkgpolicy_id
-        pkg_policy_update = self.send_api_request(endpoint, 'PUT', data=body)
+        pkg_policy_update = self.send_api_request(endpoint, 'PUT', data=body, timeout=300)
       else:
         pkg_policy_update = "Cannot proceed with check_mode set to " + self.module.check_mode
       return pkg_policy_update
@@ -442,7 +442,7 @@ class Kibana(object):
       body_JSON = dumps(body)
       endpoint = 'fleet/package_policies'
       if not self.module.check_mode:
-        pkg_policy_object = self.send_api_request(endpoint, 'POST', data=body_JSON)
+        pkg_policy_object = self.send_api_request(endpoint, 'POST', data=body_JSON, timeout=300)
       else:
         pkg_policy_object = "Cannot proceed with check_mode set to " + self.module.check_mode
       
