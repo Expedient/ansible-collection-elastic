@@ -44,6 +44,32 @@ class Kibana(object):
       raise e ## This allows errors raised during the request to be inspected while debugging
     return loads(response.read())
 
+  def send_file_api_request(self, endpoint, method, data=None, file=None):
+    import requests
+    url = f'https://{self.host}:{self.port}/api/{endpoint}'
+    headers = {}
+
+    response = None
+    
+    if data:
+      headers['Content-Type'] = 'application/json'
+      
+    if self.version:
+      headers['kbn-version'] = self.version
+    
+    if method == "POST":
+      try:
+        response = requests.post(
+          url, 
+          auth=(self.username, self.password),
+          files={'file': open(file,'rb')}, 
+          headers=headers,
+          timeout=60
+        )
+      except HTTPError as e:
+        raise e ## This allows errors raised during the request to be inspected while debugging
+    return loads(response.content.decode())
+
   def get_cluster_status(self):
     endpoint = 'status'
     return self.send_api_request(endpoint, 'GET')
@@ -410,3 +436,46 @@ class Kibana(object):
         agent_no = agent_no + 1
       page_number = page_number + 1
     return agent_list_result
+
+# Elastic Saved Objects
+
+  def get_saved_object(self,object_type,object_name):
+    page_size = 500
+    page_number = 1
+    target_object = ""
+    object_name_quote = urllib.parse.quote(object_name)
+    endpoint  = "saved_objects/_find?type=" + object_type + "&search_fields=title&search=" + object_name_quote + "&page=" + str(page_number) + "&per_page=" + str(page_size)
+    found_objects = self.send_api_request(endpoint, 'GET')
+    for found_object in found_objects['saved_objects']:
+      if 'title' in found_object['attributes']:
+        if object_name == found_object['attributes']['title']:
+          target_object = found_object
+          break
+    return target_object
+  
+  def export_saved_object(self, object_type, object_id):
+    endpoint = "saved_objects/_export"
+    object = {
+      "type": object_type,
+      "id": object_id
+    }
+    body = {}
+    objects = []
+    objects.append(object)
+    body['objects'] = objects
+    body['excludeExportDetails'] = True
+    body_JSON = dumps(body)
+    export_object = self.send_api_request(endpoint, 'POST', data=body_JSON)
+    return export_object
+
+  def import_saved_object(self, object_attributes):
+    import tempfile
+    import os
+    importObjectJSON = tempfile.NamedTemporaryFile(delete=False,suffix='.ndjson', prefix='elastic_dashboard_')
+    object_attributes_encode = object_attributes.encode()
+    importObjectJSON.write(object_attributes_encode)
+    importObjectJSON.close()
+    endpoint = "saved_objects/_import?createNewCopies=true"
+    export_object = self.send_file_api_request(endpoint, 'POST', file=importObjectJSON.name)
+    os.remove(importObjectJSON.name)
+    return export_object
