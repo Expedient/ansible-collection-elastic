@@ -61,7 +61,6 @@ def main():
         if sec_rule_info == security_rule_name + ': Rule is already enabled':
           results['changed'] = False
         results['sec_rule_info'] = sec_rule_info
-      
     module.exit_json(**results)
 
 if __name__ == "__main__":

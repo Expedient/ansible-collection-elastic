@@ -1,4 +1,6 @@
 tmp
 .vscode
+.idea
 plugins/module_utils/__pycache__/*
 *.tar.gz
+/testing/
