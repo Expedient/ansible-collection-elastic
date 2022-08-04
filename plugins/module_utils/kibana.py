@@ -16,7 +16,15 @@ from ansible.module_utils.urls import open_url, urllib_error
 from json import loads, dumps
 from urllib.error import HTTPError
 import urllib.parse
-import lookups
+
+try:
+  import ansible_collections.expedient.elastic.plugins.module_utils.lookups as lookups
+except:
+  import sys
+  import os
+  util_path = f'{os.getcwd()}/plugins/module_utils'
+  sys.path.append(util_path)
+  import lookups as lookups
 
 class Kibana(object):
   def __init__(self, module):
@@ -29,9 +37,8 @@ class Kibana(object):
     self.version = None # this is a hack to make it so that we can run the first request to get the clutser version without erroring out
     self.version = self.get_cluster_version()
 
-  def send_api_request(self, endpoint, method, data=None):
+  def send_api_request(self, endpoint, method, data=None, headers={}):
     url = f'https://{self.host}:{self.port}/api/{endpoint}'
-    headers = {}
     payload = None
     if data:
       headers['Content-Type'] = 'application/json'
@@ -96,21 +103,14 @@ class Kibana(object):
       # Creating an alert
       method="POST"
 
-    criteria = self.format_alert_conditions()
-
     # set variables for data
     notify_when = self.module.params.get('notify_on')
-    alert_on_no_data = self.module.params.get('alert_on_no_data')
     alert_type = self.module.params.get('alert_type')
     group_by = self.module.params.get('group_by')
 
     data = {
       'notify_when': lookups.notify_lookup[notify_when],
-      'params': {
-        'criteria': criteria,
-        'alertOnNoData': alert_on_no_data,
-        'sourceId': 'default' #entirely unclear what this does but it appears to be a static value so hard-coding for now
-      },
+      'params': self.format_alert_params(),
       'schedule': {
         'interval': self.module.params.get('check_every')
       },
@@ -163,7 +163,56 @@ class Kibana(object):
           formatted_condition['metric'] = condition['field']
         formatted_conditions.append(formatted_condition)
     return formatted_conditions
+  
+  def format_alert_availability(self):
+    availability = self.module.params.get('availability')
+    formatted_availability = {}
+    alert_type = self.module.params.get('alert_type')
+    if alert_type == 'uptime_monitor_status':
+      formatted_availability = {
+        'range': availability['range'],
+        'rangeUnit': lookups.time_unit_lookup[availability['rangeUnit']],
+        'threshold': availability['threshold']
+      }
 
+    return formatted_availability
+  
+  def format_alert_params(self):
+    formatted_params = {}
+    alert_type = self.module.params.get('alert_type')
+
+    if alert_type == 'metrics_threshold':
+      criteria = self.format_alert_conditions()
+      formatted_params = {
+        'criteria': criteria,
+        'alertOnNoData': self.module.params.get('alert_on_no_data'),
+        'sourceId': 'default' #entirely unclear what this does but it appears to be a static value so hard-coding for now
+      }
+    
+    elif alert_type == 'uptime_monitor_status':
+      availability = self.format_alert_availability()
+      formatted_params = {
+        'availability': availability,
+        'numTimes': self.module.params.get('numTimes'),
+        'search': self.module.params.get('search'),
+        'shouldCheckAvailability': self.module.params.get('shouldCheckAvailability'),
+        'shouldCheckStatus': self.module.params.get('shouldCheckStatus'),
+        'timerangeCount': self.module.params.get('timerangeCount'),
+        'timerangeUnit': lookups.time_unit_lookup[self.module.params.get('timerangeUnit')]
+      }
+
+    if self.module.params.get('filter'):
+      formatted_params['filterQueryText'] = self.module.params.get('filter')
+      formatted_params['filterQuery'] = self.module.params.get('filter_query')
+    if self.module.params.get('group_by'):
+      formatted_params['groupBy'] = self.module.params.get('group_by')
+      formatted_params['alertOnGroupDisappear'] = (
+        self.module.params.get('alert_on_group_disappear')
+        if self.module.params.get('alert_on_group_disappear') is not None
+        else False)
+
+    return formatted_params
+  
   # Elastic Security Rules functions
 
   def update_security_rule(self, body):
@@ -502,3 +551,38 @@ class Kibana(object):
         agent_no = agent_no + 1
       page_number = page_number + 1
     return agent_list_result
+
+  def get_fleet_server_hosts(self):
+    endpoint = 'fleet/settings'
+    result = self.send_api_request(endpoint, 'GET')
+    return result['item']['fleet_server_hosts']
+
+  def set_fleet_server_hosts(self, hosts: list):
+    endpoint = 'fleet/settings'
+    headers = {'kbn-xsrf': True}
+    body = {
+        'fleet_server_hosts': hosts
+      }
+
+    body_json = dumps(body)
+
+    result = self.send_api_request(endpoint, 'PUT', headers=headers, data=body_json)
+    return result
+
+  def get_fleet_elasticsearch_hosts(self):
+    endpoint = 'fleet/outputs'
+    result = self.send_api_request(endpoint, 'GET')
+    for item in result['items']:
+      if item['id'] == "fleet-default-output" and item['type'] == 'elasticsearch':
+        return item['hosts']
+
+  def set_fleet_elasticsearch_hosts(self, hosts: list):
+    endpoint = 'fleet/outputs/fleet-default-output'
+    body = {
+      'hosts': hosts
+    }
+
+    body_json = dumps(body)
+
+    result = self.send_api_request(endpoint, 'PUT', data=body_json)
+    return result
