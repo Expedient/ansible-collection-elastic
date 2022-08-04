@@ -16,6 +16,9 @@ from ansible.module_utils.urls import open_url, urllib_error
 from json import loads, dumps
 from urllib.error import HTTPError
 import urllib.parse
+import requests
+import tempfile
+import os
 
 class Kibana(object):
   def __init__(self, module):
@@ -45,7 +48,7 @@ class Kibana(object):
     return loads(response.read())
 
   def send_file_api_request(self, endpoint, method, data=None, file=None):
-    import requests
+
     url = f'https://{self.host}:{self.port}/api/{endpoint}'
     headers = {}
 
@@ -469,8 +472,7 @@ class Kibana(object):
     return export_object
 
   def import_saved_object(self, object_attributes):
-    import tempfile
-    import os
+
     importObjectJSON = tempfile.NamedTemporaryFile(delete=False,suffix='.ndjson', prefix='elastic_dashboard_')
     object_attributes_encode = object_attributes.encode()
     importObjectJSON.write(object_attributes_encode)
