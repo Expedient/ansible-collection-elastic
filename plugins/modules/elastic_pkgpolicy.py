@@ -173,11 +173,13 @@ def main():
     if integration_settings:
       if not 'package' in pkg_policy_object:
           pkg_policy_object = pkg_policy_object['item']
+          pkg_policy_object['inputs'] = integration_settings['inputs']
       pkg_policy_object_id = pkg_policy_object['id']  
       
       results['passed_integration_settings'] = integration_settings
       
-      for current_setting in integration_settings:
+      '''  
+    for current_setting in integration_settings:
         if current_setting == 'inputs':
           for new_entry in integration_settings[current_setting]:
             a = 0
@@ -186,6 +188,7 @@ def main():
                   #pkg_policy_object[current_setting][a]['config']['policy'] = new_entry['config']['policy']
                   deep_update(pkg_policy_object['inputs'][a], integration_settings['inputs'][a])        
               a = a +1
+      '''
       
       pkg_policy_info = kibana.update_pkg_policy(pkg_policy_object_id, pkg_policy_object)
       results['pkg_policy_object_update'] = pkg_policy_object
