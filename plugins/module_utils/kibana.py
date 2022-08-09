@@ -20,6 +20,15 @@ import requests
 import tempfile
 import os
 
+try:
+  import ansible_collections.expedient.elastic.plugins.module_utils.lookups as lookups
+except:
+  import sys
+  import os
+  util_path = f'{os.getcwd()}/plugins/module_utils'
+  sys.path.append(util_path)
+  import lookups as lookups
+
 class Kibana(object):
   def __init__(self, module):
     self.module = module
@@ -31,9 +40,8 @@ class Kibana(object):
     self.version = None # this is a hack to make it so that we can run the first request to get the clutser version without erroring out
     self.version = self.get_cluster_version()
 
-  def send_api_request(self, endpoint, method, data=None):
+  def send_api_request(self, endpoint, method, data=None, headers={}, timeout=120):
     url = f'https://{self.host}:{self.port}/api/{endpoint}'
-    headers = {}
     payload = None
     if data:
       headers['Content-Type'] = 'application/json'
@@ -42,7 +50,7 @@ class Kibana(object):
       headers['kbn-version'] = self.version
     try:
       response = open_url(url, data=payload, method=method, validate_certs=self.validate_certs, headers=headers,
-                          force_basic_auth=True, url_username=self.username, url_password=self.password, timeout=60)
+                          force_basic_auth=True, url_username=self.username, url_password=self.password, timeout=timeout)
     except HTTPError as e:
       raise e ## This allows errors raised during the request to be inspected while debugging
     return loads(response.read())
@@ -100,6 +108,139 @@ class Kibana(object):
     endpoint = 'actions/connector_types'
     connector_types = self.send_api_request(endpoint, 'GET')
     return next(filter(lambda x: x['name'] == connector_type_name, connector_types), None)
+  
+  def ensure_alert(self, alert_id=None):
+    """
+    This method will either make a POST request to create an alert,
+    or a PUT request to update an alert. This distinction is made based on
+    the existence of alert_id.
+
+    variables:
+      alert_id(str): Default to None. The ID of the alert that we want to update.
+                     If this variable exists, then the method will do a PUT request.
+                     Otherwise, it will do a POST and create a new alert.
+
+    Returns:
+      result(dict)
+    """
+    endpoint = 'alerting/rule'
+    if alert_id:
+      # Updating an alert
+      endpoint += f"/{alert_id}"
+      method = "PUT"
+    else:
+      # Creating an alert
+      method="POST"
+
+    # set variables for data
+    notify_when = self.module.params.get('notify_on')
+    alert_type = self.module.params.get('alert_type')
+    group_by = self.module.params.get('group_by')
+
+    data = {
+      'notify_when': lookups.notify_lookup[notify_when],
+      'params': self.format_alert_params(),
+      'schedule': {
+        'interval': self.module.params.get('check_every')
+      },
+      'actions': self.format_alert_actions(),
+      'tags': self.module.params.get('tags'),
+      'name': self.module.params.get('alert_name')
+    }
+    if self.module.params.get('filter'):
+      data['params']['filterQueryText'] = self.module.params.get('filter')
+      data['params']['filterQuery'] = self.module.params.get('filter_query')
+    if group_by:
+        data['params']['groupBy'] = self.module.params.get('group_by')
+    if alert_id is None:
+      # If we are creating a new alert
+      data['rule_type_id'] = lookups.alert_type_lookup[alert_type]
+      data['consumer'] = self.module.params.get('consumer')
+      data['enabled']= self.module.params.get('enabled')
+    result = self.send_api_request(endpoint, method, data=data)
+    return result
+  
+  def delete_alert(self, alert_id):
+    endpoint = f'alerting/rule/{alert_id}'
+    return self.send_api_request(endpoint, 'DELETE')
+
+  def format_alert_actions(self):
+    actions = self.module.params.get('actions')
+    formatted_actions = [{
+      'group': lookups.action_group_lookup[action['run_when']],
+      'params': {
+        lookups.action_param_type_lookup[action['action_type']]: [action['body']] if action['body'] else dumps(action['body_json'], indent=2)
+      },
+      'id': self.get_alert_connector_by_name(action['connector'])['id']
+    } for action in actions]
+    return formatted_actions
+  
+  def format_alert_conditions(self):
+    conditions = self.module.params.get('conditions')
+    alert_type = self.module.params.get('alert_type')
+    formatted_conditions = []
+    if alert_type == 'metrics_threshold':
+      for condition in conditions:
+        formatted_condition = {
+          'aggType': condition['when'],
+          'comparator': lookups.state_lookup[condition['state']],
+          'threshold': [condition['threshold']] if condition['threshold'] != 0.0 else [int(condition['threshold'])],
+          'timeSize': condition['time_period'],
+          'timeUnit': lookups.time_unit_lookup[condition['time_unit']],
+        }
+        if condition['field'] is not None:
+          formatted_condition['metric'] = condition['field']
+        formatted_conditions.append(formatted_condition)
+    return formatted_conditions
+  
+  def format_alert_availability(self):
+    availability = self.module.params.get('availability')
+    formatted_availability = {}
+    alert_type = self.module.params.get('alert_type')
+    if alert_type == 'uptime_monitor_status':
+      formatted_availability = {
+        'range': availability['range'],
+        'rangeUnit': lookups.time_unit_lookup[availability['rangeUnit']],
+        'threshold': availability['threshold']
+      }
+
+    return formatted_availability
+  
+  def format_alert_params(self):
+    formatted_params = {}
+    alert_type = self.module.params.get('alert_type')
+
+    if alert_type == 'metrics_threshold':
+      criteria = self.format_alert_conditions()
+      formatted_params = {
+        'criteria': criteria,
+        'alertOnNoData': self.module.params.get('alert_on_no_data'),
+        'sourceId': 'default' #entirely unclear what this does but it appears to be a static value so hard-coding for now
+      }
+    
+    elif alert_type == 'uptime_monitor_status':
+      availability = self.format_alert_availability()
+      formatted_params = {
+        'availability': availability,
+        'numTimes': self.module.params.get('numTimes'),
+        'search': self.module.params.get('search'),
+        'shouldCheckAvailability': self.module.params.get('shouldCheckAvailability'),
+        'shouldCheckStatus': self.module.params.get('shouldCheckStatus'),
+        'timerangeCount': self.module.params.get('timerangeCount'),
+        'timerangeUnit': lookups.time_unit_lookup[self.module.params.get('timerangeUnit')]
+      }
+
+    if self.module.params.get('filter'):
+      formatted_params['filterQueryText'] = self.module.params.get('filter')
+      formatted_params['filterQuery'] = self.module.params.get('filter_query')
+    if self.module.params.get('group_by'):
+      formatted_params['groupBy'] = self.module.params.get('group_by')
+      formatted_params['alertOnGroupDisappear'] = (
+        self.module.params.get('alert_on_group_disappear')
+        if self.module.params.get('alert_on_group_disappear') is not None
+        else False)
+
+    return formatted_params
   
   # Elastic Security Rules functions
 
@@ -248,7 +389,7 @@ class Kibana(object):
         input_no = input_no + 1
       if not self.module.check_mode:
         endpoint = "fleet/package_policies/" + pkgpolicy_id
-        pkg_policy_update = self.send_api_request(endpoint, 'PUT', data=body)
+        pkg_policy_update = self.send_api_request(endpoint, 'PUT', data=body, timeout=300)
       else:
         pkg_policy_update = "Cannot proceed with check_mode set to " + self.module.check_mode
       return pkg_policy_update
@@ -330,7 +471,7 @@ class Kibana(object):
       body_JSON = dumps(body)
       endpoint = 'fleet/package_policies'
       if not self.module.check_mode:
-        pkg_policy_object = self.send_api_request(endpoint, 'POST', data=body_JSON)
+        pkg_policy_object = self.send_api_request(endpoint, 'POST', data=body_JSON, timeout=300)
       else:
         pkg_policy_object = "Cannot proceed with check_mode set to " + self.module.check_mode
       
@@ -481,3 +622,38 @@ class Kibana(object):
     export_object = self.send_file_api_request(endpoint, 'POST', file=importObjectJSON.name)
     os.remove(importObjectJSON.name)
     return export_object
+
+  def get_fleet_server_hosts(self):
+    endpoint = 'fleet/settings'
+    result = self.send_api_request(endpoint, 'GET')
+    return result['item']['fleet_server_hosts']
+
+  def set_fleet_server_hosts(self, hosts: list):
+    endpoint = 'fleet/settings'
+    headers = {'kbn-xsrf': True}
+    body = {
+        'fleet_server_hosts': hosts
+      }
+
+    body_json = dumps(body)
+
+    result = self.send_api_request(endpoint, 'PUT', headers=headers, data=body_json)
+    return result
+
+  def get_fleet_elasticsearch_hosts(self):
+    endpoint = 'fleet/outputs'
+    result = self.send_api_request(endpoint, 'GET')
+    for item in result['items']:
+      if item['id'] == "fleet-default-output" and item['type'] == 'elasticsearch':
+        return item['hosts']
+
+  def set_fleet_elasticsearch_hosts(self, hosts: list):
+    endpoint = 'fleet/outputs/fleet-default-output'
+    body = {
+      'hosts': hosts
+    }
+
+    body_json = dumps(body)
+
+    result = self.send_api_request(endpoint, 'PUT', data=body_json)
+    return result

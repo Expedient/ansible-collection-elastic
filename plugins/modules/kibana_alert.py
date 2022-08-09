@@ -85,6 +85,46 @@ options:
       - only used for metrics threshold alerts.
       - see examples for details
     type: dict
+  availability:
+    description:
+      - dictionary defining the availability of the alert
+      - only used for uptime monitor status alerts
+      - see examples for details
+    type: dict
+  numTimes:
+    description:
+      - The number of times a monitor can go down within a specified 
+        time range (timerangeCount, timerangeUnit) before an alert is 
+        triggered.
+      default: 5
+      type: int
+  search:
+    description:
+      - The default term that appears in the filter search bar
+        when manually editing the rule.
+    type: str
+    default: ""
+  shouldcheckAvailability:
+    description:
+      - whether or not the uptime monitor should check availability
+    type: bool
+    default: True
+  shouldCheckStatus:
+    description:
+      - whether or not the uptime monitor should check status
+    type: bool
+    default: True
+  timerangeCount:
+    description:
+      - The number of timerangeUnits in which a monitor can go down
+        in which a monitor can go down up to numTimes.
+    default: 15
+    type: int
+  timerangeUnit:
+    description:
+      - The unit coinciding with timerangeCount (minute, day, week, etc.)
+    default: "minute"
+    choices: ['second', 'seconds', 'minute', 'minutes', 'hour', 'hours', 'day', 'days']
   filter:
     description:
       - kql filter to apply to the conditions
@@ -98,6 +138,11 @@ options:
   alert_on_no_data:
     description:
       whether to alert if there is no data available in the check period
+    type: bool
+  alert_on_group_disappear:
+    description:
+      whether to alert if data stops being received for a group identified by the 'group_by'
+      settings
     type: bool
   group_by:
     description:
@@ -122,56 +167,18 @@ extends_documentation_fragment:
 
 try:
   from ansible_collections.expedient.elastic.plugins.module_utils.kibana import Kibana
+  import ansible_collections.expedient.elastic.plugins.module_utils.lookups
 except:
   import sys
   import os
   util_path = new_path = f'{os.getcwd()}/plugins/module_utils'
   sys.path.append(util_path)
   from kibana import Kibana
+  import lookups
 
 from ansible.module_utils.basic import AnsibleModule
 from json import dumps
 
-time_unit_lookup = {
-  'second': 's',
-  'seconds': 's',
-  'minute': 'm',
-  'minutes': 'm',
-  'hour': 'h',
-  'hours': 'h',
-  'day': 'd',
-  'days': 'd',
-}
-
-alert_type_lookup = {
-  'metrics_threshold': 'metrics.alert.threshold'
-}
-
-action_type_lookup = {
-  'email': '.email',
-  'index': '.index',
-  'webhook': '.webhook'
-}
-
-# Need to get warning thresholds added here too
-action_group_lookup = {
-  'alert': 'metrics.threshold.fired',
-  'recovered': 'metrics.threshold.recovered'
-}
-
-action_param_type_lookup = {
-  'index': 'documents',
-  'webhook': 'body'
-}
-
-state_lookup = {
-  'above': '>',
-  'below': '<'
-}
-
-notify_lookup = {
-  'status_change': 'onActionGroupChange'
-}
 class KibanaAlert(Kibana):
   def __init__(self, module):
     super().__init__(module)
@@ -185,84 +192,18 @@ class KibanaAlert(Kibana):
     self.notify_when = self.module.params.get('notify_on')
     self.group_by = self.module.params.get('group_by')
     self.alert_on_no_data = self.module.params.get('alert_on_no_data')
+    self.alert_on_group_disappear = self.module.params.get('alert_on_group_disappear')
     self.consumer = self.module.params.get('consumer')
     self.filter = self.module.params.get('filter')
     self.filter_query = self.module.params.get('filter_query')
 
-
     self.alert = self.get_alert_by_name(self.alert_name)
+
 
   def split_time_string(self, time_string):
     tail = time_string.lstrip('0123456789')
     head = time_string[:len(time_string) - len(tail)]
     return head, tail
-
-  # This will defnitely need changes as we expand out functionality of the alert module, currently really only works with metrcis thresholds
-  def format_conditions(self):
-    conditions = self.module.params.get('conditions')
-    formatted_conditions = []
-    if self.alert_type == 'metrics_threshold':
-      for condition in conditions:
-        formatted_condition = {
-          'aggType': condition['when'],
-          'comparator': state_lookup[condition['state']],
-          'threshold': [condition['threshold']] if condition['threshold'] != 0.0 else [int(condition['threshold'])],
-          'timeSize': condition['time_period'],
-          'timeUnit': time_unit_lookup[condition['time_unit']],
-        }
-        if condition['field'] is not None:
-          formatted_condition['metric'] = condition['field']
-        formatted_conditions.append(formatted_condition)
-    return formatted_conditions
-
-  def format_actions(self):
-    actions = self.module.params.get('actions')
-    formatted_actions = [{
-      'actionTypeId': action_type_lookup[action['action_type']],
-      'group': action_group_lookup[action['run_when']],
-      'params': {
-        action_param_type_lookup[action['action_type']]: [action['body']] if action['body'] else dumps(action['body_json'], indent=2)
-      },
-      'id': self.get_alert_connector_by_name(action['connector'])['id'] ## need to actually implement this
-    } for action in actions]
-    return formatted_actions
-
-  def create_alert(self):
-    endpoint = 'alerts/alert'
-    criteria = self.format_conditions()
-    data = {
-      'notifyWhen': notify_lookup[self.notify_when],
-      'params': {
-        'criteria': criteria,
-        'alertOnNoData': self.alert_on_no_data,
-        'sourceId': 'default' #entirely unclear what this does but it appears to be a static value so hard-coding for now
-      },
-      'consumer': self.consumer,
-      'alertTypeId': alert_type_lookup[self.alert_type],
-      'schedule': {
-        'interval': self.check_every
-      },
-      'actions': self.format_actions(),
-      'tags': self.tags,
-      'name': self.alert_name,
-      'enabled': self.enabled
-    }
-    if self.filter:
-      data['params']['filterQueryText'] = self.filter
-      data['params']['filterQuery'] = self.filter_query
-    if self.group_by:
-        data['params']['groupBy'] = self.group_by
-    result = self.send_api_request(endpoint, 'POST', data=data)
-    return result
-
-  def delete_alert(self):
-    endpoint = f'alerts/alert/{self.alert["id"]}'
-    return self.send_api_request(endpoint, 'DELETE')
-
-
-
-
-
 
 def main():
   module_args=dict(
@@ -274,12 +215,12 @@ def main():
     state=dict(type='str', default='present', choices=['present', 'absent']),
     alert_name=dict(type='str', required=True),
     enabled=dict(type='bool', default=True),
-    alert_type=dict(type='str', choices=['metrics_threshold']), #more types will be added as we gain the ability to support them
+    alert_type=dict(type='str', choices=['metrics_threshold', 'uptime_monitor_status']), #more types will be added as we gain the ability to support them
     tags=dict(type='list', elements='str', default=[]),
     check_every=dict(type='str', default='1m'),
     notify_on=dict(type='str', default='status_change', choices=['status_change']),
     conditions=dict(type='list', elements='dict', options=dict(
-      when=dict(type='str', required=True, choices=['max', 'min', 'avg', 'cardnality', 'rate', 'count', 'sum', '95th_percentile', '99th_percentile']),
+      when=dict(type='str', required=True, choices=['max', 'min', 'avg', 'cardinality', 'rate', 'count', 'sum', '95th_percentile', '99th_percentile']),
       field=dict(type='str', required=False),
       state=dict(type='str', required=True),
       threshold=dict(type='float', required=True),
@@ -287,13 +228,25 @@ def main():
       time_period=dict(type='int', default=5),
       time_unit=dict(type='str', default='minute', choices=['second', 'seconds', 'minute', 'minutes', 'hour', 'hours', 'day', 'days']),
     )),
+    availability=dict(type='dict', options=dict(
+      range=dict(type='int', default=30),
+      rangeUnit=dict(type='str', default='minute', choices=['second', 'seconds', 'minute', 'minutes', 'hour', 'hours', 'day', 'days']),
+      threshold=dict(type='str', default='99')
+    )),
+    numTimes=dict(type='int', default=5),
+    search=dict(type='str', default=''),
+    shouldCheckAvailability=dict(type='bool', default=True),
+    shouldCheckStatus=dict(type='bool', default=True),
+    timerangeCount=dict(type=int, default=15),
+    timerangeUnit=dict(type='str', default='minute', choices=['second', 'seconds', 'minute', 'minutes', 'hour', 'hours', 'day', 'days']),
     filter=dict(type='str'),
     filter_query=dict(type='str'),
     alert_on_no_data=dict(type='bool', default=False),
+    alert_on_group_disappear=dict(type='bool', default=False),
     group_by=dict(type='list', elements='str', required=False),
     actions=dict(type='list', elements='dict', options=dict(
       action_type=dict(type='str', required=True, choices=['email', 'index', 'webhook']), #Only supporting these types for now, if we need more options later we can deal with them as-needed
-      run_when=dict(type='str', default='alert', choices=['alert', 'warning', 'recovered']),
+      run_when=dict(type='str', default='alert', choices=['alert', 'warning', 'recovered','uptime_down_monitor']),
       connector=dict(type='str', required=True),
       body=dict(type='str', required=False),
       body_json=dict(type='dict', required=False)
@@ -303,8 +256,9 @@ def main():
 
   # https://docs.ansible.com/ansible/latest/dev_guide/developing_program_flow_modules.html#argument-spec-dependencies
   argument_dependencies = [
-    ('state', 'present', ('enabled', 'alert_type', 'conditions', 'actions')),
-    ('alert-type', 'metrics_threshold', ('conditions'))
+    ('state', 'present', ('enabled', 'alert_type', 'actions')),
+    ('alert-type', 'metrics_threshold', ('conditions')),
+    ('alert-type', 'uptime_monitor_status', ('enabled','alert_type','actions','availability','numTimes', 'search', 'shouldCheckAvailability', 'shouldCheckStatus', 'timerangeCount', 'timerangeUnit'))
   ]
 
   results = {'changed': False}
@@ -312,14 +266,23 @@ def main():
   module = AnsibleModule(argument_spec=module_args, required_if=argument_dependencies, supports_check_mode=True)
   state = module.params.get('state')
   kibana_alert = KibanaAlert(module)
+  alert = kibana_alert.get_alert_by_name(module.params.get('alert_name'))
   if state == 'present':
     if kibana_alert.alert:
-      results['msg'] = f'alert named {kibana_alert.alert_name} exists'
+      results['msg'] = f'alert named {kibana_alert.alert_name} exists, and will be updated'
+      if not module.check_mode:
+        update_result = kibana_alert.ensure_alert(alert_id=alert['id'])
+        if update_result is not None:
+          results['msg'] = f'alert named {kibana_alert.alert_name} updated'
+          results['changed'] = True
+        else:
+          results['msg'] = f'identical to existing alert {kibana_alert.alert_name}'
+          results['changed'] = False
       module.exit_json(**results)
     results['changed'] = True
     results['msg'] = f'alert named {module.params.get("alert_name")} will be created'
     if not module.check_mode:
-      results['alert'] = kibana_alert.create_alert()
+      results['alert'] = kibana_alert.ensure_alert()
       results['msg'] = f'alert named {module.params.get("alert_name")} created'
     module.exit_json(**results)
   if state == 'absent':
@@ -329,7 +292,7 @@ def main():
     results['changed'] = True
     results['msg'] = f'alert named {module.params.get("alert_name")} will be deleted'
     if not module.check_mode:
-      kibana_alert.delete_alert()
+      kibana_alert.delete_alert(alert_id=alert['id'])
     module.exit_json(**results)
 
 if __name__ == '__main__':
