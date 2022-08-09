@@ -205,15 +205,10 @@ try:
 except:
   import sys
   import os
-  util_path = new_path = f'{os.getcwd()}/plugins/module_utils'
+  util_path = f'{os.getcwd()}/plugins/module_utils'
   sys.path.append(util_path)
   from ece import ECE
 
-from yaml import load, dump
-try:
-    from yaml import CLoader as Loader, CDumper as Dumper
-except ImportError:
-    from yaml import Loader, Dumper
 
 from ansible.module_utils.basic import AnsibleModule
 
@@ -233,138 +228,6 @@ class ECE_Cluster(ECE):
     self.elastic_user_settings = self.module.params.get('elastic_user_settings')
     self.snapshot_settings = self.module.params.get('snapshot_settings')
     self.traffic_rulesets = self.module.params.get('traffic_rulesets')
-
-
-
-  def get_matching_clusters(self):
-    clusters = self.get_clusters_by_name(self.cluster_name)
-    return clusters
-
-  def create_cluster(self):
-    data = {
-      'cluster_name': self.cluster_name,
-      'plan': {
-        'cluster_topology': [{
-          'size': {
-            'value': settings['memory_mb'],
-            'resource': 'memory'
-          },
-          'node_type': {
-            'master': 'master' in settings['roles'],
-            'data': 'data' in settings['roles'],
-            'ingest': 'ingest' in settings['roles']
-          },
-          'instance_configuration_id': self.get_instance_config(settings['instance_config'])['id'],
-          'elasticsearch': {
-            'enabled_built_in_plugins': [],
-            'node_attributes': {},
-            'user_settings_yaml': dump(self.elastic_user_settings, Dumper=Dumper),
-          },
-          'zone_count': settings['zone_count']
-        } for settings in self.elastic_settings],
-        'elasticsearch': {
-          'version': self.version
-        },
-        'transient': {},
-        'deployment_template': {
-          'id': self.get_deployment_template(self.deployment_template)['id']
-        },
-      },
-      'settings': {},
-      'kibana': {
-        'plan': {
-          'cluster_topology': [{
-            'instance_configuration_id': self.get_instance_config(self.kibana_settings['instance_config'])['id'],
-            'size': {
-              'value': self.kibana_settings['memory_mb'],
-              'resource': 'memory'
-            },
-            'zone_count': self.kibana_settings['zone_count']
-          }],
-          'kibana': {
-            ## using a default value here, if we want to extend it later it can be
-            'user_settings_yaml': "# Note that the syntax for user settings can change between major versions.\n# You might need to update these user settings before performing a major version upgrade.\n#\n# Use OpenStreetMap for tiles:\n# tilemap:\n#   options.maxZoom: 18\n#   url: http://a.tile.openstreetmap.org/{z}/{x}/{y}.png\n#\n# To learn more, see the documentation.",
-            'version': self.version
-          }
-        },
-      }
-    }
-
-    if self.apm_settings:
-      data['apm'] = {
-        'plan': {
-          'cluster_topology': [{
-              'instance_configuration_id': self.get_instance_config(self.apm_settings['instance_config'])['id'],
-              'size': {
-                'value': self.apm_settings['memory_mb'],
-                'resource': 'memory'
-              },
-              'zone_count': self.apm_settings['zone_count']
-            }],
-            'apm': {'version': self.version}
-        }
-      }
-
-    ## This is technically just another ES deployment rather than it's own config, but decided to follow the UI rather than API conventions
-    if self.ml_settings:
-      data['plan']['cluster_topology'].append({
-                  'instance_configuration_id': self.get_instance_config(self.ml_settings['instance_config'])['id'],
-                  'size': {
-                    'value': self.ml_settings['memory_mb'],
-                    'resource': 'memory'
-                  },
-                  'node_type': {
-                    'master': False,
-                    'data': False,
-                    'ingest': False,
-                    'ml': True
-                  },
-                  'zone_count': self.ml_settings['zone_count']
-                })
-
-    if self.snapshot_settings:
-      data['settings']['snapshot'] = {
-        'repository': {
-          'reference': {
-            'repository_name': self.snapshot_settings['repository_name']
-          }
-        },
-        'enabled': self.snapshot_settings['enabled'],
-        'retention': {
-          'snapshots': self.snapshot_settings['snapshots_to_retain'],
-        },
-        'interval': self.snapshot_settings['snapshot_interval']
-      }
-
-    if self.traffic_rulesets:
-      data['settings']['ip_filtering'] = {
-        'rulesets': [self.get_traffic_ruleset_by_name(x)['id'] for x in self.traffic_rulesets]
-      }
-
-    endpoint = 'clusters/elasticsearch'
-    cluster_creation_result = self.send_api_request(endpoint, 'POST', data=data)
-    if self.wait_for_completion:
-      elastic_result = self.wait_for_cluster_state('elasticsearch', cluster_creation_result['elasticsearch_cluster_id'], 'started', self.completion_timeout)
-      kibana_result = self.wait_for_cluster_state('kibana', cluster_creation_result['kibana_cluster_id'], 'started', self.completion_timeout)
-      if not elastic_result and kibana_result:
-        return False
-    return cluster_creation_result
-
-  def delete_cluster(self, cluster_id):
-    self.terminate_cluster(cluster_id)
-    endpoint = f'clusters/elasticsearch/{cluster_id}'
-    delete_result = self.send_api_request(endpoint, 'DELETE')
-    return delete_result
-
-  def terminate_cluster(self, cluster_id):
-    endpoint = f'clusters/elasticsearch/{cluster_id}/_shutdown'
-    stop_result = self.send_api_request(endpoint, 'POST')
-    wait_result = self.wait_for_cluster_state('elasticsearch', cluster_id, 'stopped', self.completion_timeout)
-    if not wait_result:
-      self.module.fail_json(msg=f'failed to stop cluster {self.cluster_name}')
-    return stop_result
-
-
 
 def main():
   elastic_settings_spec=dict(
@@ -412,7 +275,7 @@ def main():
     kibana_settings=dict(type='dict', required=False, options=kibana_settings_spec),
     apm_settings=dict(type='dict', required=False, options=apm_settings_spec),
     ml_settings=dict(type='dict', required=False, options=ml_settings_spec),
-    version=dict(type='str', default='7.13.0'),
+    version=dict(type='str', default='7.17.5'),
     deployment_template=dict(type='str', required=True),
     wait_for_completion=dict(type='bool', default=False),
     completion_timeout=dict(type='int', default=600),
@@ -425,20 +288,23 @@ def main():
   ece_cluster = ECE_Cluster(module)
 
   matching_clusters = ece_cluster.get_matching_clusters()
-  if len(matching_clusters) > 1:
-    results['msg'] = f'found multiple clusters matching name {module.params.get("cluster_name")}'
-    module.fail_json(**results)
+  #if len(matching_clusters) > 1:
+  if matching_clusters:
+    #results['msg'] = f'found multiple clusters matching name {module.params.get("cluster_name")}'
+    results['msg'] = f'found cluster matching name {module.params.get("cluster_name")}'
+    #module.fail_json(**results)
 
   if state == 'present':
-    if len(matching_clusters) > 0:
+    #if len(matching_clusters) > 0:
+    if matching_clusters:
       results['msg'] = 'cluster exists'
       ## This code handles edge cases poorly, in the interest of being able to match the data format of the cluster creation result
       results['cluster_data'] = {
-        'elasticsearch_cluster_id': matching_clusters[0]['cluster_id'],
-        'kibana_cluster_id': matching_clusters[0]['associated_kibana_clusters'][0]['kibana_id']
+        'elasticsearch_cluster_id': matching_clusters['resources']['elasticsearch'][0]['id'],
+        'kibana_cluster_id': matching_clusters['resources']['kibana'][0]['id']
       }
-      if len(matching_clusters[0]['associated_apm_clusters']) > 0:
-        results['cluster_data']['apm_id'] = matching_clusters[0]['associated_apm_clusters'][0]['apm_id']
+      if len( matching_clusters['resources']['apm']) > 0:
+        results['cluster_data']['apm_id'] = matching_clusters['resources']['apm'][0]['id']
       module.exit_json(**results)
 
     results['changed'] = True
@@ -449,6 +315,13 @@ def main():
         results['msg'] = 'cluster creation failed'
         module.fail_json(**results)
       results['cluster_data'] = cluster_data
+      for resource in cluster_data['resources']:
+        if resource['ref_id'] == "main-elasticsearch":
+          elasticsearch_cluster_id = resource['id']
+        if resource['ref_id'] == "main-kibana":
+          kibana_cluster_id = resource['id']
+      results['cluster_data']['elasticsearch_cluster_id'] = elasticsearch_cluster_id
+      results['cluster_data']['kibana_cluster_id'] = kibana_cluster_id
       results['msg'] = f'cluster {module.params.get("cluster_name")} created'
     module.exit_json(**results)
 
@@ -460,13 +333,9 @@ def main():
     results['msg'] = f'cluster {module.params.get("cluster_name")} will be deleted'
     if not module.check_mode:
       results['changed'] = True
-      ece_cluster.delete_cluster(matching_clusters[0]['cluster_id'])
+      ece_cluster.delete_cluster(matching_clusters['id'])
       results['msg'] = f'cluster {module.params.get("cluster_name")} deleted'
       module.exit_json(**results)
-
-
-
-
 
 if __name__ == '__main__':
   main()
