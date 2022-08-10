@@ -205,15 +205,10 @@ try:
 except:
   import sys
   import os
-  util_path = new_path = f'{os.getcwd()}/plugins/module_utils'
+  util_path = f'{os.getcwd()}/plugins/module_utils'
   sys.path.append(util_path)
   from ece import ECE
 
-from yaml import load, dump
-try:
-    from yaml import CLoader as Loader, CDumper as Dumper
-except ImportError:
-    from yaml import Loader, Dumper
 
 from ansible.module_utils.basic import AnsibleModule
 
@@ -233,8 +228,6 @@ class ECE_Cluster(ECE):
     self.elastic_user_settings = self.module.params.get('elastic_user_settings')
     self.snapshot_settings = self.module.params.get('snapshot_settings')
     self.traffic_rulesets = self.module.params.get('traffic_rulesets')
-
-
 
   def get_matching_clusters(self):
     clusters = self.get_cluster_by_name(self.cluster_name)
@@ -366,8 +359,6 @@ class ECE_Cluster(ECE):
       self.module.fail_json(msg=f'failed to stop cluster {self.cluster_name}')
     return stop_result
 
-
-
 def main():
   elastic_settings_spec=dict(
     memory_mb=dict(type='int', required=True),
@@ -414,7 +405,7 @@ def main():
     kibana_settings=dict(type='dict', required=False, options=kibana_settings_spec),
     apm_settings=dict(type='dict', required=False, options=apm_settings_spec),
     ml_settings=dict(type='dict', required=False, options=ml_settings_spec),
-    version=dict(type='str', default='7.13.0'),
+    version=dict(type='str', default='7.17.5'),
     deployment_template=dict(type='str', required=True),
     wait_for_completion=dict(type='bool', default=False),
     completion_timeout=dict(type='int', default=600),
@@ -427,20 +418,23 @@ def main():
   ece_cluster = ECE_Cluster(module)
 
   matching_clusters = ece_cluster.get_matching_clusters()
-  if len(matching_clusters) > 1:
-    results['msg'] = f'found multiple clusters matching name {module.params.get("cluster_name")}'
-    module.fail_json(**results)
+  #if len(matching_clusters) > 1:
+  if matching_clusters:
+    #results['msg'] = f'found multiple clusters matching name {module.params.get("cluster_name")}'
+    results['msg'] = f'found cluster matching name {module.params.get("cluster_name")}'
+    #module.fail_json(**results)
 
   if state == 'present':
-    if len(matching_clusters) > 0:
+    #if len(matching_clusters) > 0:
+    if matching_clusters:
       results['msg'] = 'cluster exists'
       ## This code handles edge cases poorly, in the interest of being able to match the data format of the cluster creation result
       results['cluster_data'] = {
-        'elasticsearch_cluster_id': matching_clusters[0]['cluster_id'],
-        'kibana_cluster_id': matching_clusters[0]['associated_kibana_clusters'][0]['kibana_id']
+        'elasticsearch_cluster_id': matching_clusters['resources']['elasticsearch'][0]['id'],
+        'kibana_cluster_id': matching_clusters['resources']['kibana'][0]['id']
       }
-      if len(matching_clusters[0]['associated_apm_clusters']) > 0:
-        results['cluster_data']['apm_id'] = matching_clusters[0]['associated_apm_clusters'][0]['apm_id']
+      if len( matching_clusters['resources']['apm']) > 0:
+        results['cluster_data']['apm_id'] = matching_clusters['resources']['apm'][0]['id']
       module.exit_json(**results)
 
     results['changed'] = True
@@ -451,6 +445,13 @@ def main():
         results['msg'] = 'cluster creation failed'
         module.fail_json(**results)
       results['cluster_data'] = cluster_data
+      for resource in cluster_data['resources']:
+        if resource['ref_id'] == "main-elasticsearch":
+          elasticsearch_cluster_id = resource['id']
+        if resource['ref_id'] == "main-kibana":
+          kibana_cluster_id = resource['id']
+      results['cluster_data']['elasticsearch_cluster_id'] = elasticsearch_cluster_id
+      results['cluster_data']['kibana_cluster_id'] = kibana_cluster_id
       results['msg'] = f'cluster {module.params.get("cluster_name")} created'
     module.exit_json(**results)
 
@@ -462,13 +463,9 @@ def main():
     results['msg'] = f'cluster {module.params.get("cluster_name")} will be deleted'
     if not module.check_mode:
       results['changed'] = True
-      ece_cluster.delete_cluster(matching_clusters[0]['cluster_id'])
+      ece_cluster.delete_cluster(matching_clusters['id'])
       results['msg'] = f'cluster {module.params.get("cluster_name")} deleted'
       module.exit_json(**results)
-
-
-
-
 
 if __name__ == '__main__':
   main()

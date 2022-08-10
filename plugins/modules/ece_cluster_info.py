@@ -58,7 +58,7 @@ def main():
       results['deployment_kibana_info'] = "No deployment kibana was returned, check your deployment name"
     else:
       results['deployment_kibana_endpoint'] = deployment_kibana_info['info']['metadata'].get('aliased_endpoint') or deployment_kibana_info['info']['metadata']['endpoint']
-      results['deployment_kibana_url'] = deployment_kibana_info['info']['metadata']['aliased_url']
+      results['deployment_kibana_url'] = deployment_kibana_info['info']['metadata'].get('aliased_endpoint')
       results['deployment_kibana_object'] = deployment_object
       results['deployment_kibana_info'] = "Deployment kibana was returned sucessfully"
       
