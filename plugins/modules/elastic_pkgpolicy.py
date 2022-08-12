@@ -171,7 +171,7 @@ def main():
           results['pkg_policy_object'] = pkg_policy_object
           results['changed'] = True
         else:
-          results['pkg_policy_status'] = "No Integration Package found, Package Policy not created becans check_mode is set to true"
+          results['pkg_policy_status'] = "No Integration Package found, Package Policy not created because check_mode is set to true"
           results['pkg_policy_object'] = ""
           results['changed'] = False
 
