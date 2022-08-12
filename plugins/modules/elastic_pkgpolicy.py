@@ -127,6 +127,7 @@ def main():
         results['changed'] = True
 
     kibana = Kibana(module)
+    
     if module.params.get('agent_policy_id'):
       agency_policy_object = kibana.get_agent_policy_byid(agent_policy_id)
     else:
@@ -164,11 +165,15 @@ def main():
         results['pkg_policy_status'] = "Integration Package found, No package created"
         results['changed'] = False
       else:
-        pkg_policy_object = kibana.create_pkg_policy(pkg_policy_name, pkg_policy_desc, agent_policy_id, integration_object, namespace)
-        results['pkg_policy_status'] = "No Integration Package found, Package Policy created"
-      results['pkg_policy_object'] = pkg_policy_object
-    else:
-      results['pkg_policy_object'] = "A valid state was not passed"
+        if module.check_mode == False: 
+          pkg_policy_object = kibana.create_pkg_policy(pkg_policy_name, pkg_policy_desc, agent_policy_id, integration_object, namespace)
+          results['pkg_policy_status'] = "No Integration Package found, Package Policy created"
+          results['pkg_policy_object'] = pkg_policy_object
+          results['changed'] = True
+        else:
+          results['pkg_policy_status'] = "No Integration Package found, Package Policy not created becans check_mode is set to true"
+          results['pkg_policy_object'] = ""
+          results['changed'] = False
 
     if integration_settings:
       if not 'package' in pkg_policy_object:
@@ -191,7 +196,7 @@ def main():
       '''
       
       pkg_policy_info = kibana.update_pkg_policy(pkg_policy_object_id, pkg_policy_object)
-      results['pkg_policy_object_update'] = pkg_policy_object
+      results['pkg_policy_object_update'] = pkg_policy_info
 
     module.exit_json(**results)
 

@@ -166,9 +166,11 @@ def main():
           pkg_policy_object = kibana.create_pkg_policy(pkg_policy_name, pkg_policy_desc, agent_policy_id, integration_object, namespace)
           updated_pkg_policy_object = kibana.create_securityctrl_baseline_settings(pkg_policy_object)
           results['pkg_policy_status'] = "No Integration Package found, Package Policy created"
+          results['pkg_policy_object'] = pkg_policy_object
           results['changed'] = True
         else:
           results['pkg_policy_status'] = "No Integration Package found, Package Policy not created becans check_mode is set to true"
+          results['pkg_policy_object'] = ""
           results['changed'] = False
         
       results['pkg_policy_object'] = pkg_policy_object

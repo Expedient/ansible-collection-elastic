@@ -413,7 +413,7 @@ class Kibana(object):
             for policy_input in policy_template['inputs']:
               inputs_body_entry = {}
               inputs_body_entry['policy_template'] = policy_template['name']
-              inputs_body_entry['enabled'] = True
+              inputs_body_entry['enabled'] = False
               inputs_body_entry['type'] = policy_input['type']
               if 'config' in policy_input:                 
                 inputs_body_entry['config'] = policy_input['config']
@@ -452,7 +452,6 @@ class Kibana(object):
                   
                 inputs_body_entry['streams'] = inputs_body_streams
               inputs_body.append(inputs_body_entry)
-
     if not pkg_policy_object:
       body = {
         "name": pkg_policy_name,
