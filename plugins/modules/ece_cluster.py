@@ -15,6 +15,7 @@
 
 # -*- coding: utf-8 -*-
 
+
 ANSIBLE_METADATA = {
   'metadata_version': '1.1',
   'status': ['preview'],
@@ -212,153 +213,6 @@ except:
 
 from ansible.module_utils.basic import AnsibleModule
 
-
-class ECE_Cluster(ECE):
-  def __init__(self, module):
-    super().__init__(module)
-    self.cluster_name = self.module.params.get('cluster_name')
-    self.elastic_settings = self.module.params.get('elastic_settings')
-    self.kibana_settings = self.module.params.get('kibana_settings')
-    self.apm_settings = self.module.params.get('apm_settings')
-    self.ml_settings = self.module.params.get('ml_settings')
-    self.version = self.module.params.get('version')
-    self.deployment_template = self.module.params.get('deployment_template')
-    self.wait_for_completion = self.module.params.get('wait_for_completion')
-    self.completion_timeout = self.module.params.get('completion_timeout')
-    self.elastic_user_settings = self.module.params.get('elastic_user_settings')
-    self.snapshot_settings = self.module.params.get('snapshot_settings')
-    self.traffic_rulesets = self.module.params.get('traffic_rulesets')
-
-  def get_matching_clusters(self):
-    clusters = self.get_cluster_by_name(self.cluster_name)
-    if not clusters:
-      clusters = []
-    return clusters
-
-  def create_cluster(self):
-    data = {
-      'cluster_name': self.cluster_name,
-      'plan': {
-        'cluster_topology': [{
-          'size': {
-            'value': settings['memory_mb'],
-            'resource': 'memory'
-          },
-          'node_type': {
-            'master': 'master' in settings['roles'],
-            'data': 'data' in settings['roles'],
-            'ingest': 'ingest' in settings['roles']
-          },
-          'instance_configuration_id': self.get_instance_config(settings['instance_config'])['id'],
-          'elasticsearch': {
-            'enabled_built_in_plugins': [],
-            'node_attributes': {},
-            'user_settings_yaml': dump(self.elastic_user_settings, Dumper=Dumper),
-          },
-          'zone_count': settings['zone_count']
-        } for settings in self.elastic_settings],
-        'elasticsearch': {
-          'version': self.version
-        },
-        'transient': {},
-        'deployment_template': {
-          'id': self.get_deployment_template(self.deployment_template)['id']
-        },
-      },
-      'settings': {},
-      'kibana': {
-        'plan': {
-          'cluster_topology': [{
-            'instance_configuration_id': self.get_instance_config(self.kibana_settings['instance_config'])['id'],
-            'size': {
-              'value': self.kibana_settings['memory_mb'],
-              'resource': 'memory'
-            },
-            'zone_count': self.kibana_settings['zone_count']
-          }],
-          'kibana': {
-            ## using a default value here, if we want to extend it later it can be
-            'user_settings_yaml': "# Note that the syntax for user settings can change between major versions.\n# You might need to update these user settings before performing a major version upgrade.\n#\n# Use OpenStreetMap for tiles:\n# tilemap:\n#   options.maxZoom: 18\n#   url: http://a.tile.openstreetmap.org/{z}/{x}/{y}.png\n#\n# To learn more, see the documentation.",
-            'version': self.version
-          }
-        },
-      }
-    }
-
-    if self.apm_settings:
-      data['apm'] = {
-        'plan': {
-          'cluster_topology': [{
-              'instance_configuration_id': self.get_instance_config(self.apm_settings['instance_config'])['id'],
-              'size': {
-                'value': self.apm_settings['memory_mb'],
-                'resource': 'memory'
-              },
-              'zone_count': self.apm_settings['zone_count']
-            }],
-            'apm': {'version': self.version}
-        }
-      }
-
-    ## This is technically just another ES deployment rather than it's own config, but decided to follow the UI rather than API conventions
-    if self.ml_settings:
-      data['plan']['cluster_topology'].append({
-                  'instance_configuration_id': self.get_instance_config(self.ml_settings['instance_config'])['id'],
-                  'size': {
-                    'value': self.ml_settings['memory_mb'],
-                    'resource': 'memory'
-                  },
-                  'node_type': {
-                    'master': False,
-                    'data': False,
-                    'ingest': False,
-                    'ml': True
-                  },
-                  'zone_count': self.ml_settings['zone_count']
-                })
-
-    if self.snapshot_settings:
-      data['settings']['snapshot'] = {
-        'repository': {
-          'reference': {
-            'repository_name': self.snapshot_settings['repository_name']
-          }
-        },
-        'enabled': self.snapshot_settings['enabled'],
-        'retention': {
-          'snapshots': self.snapshot_settings['snapshots_to_retain'],
-        },
-        'interval': self.snapshot_settings['snapshot_interval']
-      }
-
-    if self.traffic_rulesets:
-      data['settings']['ip_filtering'] = {
-        'rulesets': [self.get_traffic_ruleset_by_name(x)['id'] for x in self.traffic_rulesets]
-      }
-
-    endpoint = 'clusters/elasticsearch'
-    cluster_creation_result = self.send_api_request(endpoint, 'POST', data=data)
-    if self.wait_for_completion:
-      elastic_result = self.wait_for_cluster_state('elasticsearch', cluster_creation_result['elasticsearch_cluster_id'], 'started', self.completion_timeout)
-      kibana_result = self.wait_for_cluster_state('kibana', cluster_creation_result['kibana_cluster_id'], 'started', self.completion_timeout)
-      if not elastic_result and kibana_result:
-        return False
-    return cluster_creation_result
-
-  def delete_cluster(self, cluster_id):
-    self.terminate_cluster(cluster_id)
-    endpoint = f'clusters/elasticsearch/{cluster_id}'
-    delete_result = self.send_api_request(endpoint, 'DELETE')
-    return delete_result
-
-  def terminate_cluster(self, cluster_id):
-    endpoint = f'clusters/elasticsearch/{cluster_id}/_shutdown'
-    stop_result = self.send_api_request(endpoint, 'POST')
-    wait_result = self.wait_for_cluster_state('elasticsearch', cluster_id, 'stopped', self.completion_timeout)
-    if not wait_result:
-      self.module.fail_json(msg=f'failed to stop cluster {self.cluster_name}')
-    return stop_result
-
 def main():
   elastic_settings_spec=dict(
     memory_mb=dict(type='int', required=True),
@@ -388,8 +242,6 @@ def main():
     zone_count=dict(type='int', default=1),
   )
 
-
-
   module_args = dict(
     host=dict(type='str', required=True),
     port=dict(type='int', default=12443),
@@ -405,7 +257,7 @@ def main():
     kibana_settings=dict(type='dict', required=False, options=kibana_settings_spec),
     apm_settings=dict(type='dict', required=False, options=apm_settings_spec),
     ml_settings=dict(type='dict', required=False, options=ml_settings_spec),
-    version=dict(type='str', default='7.17.5'),
+    version=dict(type='str', default='8.3.3'),
     deployment_template=dict(type='str', required=True),
     wait_for_completion=dict(type='bool', default=False),
     completion_timeout=dict(type='int', default=600),
@@ -414,10 +266,25 @@ def main():
   results = {'changed': False}
 
   module = AnsibleModule(argument_spec=module_args, supports_check_mode=True)
+  
   state = module.params.get('state')
-  ece_cluster = ECE_Cluster(module)
+  cluster_name = module.params.get('cluster_name')
+  version = module.params.get('version')
+  elastic_settings = module.params.get('elastic_settings')
+  elastic_user_settings = module.params.get('elastic_user_settings')
+  snapshot_settings = module.params.get('snapshot_settings')
+  traffic_rulesets = module.params.get('traffic_rulesets')
+  kibana_settings = module.params.get('kibana_settings')
+  apm_settings = module.params.get('apm_settings')
+  ml_settings = module.params.get('ml_settings')
+  deployment_template = module.params.get('deployment_template')
+  wait_for_completion = module.params.get('wait_for_completion')
+  completion_timeout = module.params.get('completion_timeout')
+  
+  ece_cluster = ECE(module)
+  
 
-  matching_clusters = ece_cluster.get_matching_clusters()
+  matching_clusters = ece_cluster.get_matching_clusters(cluster_name)
   #if len(matching_clusters) > 1:
   if matching_clusters:
     #results['msg'] = f'found multiple clusters matching name {module.params.get("cluster_name")}'
@@ -440,7 +307,20 @@ def main():
     results['changed'] = True
     results['msg'] = f'cluster {module.params.get("cluster_name")} will be created'
     if not module.check_mode:
-      cluster_data = ece_cluster.create_cluster()
+      cluster_data = ece_cluster.create_cluster(
+          cluster_name,
+          version,
+          deployment_template, 
+          elastic_settings, 
+          kibana_settings, 
+          elastic_user_settings, 
+          apm_settings, 
+          ml_settings, 
+          snapshot_settings,
+          traffic_rulesets,
+          wait_for_completion,
+          completion_timeout
+          )
       if not cluster_data:
         results['msg'] = 'cluster creation failed'
         module.fail_json(**results)

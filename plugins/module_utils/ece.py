@@ -29,12 +29,6 @@ class ECE(object):
     self.username = module.params.get('username')
     self.password = module.params.get('password')
     self.validate_certs = module.params.get('verify_ssl_cert')
-    self.cluster_name = module.params.get('cluster_name')
-    self.elastic_settings = module.params.get('elastic_settings')
-    self.kibana_settings = module.params.get('kibana_settings')
-    self.ml_settings = module.params.get('ml_settings')
-    self.apm_settings = module.params.get('apm_settings')
-    self.deployment_template = module.params.get('deployment_template')
 
     if self.username and self.password:
       url = f'https://{self.host}:{self.port}/api/v1/users/auth/_login'
@@ -133,7 +127,8 @@ class ECE(object):
     return next(filter(lambda x: x['name'] == config_name, instances), None)
 
   def get_deployment_template(self, template_name):
-    endpoint = 'platform/configuration/templates/deployments'
+    #endpoint = 'platform/configuration/templates/deployments'
+    endpoint = 'deployments/templates?region=ece-region'
     templates = self.send_api_request(endpoint, 'GET')
     return next(filter(lambda x: x['name'] == template_name, templates), None)
 
@@ -188,16 +183,29 @@ class ECE(object):
         break
     return target_deployment_object
 
-  def create_cluster(self):
+  def create_cluster(self, 
+                     cluster_name, 
+                     version, 
+                     deployment_template, 
+                     elastic_settings, 
+                     kibana_settings, 
+                     elastic_user_settings, 
+                     apm_settings, 
+                     ml_settings = None, 
+                     snapshot_settings = None, 
+                     traffic_rulesets = None,
+                     wait_for_completion = False,
+                     completion_timeout = 600
+                     ):
       x = 0
-      for role in self.elastic_settings[0]['roles']:
+      for role in elastic_settings[0]['roles']:
         if role == 'data':
-          self.elastic_settings[0]['roles'][x] = 'data_hot'
+          elastic_settings[0]['roles'][x] = 'data_hot'
         x = x + 1
-      self.elastic_settings[0]['roles'].append('data_content')
-      deployment_template_object = self.get_deployment_template(self.deployment_template)
+      elastic_settings[0]['roles'].append('data_content')
+      deployment_template_object = self.get_deployment_template(deployment_template)
       data = {
-        'name': self.cluster_name,
+        'name': cluster_name,
         'settings': {},
         'resources': {
           'elasticsearch': [
@@ -209,23 +217,23 @@ class ECE(object):
                   'id': deployment_template_object['id']
                 },
                 'elasticsearch': {
-                    'version': self.version
+                    'version': version
                 },
                 'cluster_topology': [
                   {
                     'id': 'hot_content',
-                    'node_roles': self.elastic_settings[0]['roles'],
-                    'zone_count': self.elastic_settings[0]['zone_count'],
+                    'node_roles': elastic_settings[0]['roles'],
+                    'zone_count': elastic_settings[0]['zone_count'],
                     'elasticsearch': {
                       'enabled_built_in_plugins': [],
                       'node_attributes': {},
-                      'user_settings_yaml': dump(self.elastic_user_settings, Dumper=Dumper),
+                      'user_settings_yaml': dump(elastic_user_settings, Dumper=Dumper),
                     },
                     'size': {
-                      'value': self.elastic_settings[0]['memory_mb'],
+                      'value': elastic_settings[0]['memory_mb'],
                       'resource': 'memory'
                     },
-                    'instance_configuration_id': self.get_instance_config(self.elastic_settings[0]['instance_config'])['id']
+                    'instance_configuration_id': self.get_instance_config(elastic_settings[0]['instance_config'])['id']
                   },
                 ]
               }
@@ -233,23 +241,23 @@ class ECE(object):
           ]
         }
       }
-      if self.kibana_settings:
+      if kibana_settings:
         kibana_data = {
           'ref_id': 'main-kibana',
           'elasticsearch_cluster_ref_id': 'main-elasticsearch',
           'region': 'ece-region',
           'plan': {
             'cluster_topology': [{
-              'instance_configuration_id': self.get_instance_config(self.kibana_settings['instance_config'])['id'],
+              'instance_configuration_id': self.get_instance_config(kibana_settings['instance_config'])['id'],
               'size': {
-                'value': self.kibana_settings['memory_mb'],
+                'value': kibana_settings['memory_mb'],
                 'resource': 'memory'
               },
-              'zone_count': self.kibana_settings['zone_count']
+              'zone_count': kibana_settings['zone_count']
             }],
             'kibana': {
               'user_settings_yaml': '# Note that the syntax for user settings can change between major versions.\n# You might need to update these user settings before performing a major version upgrade.\n#\n# Use OpenStreetMap for tiles:\n# tilemap:\n#   options.maxZoom: 18\n#   url: http://a.tile.openstreetmap.org/{z}/{x}/{y}.png\n#\n# To learn more, see the documentation.',
-              'version': self.version
+              'version': version
             }
           }
         }
@@ -257,37 +265,37 @@ class ECE(object):
         data['resources']['kibana'].append(kibana_data)
 
 
-      if self.apm_settings:
+      if apm_settings:
         apm_data = {
           'ref_id': 'main-apm',
           'region': 'ece-region',
           'elasticsearch_cluster_ref_id': 'main-elasticsearch',
           'plan': {
             'cluster_topology': [{
-                'instance_configuration_id': self.get_instance_config(self.apm_settings['instance_config'])['id'],
+                'instance_configuration_id': self.get_instance_config(apm_settings['instance_config'])['id'],
                 'size': {
-                  'value': self.apm_settings['memory_mb'],
+                  'value': apm_settings['memory_mb'],
                   'resource': 'memory'
                 },
-                'zone_count': self.apm_settings['zone_count']
+                'zone_count': apm_settings['zone_count']
               }],
-              'apm': {'version': self.version}
+              'apm': {'version': version}
           }
         }
         data['resources']['apm'] = []
         data['resources']['apm'].append(apm_data)
 
       ## This is technically just another ES deployment rather than it's own config, but decided to follow the UI rather than API conventions
-      if self.ml_settings:
+      if ml_settings:
         ml_data = {
           'id': "ml",
           'instance_configuration_id': "ml",
           'size': {
-            'value': self.ml_settings['memory_mb'],
+            'value': ml_settings['memory_mb'],
             'resource': 'memory'
           },
           'node_roles': ['ml', 'remote_cluster_client'],
-          'zone_count': self.ml_settings['zone_count']
+          'zone_count': ml_settings['zone_count']
         }
         x = 0
         for resource in data['resources']['elasticsearch']:
@@ -295,19 +303,19 @@ class ECE(object):
             data['resources']['elasticsearch'][x]['plan']['cluster_topology'].append(ml_data)
           x = x + 1
 
-      if self.snapshot_settings:
+      if snapshot_settings:
         #data['settings']['snapshot'] = {
         snapshot_settings = {
           'repository': {
             'reference': {
-              'repository_name': self.snapshot_settings['repository_name']
+              'repository_name': snapshot_settings['repository_name']
             }
           },
-          'enabled': self.snapshot_settings['enabled'],
+          'enabled': snapshot_settings['enabled'],
           'retention': {
-            'snapshots': self.snapshot_settings['snapshots_to_retain'],
+            'snapshots': snapshot_settings['snapshots_to_retain'],
           },
-          'interval': self.snapshot_settings['snapshot_interval']
+          'interval': snapshot_settings['snapshot_interval']
         }
         x = 0
         for resource in data['resources']['elasticsearch']:
@@ -317,25 +325,25 @@ class ECE(object):
             data['resources']['elasticsearch'][x]['settings']['snapshot'] = snapshot_settings
           x = x + 1
 
-      if self.traffic_rulesets:
+      if traffic_rulesets:
         ip_filtering_data = {
           'rulesets': [self.get_traffic_ruleset_by_name(x)['id'] for x in self.traffic_rulesets]
         }
 
       endpoint = 'deployments'
       cluster_creation_result = self.send_api_request(endpoint, 'POST', data=data)
-      if self.wait_for_completion:
-        elastic_deployment_result = self.wait_for_cluster_state(cluster_creation_result['id'],'elasticsearch','main-elasticsearch','started', self.completion_timeout)
-        kibana_deployment_result = self.wait_for_cluster_state(cluster_creation_result['id'],'kibana','main-kibana','started', self.completion_timeout)
+      if wait_for_completion:
+        elastic_deployment_result = self. wait_for_cluster_state(cluster_creation_result['id'],'elasticsearch','main-elasticsearch','started', completion_timeout)
+        kibana_deployment_result = self.wait_for_cluster_state(cluster_creation_result['id'],'kibana','main-kibana','started', completion_timeout)
         if not elastic_deployment_result and not kibana_deployment_result:
           return False
       return cluster_creation_result
 
-  def get_matching_clusters(self):
-    clusters = self.get_clusters_by_name(self.cluster_name)
+  def get_matching_clusters(self, cluster_name):
+    clusters = self.get_clusters_by_name(cluster_name)
     return clusters
 
-  def delete_cluster(self, deployment_id, resource_kind = "elasticsearch"):
+  def delete_cluster(self, deployment_id):
     self.terminate_cluster(deployment_id)
     #endpoint = f'clusters/elasticsearch/{cluster_id}'
     #target_resource_object = self.get_deployment_resource_by_kind(deployment_id, resource_kind)
