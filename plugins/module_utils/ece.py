@@ -363,5 +363,5 @@ class ECE(object):
       stop_result = self.send_api_request(endpoint, 'POST')
       wait_result = self.wait_for_cluster_state(deployment_id, resource_kind, target_resource_ref_id,'stopped', self.completion_timeout)
     if not wait_result:
-      self.module.fail_json(msg=f'failed to stop cluster {self.cluster_name}')
+      self.module.fail_json(msg=f'failed to stop deployment {deployment_id}')
     return stop_result
