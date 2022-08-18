@@ -296,9 +296,11 @@ def main():
     if matching_clusters:
       results['msg'] = 'cluster exists'
       ## This code handles edge cases poorly, in the interest of being able to match the data format of the cluster creation result
+      elastic_creds = ece_cluster.set_elastic_user_password(matching_clusters['id'])
       results['cluster_data'] = {
         'elasticsearch_cluster_id': matching_clusters['resources']['elasticsearch'][0]['id'],
-        'kibana_cluster_id': matching_clusters['resources']['kibana'][0]['id']
+        'kibana_cluster_id': matching_clusters['resources']['kibana'][0]['id'],
+        'credentials': elastic_creds
       }
       if len( matching_clusters['resources']['apm']) > 0:
         results['cluster_data']['apm_id'] = matching_clusters['resources']['apm'][0]['id']

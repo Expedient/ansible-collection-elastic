@@ -365,3 +365,8 @@ class ECE(object):
     if not wait_result:
       self.module.fail_json(msg=f'failed to stop deployment {deployment_id}')
     return stop_result
+
+  def set_elastic_user_password(self, deployment_id, resource_kind = "elasticsearch", ref_id = "main-elasticsearch"):
+    endpoint = f'deployments/{deployment_id}/{resource_kind}/{ref_id}/_reset-password'
+    credentail_object = self.send_api_request(endpoint, 'POST')
+    return credentail_object
