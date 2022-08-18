@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from operator import contains
 from ansible.module_utils.urls import open_url, urllib_error
 from json import loads, dumps
 from urllib.error import HTTPError
@@ -42,6 +43,21 @@ class Kibana(object):
 
   def send_api_request(self, endpoint, method, data=None, headers={}, timeout=120):
     url = f'https://{self.host}:{self.port}/api/{endpoint}'
+    payload = None
+    if data:
+      headers['Content-Type'] = 'application/json'
+      payload = dumps(data)
+    if self.version:
+      headers['kbn-version'] = self.version
+    try:
+      response = open_url(url, data=payload, method=method, validate_certs=self.validate_certs, headers=headers,
+                          force_basic_auth=True, url_username=self.username, url_password=self.password, timeout=timeout)
+    except HTTPError as e:
+      raise e ## This allows errors raised during the request to be inspected while debugging
+    return loads(response.read())
+  
+  def send_epr_api_request(self, endpoint, method, data=None, headers={}, timeout=120):
+    url = f'https://epr.elastic.co/{endpoint}'
     payload = None
     if data:
       headers['Content-Type'] = 'application/json'
@@ -403,56 +419,82 @@ class Kibana(object):
         break
     return pkg_policy_object
   
+  def get_elatic_package_repository_package_info(self, package_name, package_version):
+    endpoint = "package/" + package_name + "/" + package_version
+    epr_object = self.send_epr_api_request(endpoint, 'GET', timeout=300)
+    return epr_object
+  
   def create_pkg_policy(self,pkg_policy_name, pkg_policy_desc, agent_policy_id, integration_object, namespace="default"):
     pkg_policy_object = self.get_pkg_policy(pkg_policy_name)
+    epr_object = self.get_elatic_package_repository_package_info(integration_object['name'], integration_object['version'])
     inputs_body = []
-    if 'policy_templates' in integration_object:
-      for policy_template in integration_object['policy_templates']:
-        if 'inputs' in policy_template:
-          if policy_template['inputs'] != None:
-            for policy_input in policy_template['inputs']:
-              inputs_body_entry = {}
-              inputs_body_entry['policy_template'] = policy_template['name']
-              inputs_body_entry['enabled'] = False
-              inputs_body_entry['type'] = policy_input['type']
-              if 'config' in policy_input:                 
-                inputs_body_entry['config'] = policy_input['config']
-              else:
-                inputs_body_entry['config'] = {}
-              input_body_template_var = {}
-              if 'vars' in policy_input:
-                for policy_template_var in policy_input['vars']:
-                  if 'value' in policy_template_var:
-                    input_body_template_var[policy_template_var['name']] = { "type": policy_template_var['type'], "value": policy_template_var['value'] }
-                  else:
-                    input_body_template_var[policy_template_var['name']] = { "type": policy_template_var['type'] }
-              inputs_body_entry['vars'] = input_body_template_var
-              inputs_body_streams = []
-              for integration_object_input in integration_object['data_streams']:
-                inputs_body_stream_entry = {}
-                #inputs_body_stream_entry['enabled'] = True
-                for integration_input_stream in integration_object_input['streams']:
-                  if 'enabled' in integration_input_stream:
-                    inputs_body_stream_entry['enabled'] = integration_input_stream['enabled']
-                  else:
-                    inputs_body_stream_entry['enabled'] = False
-                  if integration_input_stream['input'] == policy_input['type']:
-                    inputs_body_streams_datastream = {}
-                    inputs_body_streams_datastream['dataset'] = integration_object_input['dataset']
-                    inputs_body_streams_datastream['type'] = integration_object_input['type']
-                    inputs_body_stream_entry['data_stream'] = inputs_body_streams_datastream
-                    input_body_stream_var = {}
-                    for integration_stream_var in integration_input_stream['vars']:
-                      if 'default' in integration_stream_var:
-                        input_body_stream_var[integration_stream_var['name']] = { "type": integration_stream_var['type'], "value": integration_stream_var['default']}
-                      else:
-                        input_body_stream_var[integration_stream_var['name']] = { "type": integration_stream_var['type'], "value": ""}
-                    inputs_body_stream_entry['vars'] = input_body_stream_var
-                    inputs_body_streams.append(inputs_body_stream_entry)
-                  
-                inputs_body_entry['streams'] = inputs_body_streams
-              inputs_body.append(inputs_body_entry)
     if not pkg_policy_object:
+      if 'policy_templates' in epr_object:
+        for epr_policy_template in epr_object['policy_templates']:
+          if 'inputs' in epr_policy_template:
+            for epr_inputs in epr_policy_template['inputs']:
+              inputs_entry = {}         
+              inputs_entry['policy_template'] = epr_policy_template['name']
+              if epr_inputs['title'].find("(experimental)") >= 0:
+                inputs_entry['enabled'] = False
+              else:
+                inputs_entry['enabled'] = True
+              inputs_entry['type'] = epr_inputs['type']
+              if 'config' in inputs_entry:
+                inputs_entry['config'] = epr_inputs['config']
+              else:
+                inputs_entry['config'] = {}
+              if 'vars' in epr_inputs:
+                inputs_entry['vars'] = {}
+                for epr_inputs_var in epr_inputs['vars']:
+                  epr_inputs_var.pop('title')
+                  epr_inputs_var.pop('multi')
+                  epr_inputs_var.pop('required')
+                  epr_inputs_var.pop('show_user')
+                  if 'description' in epr_inputs_var: 
+                    epr_inputs_var.pop('description')
+                  if 'default' in epr_inputs_var:
+                    epr_inputs_var['value'] = epr_inputs_var['default']
+                    epr_inputs_var.pop('default')
+                  var_name = epr_inputs_var['name']
+                  epr_inputs_var.pop('name')
+                  inputs_entry['vars'][var_name] = epr_inputs_var
+                  #inputs_entry['vars'].update(epr_inputs_var)
+              else:
+                inputs_entry['vars'] = {}
+              if 'config' in epr_inputs:
+                inputs_entry['config'] = epr_inputs['config']
+              inputs_entry['streams'] = []                
+              for epr_data_stream in epr_object['data_streams']:
+                if 'streams' in epr_data_stream:
+                  for epr_stream in epr_data_stream['streams']:
+                    if epr_inputs['type'] == epr_stream['input']:
+                      inputs_body_streams_entry = {}
+                      inputs_body_streams_entry['enabled'] = epr_stream['enabled']
+                      inputs_body_streams_entry['data_stream'] = {}
+                      inputs_body_streams_entry['data_stream']['dataset'] = epr_data_stream['dataset']
+                      inputs_body_streams_entry['data_stream']['type'] = epr_data_stream['type']
+                      if 'vars' in epr_stream:
+                        inputs_body_streams_entry['vars'] = {}
+                        for epr_stream_var in epr_stream['vars']:
+                          inputs_body_streams_var_entry = {}
+                          epr_stream_var.pop('title')
+                          epr_stream_var.pop('multi')
+                          epr_stream_var.pop('required')
+                          epr_stream_var.pop('show_user')
+                          if 'description' in epr_stream_var:
+                            epr_stream_var.pop('description')
+                          var_name = epr_stream_var['name']
+                          epr_stream_var.pop('name')
+                          if 'default' in epr_stream_var:
+                            epr_stream_var['value'] = epr_stream_var['default']
+                            epr_stream_var.pop('default')
+                          inputs_body_streams_var_entry[var_name] = epr_stream_var
+                          inputs_body_streams_entry['vars'].update(inputs_body_streams_var_entry)
+                      if inputs_body_streams_entry:
+                        inputs_entry['streams'].append(inputs_body_streams_entry)
+              inputs_body.append(inputs_entry)
+
       body = {
         "name": pkg_policy_name,
         "namespace": namespace.lower(),
