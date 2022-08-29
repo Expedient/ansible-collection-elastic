@@ -333,8 +333,11 @@ def main():
           elasticsearch_credentials = resource['credentials']
         if resource['ref_id'] == "main-kibana":
           kibana_cluster_id = resource['id']
+        if resource['ref_id'] == "main-apm":
+          apm_cluster_id = resource['id']
       results['cluster_data']['elasticsearch_cluster_id'] = elasticsearch_cluster_id
       results['cluster_data']['kibana_cluster_id'] = kibana_cluster_id
+      results['cluster_data']['apm_cluster_id'] = apm_cluster_id
       results['cluster_data']['credentials'] = elasticsearch_credentials
       results['msg'] = f'cluster {module.params.get("cluster_name")} created'
     module.exit_json(**results)
