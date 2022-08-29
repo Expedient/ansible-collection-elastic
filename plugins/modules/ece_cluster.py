@@ -210,6 +210,7 @@ except:
   sys.path.append(util_path)
   from ece import ECE
 
+import time
 
 from ansible.module_utils.basic import AnsibleModule
 
@@ -327,14 +328,27 @@ def main():
         results['msg'] = 'cluster creation failed'
         module.fail_json(**results)
       results['cluster_data'] = cluster_data
+      deployment_healthy = ece_cluster.wait_for_cluster_healthy(cluster_data['id'])
+      if deployment_healthy == False:
+        results['cluster_data']['msg'] = "Cluster information may be incomplete because the cluster is not healthy"
+      else:
+        time.sleep(30)
+      deployment_object = ece_cluster.get_deployment_byid(cluster_data['id'])
       for resource in cluster_data['resources']:
         if resource['kind'] == "elasticsearch":
           results['cluster_data']['credentials'] = resource['credentials']
-        kind_object = ece_cluster.get_deployment_resource_by_kind(cluster_data['id'],resource['kind'])
-        if resource['id']:
-          results['cluster_data'][resource['kind'] + '_cluster_id'] = resource['id']
-        if kind_object['info']['metadata']['service_url']:
-          results['cluster_data'][resource['kind'] + '_cluster_url'] = kind_object['info']['metadata']['service_url']
+          continue
+      for kind_object_name in deployment_object['resources']:
+        for kind_object in deployment_object['resources'][kind_object_name]:
+          if 'cluster_id' in kind_object['info']:
+            results['cluster_data'][kind_object_name + '_cluster_id'] = kind_object['info']['cluster_id']
+          elif 'deployment_id' in kind_object['info']:
+            results['cluster_data'][kind_object_name + '_cluster_id'] = kind_object['info']['deployment_id']
+          if 'services_urls' in kind_object['info']['metadata']:
+            for service_url in kind_object['info']['metadata']['services_urls']:
+              results['cluster_data'][service_url['service'] + '_cluster_url'] = service_url['url']
+          elif 'service_url' in kind_object['info']['metadata']:
+            results['cluster_data'][kind_object_name + '_cluster_url'] = kind_object['info']['metadata']['service_url']
       results['msg'] = f'cluster {module.params.get("cluster_name")} created'
     module.exit_json(**results)
 

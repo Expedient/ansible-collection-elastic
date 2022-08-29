@@ -147,6 +147,18 @@ class ECE(object):
           cluster_object = self.get_cluster_by_id(cluster_id)
       x = x + 1
     return True
+  
+  def wait_for_cluster_healthy(self, cluster_id, cluster_health = True, completion_timeout=900):
+    timeout = time.time() + completion_timeout
+    cluster_object = self.get_cluster_by_id(cluster_id)
+    x = 0
+    while cluster_object['healthy'] != cluster_health:
+      time.sleep(1)
+      if time.time() > timeout:
+        return False
+      cluster_object = self.get_cluster_by_id(cluster_id)
+
+    return True
 
   def get_traffic_rulesets(self, include_assocations=False):
     endpoint = 'deployments/traffic-filter/rulesets'
@@ -369,4 +381,5 @@ class ECE(object):
   def set_elastic_user_password(self, deployment_id, resource_kind = "elasticsearch", ref_id = "main-elasticsearch"):
     endpoint = f'deployments/{deployment_id}/{resource_kind}/{ref_id}/_reset-password'
     credentail_object = self.send_api_request(endpoint, 'POST')
+    time.sleep(15)
     return credentail_object
