@@ -328,17 +328,13 @@ def main():
         module.fail_json(**results)
       results['cluster_data'] = cluster_data
       for resource in cluster_data['resources']:
-        if resource['ref_id'] == "main-elasticsearch":
-          elasticsearch_cluster_id = resource['id']
-          elasticsearch_credentials = resource['credentials']
-        if resource['ref_id'] == "main-kibana":
-          kibana_cluster_id = resource['id']
-        if resource['ref_id'] == "main-apm":
-          apm_cluster_id = resource['id']
-      results['cluster_data']['elasticsearch_cluster_id'] = elasticsearch_cluster_id
-      results['cluster_data']['kibana_cluster_id'] = kibana_cluster_id
-      results['cluster_data']['apm_cluster_id'] = apm_cluster_id
-      results['cluster_data']['credentials'] = elasticsearch_credentials
+        if resource['kind'] == "elasticsearch":
+          results['cluster_data']['credentials'] = resource['credentials']
+        kind_object = ece_cluster.get_deployment_resource_by_kind(cluster_data['id'],resource['kind'])
+        if resource['id']:
+          results['cluster_data'][resource['kind'] + '_cluster_id'] = resource['id']
+        if kind_object['info']['metadata']['service_url']:
+          results['cluster_data'][resource['kind'] + '_cluster_url'] = kind_object['info']['metadata']['service_url']
       results['msg'] = f'cluster {module.params.get("cluster_name")} created'
     module.exit_json(**results)
 
