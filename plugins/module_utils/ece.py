@@ -153,7 +153,7 @@ class ECE(object):
     cluster_object = self.get_cluster_by_id(cluster_id)
     x = 0
     while cluster_object['healthy'] != cluster_health:
-      time.sleep(1)
+      time.sleep(15)
       if time.time() > timeout:
         return False
       cluster_object = self.get_cluster_by_id(cluster_id)
