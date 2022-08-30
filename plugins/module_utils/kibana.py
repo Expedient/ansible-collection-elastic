@@ -42,7 +42,7 @@ class Kibana(object):
     #self.version = self.send_api_check_request()
     self.version = self.get_cluster_version()
 
-  def send_api_request(self, endpoint, method, data=None, headers={}, timeout=300):
+  def send_api_request(self, endpoint, method, data=None, headers={}, timeout=120):
     url = f'https://{self.host}:{self.port}/api/{endpoint}'
     payload = None
     if data:
@@ -294,7 +294,7 @@ class Kibana(object):
     return action_object
 
   def delete_action(self, action):
-    endpoint = f'actions/connectors/{action["id"]}'
+    endpoint = f'actions/connector/{action["id"]}'
     action_object = self.send_api_request(endpoint, 'DELETE')
     return action_object
    
