@@ -36,56 +36,6 @@ except:
 
 from ansible.module_utils.basic import AnsibleModule
 
-
-class KibanaAction(Kibana):
-  def __init__(self, module):
-    super().__init__(module)
-    self.module = module
-    self.state = self.module.params.get('state')
-    self.action_name = self.module.params.get('action_name')
-    self.action_type = self.module.params.get('action_type')
-    self.action_type_id = self.get_alert_connector_type_by_name(self.action_type)['id']
-    self.config = self.module.params.get('config')
-    self.secrets = self.module.params.get('secrets')
-    self.action = self.get_alert_connector_by_name(self.action_name)
-
-  def format_config(self):
-    if self.action_type == 'Webhook':
-      return {
-        'method': self.config['method'],
-        'hasAuth': self.config['auth'],
-        'url': self.config['url'],
-        'headers': self.config['headers']
-      }
-    if self.action_type == 'Email':
-      return {
-        'from': self.config['sender'],
-        'hasAuth': self.config['auth'],
-        'host': self.config['host'],
-        'port': self.config['port']
-      }
-    
-  def format_secrets(self):
-    secrets = {}
-    if self.action_type == 'webhook' and 'user' in self.secrets:
-      secrets['user'] = self.secrets['user']
-      secrets['password'] = self.secrets['password']
-    return secrets
-
-  def create_action(self):
-    endpoint = 'actions/connector'
-    data = {
-      'connector_type_id': self.action_type_id,
-      'name': self.action_name,
-      'config': self.format_config(),
-      'secrets': self.format_secrets()
-    }
-    return self.send_api_request(endpoint, 'POST', data=data)
-
-  def delete_action(self):
-    endpoint = f'actions/connector/{self.action["id"]}'
-    return self.send_api_request(endpoint, 'DELETE')
-
 def main():
   module_args=dict(
     host=dict(type='str', required=True),
@@ -107,32 +57,38 @@ def main():
   results = {'changed': False}
 
   module = AnsibleModule(argument_spec=module_args, required_if=argument_dependencies, supports_check_mode=True)
+  kibana = Kibana(module)
+  
   state = module.params.get('state')
-
-  kibana_action = KibanaAction(module)
-
+  action_name = module.params.get('action_name')
+  action_type = module.params.get('action_type')
+  config = module.params.get('config')
+  secrets = module.params.get('secrets')
+    
+  action_object = kibana.get_alert_connector_by_name(action_name)
+  action_type_id_object = kibana.get_alert_connector_type_by_name(action_type)['id']
   if state =='present':
-    if kibana_action.action:
-      results['msg'] = f'action named {kibana_action.action_name} exists'
-      results['action'] = kibana_action.action
+    if action_object:
+      results['msg'] = f'action named {action_name} exists'
+      results['action'] = action_object
       module.exit_json(**results)
     results['changed'] = True
-    results['msg'] = f'action named {kibana_action.action_name} will be created'
+    results['msg'] = f'action named {action_name} will be created'
     if not module.check_mode:
-      results['action'] = kibana_action.create_action()
-      results['msg'] = f'action named {kibana_action.action_name} created'
+      format_config = kibana.format_action_config(action_type, config)
+      format_secrets = kibana.format_action_secrets(action_type, secrets)
+      results['action'] = kibana.create_action(action_type_id_object, action_name, format_config, format_secrets)
+      results['msg'] = f'action named {action_name} created'
     module.exit_json(**results)
   if state == 'absent':
-    if not kibana_action.action:
-      results['msg'] = f'action named {kibana_action.action_name} does not exist'
+    if not action_object:
+      results['msg'] = f'action named {action_name} does not exist'
       module.exit_json(**results)
     results['changed'] = True
-    results['msg'] = f'action named {kibana_action.action_name} will be deleted'
+    results['msg'] = f'action named {action_name} will be deleted'
     if not module.check_mode:
-      kibana_action.delete_action()
+      kibana.delete_action()
     module.exit_json(**results)
-
-
 
 if __name__ == '__main__':
   main()
