@@ -161,12 +161,17 @@ def main():
     
     if state == "present":
       pkg_policy_object = kibana.get_pkg_policy(pkg_policy_name)
+      if 'item' in pkg_policy_object:
+        pkg_policy_object = pkg_policy_object['item']      
       if pkg_policy_object:
         results['pkg_policy_status'] = "Integration Package found, No package created"
         results['changed'] = False
       else:
         if module.check_mode == False: 
           pkg_policy_object = kibana.create_pkg_policy(pkg_policy_name, pkg_policy_desc, agent_policy_id, integration_object, namespace)
+          if 'item' in pkg_policy_object:
+            pkg_policy_object = pkg_policy_object['item']
+          #pkg_policy_object = kibana.upgrade_pkg_policy(pkg_policy_object['id'])
           results['pkg_policy_status'] = "No Integration Package found, Package Policy created"
           results['pkg_policy_object'] = pkg_policy_object
           results['changed'] = True
@@ -176,14 +181,13 @@ def main():
           results['changed'] = False
 
     if integration_settings:
-      if 'item' in pkg_policy_object:
-        pkg_policy_object = pkg_policy_object['item']
       input_no = 0
       for orig_input in pkg_policy_object['inputs']:
         for update_input in integration_settings['inputs']:
           if orig_input['type'] == update_input['type']:
-            if 'artifact_manifest' in orig_input['config']:
-              integration_settings['inputs'][input_no]['config']['artifact_manifest'] = orig_input['config']['artifact_manifest']
+            if 'config' in orig_input:
+              if 'artifact_manifest' in orig_input['config']:
+                integration_settings['inputs'][input_no]['config']['artifact_manifest'] = orig_input['config']['artifact_manifest']
         input_no = input_no + 1
       pkg_policy_object['inputs'] = integration_settings['inputs']
       pkg_policy_object_id = pkg_policy_object['id']  
