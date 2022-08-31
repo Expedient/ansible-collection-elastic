@@ -258,6 +258,45 @@ class Kibana(object):
 
     return formatted_params
   
+  def format_action_config(self, action_type, config):
+    if action_type == 'Webhook':
+      return {
+        'method': config['method'],
+        'hasAuth': config['auth'],
+        'url': config['url'],
+        'headers': config['headers']
+      }
+    if action_type == 'Email':
+      return {
+        'from': config['sender'],
+        'hasAuth': config['auth'],
+        'host': config['host'],
+        'port': config['port']
+      }
+
+  def format_action_secrets(self, action_type, secrets):
+    secrets = {}
+    if action_type == 'webhook' and 'user' in secrets:
+      secrets['user'] = secrets['user']
+      secrets['password'] = secrets['password']
+    return secrets
+    
+  def create_action(self, action_type_id, action_name, config, secrets):
+    endpoint = 'actions/connector'
+    data = {
+      'connector_type_id': action_type_id,
+      'name': action_name,
+      'config': config,
+      'secrets': secrets
+    }
+    action_object = self.send_api_request(endpoint, 'POST', data=data)
+    return action_object
+
+  def delete_action(self, action):
+    endpoint = f'actions/connector/{action["id"]}'
+    action_object = self.send_api_request(endpoint, 'DELETE')
+    return action_object
+   
   # Elastic Security Rules functions
 
   def update_security_rule(self, body):
@@ -286,7 +325,16 @@ class Kibana(object):
     update_rule = self.update_security_rule(body)
     return update_rule
   
-  def enable_security_rule_action(self, rule_id, action_id, action_type, body, replace_or_append, existing_actions, action_group = 'default'):
+  def enable_security_rule_action(
+      self, 
+      rule_id, 
+      action_id, 
+      action_type, 
+      body, 
+      replace_or_append, 
+      existing_actions, 
+      action_group = 'default'
+    ):
     params = {
       'body': str(body)
     }
@@ -698,3 +746,4 @@ class Kibana(object):
 
     result = self.send_api_request(endpoint, 'PUT', data=body_json)
     return result
+

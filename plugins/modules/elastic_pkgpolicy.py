@@ -176,9 +176,16 @@ def main():
           results['changed'] = False
 
     if integration_settings:
-      if not 'package' in pkg_policy_object:
-          pkg_policy_object = pkg_policy_object['item']
-          pkg_policy_object['inputs'] = integration_settings['inputs']
+      if 'item' in pkg_policy_object:
+        pkg_policy_object = pkg_policy_object['item']
+      input_no = 0
+      for orig_input in pkg_policy_object['inputs']:
+        for update_input in integration_settings['inputs']:
+          if orig_input['type'] == update_input['type']:
+            if 'artifact_manifest' in orig_input['config']:
+              integration_settings['inputs'][input_no]['config']['artifact_manifest'] = orig_input['config']['artifact_manifest']
+        input_no = input_no + 1
+      pkg_policy_object['inputs'] = integration_settings['inputs']
       pkg_policy_object_id = pkg_policy_object['id']  
       
       results['passed_integration_settings'] = integration_settings
