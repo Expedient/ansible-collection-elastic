@@ -36,9 +36,14 @@ def main():
         username=dict(type='str', required=True),
         password=dict(type='str', no_log=True, required=True),   
         verify_ssl_cert=dict(type='bool', default=True),
-        dashboard_name=dict(type='str'),
-        dashboard_attributes=dict(type='json'),
-        state=dict(type='str', default='present'),
+        role_name=dict(type='str', required=True),
+        elasticsearch_cluster=dict(type='array'),
+        elasticsearch_indices=dict(type='array'),
+        kibana_base=dict(type='array'),
+        kibana_feature=dict(type='dict'),
+        kibana_spaces=dict(type='array'),
+        body=dict(type='dict'),
+        state=dict(type='str', default='present')
     )
     
     argument_dependencies = []
@@ -46,30 +51,25 @@ def main():
         #('alert-type', 'metrics_threshold', ('conditions'))
     
     module = AnsibleModule(argument_spec=module_args, supports_check_mode=True
-                            ,mutually_exclusive=[('dashboard_name', 'dashboard_attributes')]
-                            ,required_one_of=[('dashboard_name', 'dashboard_attributes')]
                             )
     
     kibana = Kibana(module)
     results['changed'] = False
-    dashboard_name = module.params.get('dashboard_name')
-    dashboard_attributes = module.params.get('dashboard_attributes')
+    role_name = module.params.get('role_name')
+    body = module.params.get('body')
     state = module.params.get('state')
-
-    if dashboard_name and state == "present":
-      dashboard_object_info = kibana.get_saved_object("dashboard", dashboard_name)
-      dashboard_object = kibana.export_saved_object("dashboard", dashboard_object_info['id'])
-
-    if dashboard_attributes and state == "absent":
-      dashboard_object = kibana.import_saved_object(dashboard_attributes)
-
-    if dashboard_object:
-      results['dashboard_status'] = "Dashboard Found"
-      results['dashboard_object'] = dashboard_object
-    else:
-      results['dashboard_status'] = "No Dashboard was returned, check your Dashboard Info"
-      results['dashboard_object'] = None
+    
+    if role_name and state == "present":
       
+      userrole_object = kibana.get_userrole(role_name)
+      results['userrole_status'] = "User Role Object Found"
+      
+      if userrole_object == None:
+        userrole_object = kibana.create_userrole(role_name, body)
+        results['userrole_status'] = "User Role Object Created"
+        
+    results['userrole_object'] = userrole_object
+    
     module.exit_json(**results)
 
 if __name__ == "__main__":

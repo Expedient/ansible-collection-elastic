@@ -41,8 +41,11 @@ class Kibana(object):
     self.version = None # this is a hack to make it so that we can run the first request to get the clutser version without erroring out
     self.version = self.get_cluster_version()
 
-  def send_api_request(self, endpoint, method, data=None, headers={}, timeout=120):
-    url = f'https://{self.host}:{self.port}/api/{endpoint}'
+  def send_api_request(self, endpoint, method, data=None, headers={}, timeout=120, space="default"):
+    if space != "default":
+      url = f'https://{self.host}:{self.port}/s/{space}/api/{endpoint}'
+    else:
+      url = f'https://{self.host}:{self.port}/api/{endpoint}'
     payload = None
     if data:
       headers['Content-Type'] = 'application/json'
@@ -54,7 +57,10 @@ class Kibana(object):
                           force_basic_auth=True, url_username=self.username, url_password=self.password, timeout=timeout)
     except HTTPError as e:
       raise e ## This allows errors raised during the request to be inspected while debugging
-    return loads(response.read())
+    if response.msg == 'No Content' and str(response.status).startswith('2'):
+      return
+    else:
+      return loads(response.read())
   
   def send_epr_api_request(self, endpoint, method, data=None, headers={}, timeout=120):
     url = f'https://epr.elastic.co/{endpoint}'
@@ -71,9 +77,13 @@ class Kibana(object):
       raise e ## This allows errors raised during the request to be inspected while debugging
     return loads(response.read())
 
-  def send_file_api_request(self, endpoint, method, data=None, file=None):
+  def send_file_api_request(self, endpoint, method, data=None, file=None, space="default"):
 
-    url = f'https://{self.host}:{self.port}/api/{endpoint}'
+    if space != "default":
+      url = f'https://{self.host}:{self.port}/s/{space}/api/{endpoint}'
+    else:
+      url = f'https://{self.host}:{self.port}/api/{endpoint}'
+      
     headers = {}
 
     response = None
@@ -672,45 +682,65 @@ class Kibana(object):
 
 # Elastic Saved Objects
 
-  def get_saved_object(self,object_type,object_name):
+  def get_saved_object(self, object_type, object_name, space = 'default'):
     page_size = 500
     page_number = 1
     target_object = ""
     object_name_quote = urllib.parse.quote(object_name)
-    endpoint  = "saved_objects/_find?type=" + object_type + "&search_fields=title&search=" + object_name_quote + "&page=" + str(page_number) + "&per_page=" + str(page_size)
-    found_objects = self.send_api_request(endpoint, 'GET')
+    endpoint  = f'saved_objects/_find?type={object_type}&search_fields=name&search_fields=title&search={object_name_quote}&page={str(page_number)}&per_page={str(page_size)}'
+    found_objects = self.send_api_request(endpoint, 'GET', space = space)
     for found_object in found_objects['saved_objects']:
+      if 'name' in found_object['attributes']:
+        if object_name == found_object['attributes']['name']:
+          target_object = found_object
+          break
       if 'title' in found_object['attributes']:
         if object_name == found_object['attributes']['title']:
           target_object = found_object
           break
     return target_object
+
+  def get_saved_objects_list(self, object_string, object_type, space = 'default'):
+    page_size = 500
+    page_number = 1
+    object_name_quote = urllib.parse.quote(object_string)
+    endpoint  = f'saved_objects/_find?type={object_type}&search_fields=name&search_fields=title&search={object_name_quote}&page={str(page_number)}&per_page={str(page_size)}'
+    found_objects = self.send_api_request(endpoint, 'GET', space = space)
+    return found_objects
+
+  def update_saved_object(self, saved_object_id, saved_object, object_type):
+    endpoint  = f'saved_objects/{object_type}/{saved_object_id}'
+    body_JSON = dumps(saved_object)
+    updated_object = self.send_api_request(endpoint, 'PUT', data = body_JSON)
+    return updated_object
   
-  def export_saved_object(self, object_type, object_id):
+  def export_saved_object(self, object_type, object_id, includeReferencesDeep = True, excludeExportDetails = False ):
     endpoint = "saved_objects/_export"
     object = {
       "type": object_type,
       "id": object_id
     }
-    body = {}
+    body = {
+      "includeReferencesDeep": includeReferencesDeep,
+      "excludeExportDetails": excludeExportDetails
+    }
     objects = []
     objects.append(object)
     body['objects'] = objects
-    body['excludeExportDetails'] = True
+    #body['excludeExportDetails'] = True
     body_JSON = dumps(body)
     export_object = self.send_api_request(endpoint, 'POST', data=body_JSON)
     return export_object
 
-  def import_saved_object(self, object_attributes):
-
-    importObjectJSON = tempfile.NamedTemporaryFile(delete=False,suffix='.ndjson', prefix='elastic_dashboard_')
+  def import_saved_object(self, object_attributes, space = "default", overwrite = False, createNewCopies = True):
+    importObjectJSON = tempfile.NamedTemporaryFile(delete=False,suffix='.ndjson', prefix='saved_object_')
     object_attributes_encode = object_attributes.encode()
     importObjectJSON.write(object_attributes_encode)
     importObjectJSON.close()
-    endpoint = "saved_objects/_import?createNewCopies=true"
-    export_object = self.send_file_api_request(endpoint, 'POST', file=importObjectJSON.name)
+    endpoint = f'saved_objects/_import?createNewCopies={createNewCopies}&overwrite={overwrite}'
+    import_object = self.send_file_api_request(endpoint, 'POST', file=importObjectJSON.name, space=space)
     os.remove(importObjectJSON.name)
-    return export_object
+    return import_object
 
   def get_fleet_server_hosts(self):
     endpoint = 'fleet/settings'
@@ -747,3 +777,44 @@ class Kibana(object):
     result = self.send_api_request(endpoint, 'PUT', data=body_json)
     return result
 
+# Elastic Space
+
+  def create_space(self, id, name, description = None, disabledFeatures = None, initials = None, color = None):
+    endpoint  = f'spaces/space'
+    body = {
+      "id": id,
+      "name": name
+    }
+    if description != None:
+      body['description'] = description
+    if disabledFeatures != None:
+      body['disabledFeatures'] = disabledFeatures
+    if initials != None:
+      body['initials'] = initials
+    if color != None:
+      body['color'] = color
+    body_json = dumps(body)
+    result = self.send_api_request(endpoint, 'POST', data = body_json)
+    return result
+ 
+ # Elastic User Role
+  
+  def get_userrole(self, name):
+    endpoint  = f'security/role'
+    userroles = self.send_api_request(endpoint, 'GET')
+    userrole_object = None
+    for userrole in userroles:
+      if userrole['name'] == name:
+        userrole_object = userrole
+        break
+    return userrole_object
+
+  def create_userrole(self, 
+                   name, 
+                   body = None, 
+                   *args, 
+                   **kwargs ):
+    endpoint  = f'security/role/{name}'
+    body_json = dumps(body)
+    result = self.send_api_request(endpoint, 'PUT', data = body_json)
+    return result  
