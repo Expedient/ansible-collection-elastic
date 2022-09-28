@@ -39,7 +39,7 @@ def main():
         space_name=dict(type='str', required=True),
         space_description=dict(type='str', default="None"),
         space_id=dict(type='str', required=True),
-        disabledFeatures=dict(type='str', default=None),
+        disabledFeatures=dict(type='list'),
         initials=dict(type='str', default=None),
         color=dict(type='str', default=None),
         state=dict(type='str', default='present')
@@ -62,15 +62,16 @@ def main():
     color = module.params.get('color')
     state = module.params.get('state')
     
-    if space_name and state == "present":
-      space_object = kibana.create_space(space_id, space_name, space_description,disabledFeatures, initials, color)
-
-    if space_object != "":
+    space_object = None
+    
+    if space_id and state == "present":
+      
+      space_object = kibana.get_space(space_id)
       results['space_status'] = "Space Object Found"
-      results['space_object'] = space_object
-    else:
-      results['space_status'] = "No Space Object was returned, check your Space Object Info"
-      results['space_object'] = None
+      
+      if space_object == None:
+        space_object = kibana.create_space(space_id, space_name, space_description, disabledFeatures, initials, color)
+        results['space_status'] = "Space Object Created"
       
     module.exit_json(**results)
 

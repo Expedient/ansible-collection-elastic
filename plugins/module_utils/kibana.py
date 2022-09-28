@@ -779,7 +779,27 @@ class Kibana(object):
 
 # Elastic Space
 
-  def create_space(self, id, name, description = None, disabledFeatures = None, initials = None, color = None):
+  def get_space(self, id, *args, **kwargs ):
+      endpoint  = f'spaces/space'
+      spaces = self.send_api_request(endpoint, 'GET')
+      target_space = None
+      for space in spaces:
+        if space['id'] == id:
+          target_space = space
+          break
+      return target_space
+
+  def create_space(
+    self, 
+    id, 
+    name, 
+    description = None, 
+    disabledFeatures = None, 
+    initials = None, 
+    color = None, 
+    *args, 
+    **kwargs
+    ):
     endpoint  = f'spaces/space'
     body = {
       "id": id,
@@ -789,6 +809,8 @@ class Kibana(object):
       body['description'] = description
     if disabledFeatures != None:
       body['disabledFeatures'] = disabledFeatures
+    else:
+      body['disabledFeatures'] = []
     if initials != None:
       body['initials'] = initials
     if color != None:
