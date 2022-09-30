@@ -30,6 +30,15 @@ except:
   sys.path.append(util_path)
   import lookups as lookups
 
+try:
+  from ansible_collections.expedient.elastic.plugins.module_utils.ece_apiproxy import ECE_API_Proxy
+except:
+  import sys
+  import os
+  util_path = new_path = f'{os.getcwd()}/plugins/module_utils'
+  sys.path.append(util_path)
+  from ece_apiproxy import ECE_API_Proxy
+
 class Kibana(object):
   def __init__(self, module):
     self.module = module
@@ -39,7 +48,11 @@ class Kibana(object):
     self.password = module.params.get('password')
     self.validate_certs = module.params.get('verify_ssl_cert')
     self.version = None # this is a hack to make it so that we can run the first request to get the clutser version without erroring out
-    self.version = self.get_cluster_version()
+    self.deployment_info = module.params.get('deployment_info')
+    if self.deployment_info:
+      self.ece_api_proxy = ECE_API_Proxy(module)
+    else:
+      self.version = self.get_cluster_version()
 
   def send_api_request(self, endpoint, method, data=None, headers={}, timeout=120, space="default"):
     if space != "default":
@@ -841,22 +854,23 @@ class Kibana(object):
     result = self.send_api_request(endpoint, 'PUT', data = body_json)
     return result
 
-
-
 # Kibana Settings
 
-  def get_kibana_settings(self, space = 'default'):
+  def get_kibana_settings(self, space = 'default', *args, **kwargs ):
     endpoint  = f'kibana/settings'
-    kibana_settings = self.send_api_request(endpoint, 'GET', space)
+    if self.deployment_info:
+      kibana_settings = self.ece_api_proxy.send_api_request(endpoint, 'GET', space = space)
+    else:
+      kibana_settings = self.send_api_request(endpoint, 'GET', space)
     return kibana_settings
 
   def update_kibana_settings(self, settings, space = 'default', *args, **kwargs ):
     endpoint  = f'kibana/settings'
     for setting, value in settings.items():
-      setting_endpoint = f'{endpoint}/{setting}'
+      endpoint = f'{endpoint}/{setting}'
       body = {
         "value": value
       } 
       body_json = dumps(body)
-      result = self.send_api_request(setting_endpoint, 'POST', data = body_json, space = space)
+      result = self.send_api_request(endpoint, 'POST', data = body_json, space = space)
     return result
