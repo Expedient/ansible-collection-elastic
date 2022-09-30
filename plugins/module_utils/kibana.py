@@ -819,7 +819,7 @@ class Kibana(object):
     result = self.send_api_request(endpoint, 'POST', data = body_json)
     return result
  
- # Elastic User Role
+# Elastic User Role
   
   def get_userrole(self, name):
     endpoint  = f'security/role'
@@ -839,4 +839,24 @@ class Kibana(object):
     endpoint  = f'security/role/{name}'
     body_json = dumps(body)
     result = self.send_api_request(endpoint, 'PUT', data = body_json)
-    return result  
+    return result
+
+
+
+# Kibana Settings
+
+  def get_kibana_settings(self, space = 'default'):
+    endpoint  = f'kibana/settings'
+    kibana_settings = self.send_api_request(endpoint, 'GET', space)
+    return kibana_settings
+
+  def update_kibana_settings(self, settings, space = 'default', *args, **kwargs ):
+    endpoint  = f'kibana/settings'
+    for setting, value in settings.items():
+      setting_endpoint = f'{endpoint}/{setting}'
+      body = {
+        "value": value
+      } 
+      body_json = dumps(body)
+      result = self.send_api_request(setting_endpoint, 'POST', data = body_json, space = space)
+    return result
