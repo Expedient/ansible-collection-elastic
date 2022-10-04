@@ -54,16 +54,16 @@ class Kibana(object):
     else:
       self.version = self.get_cluster_version()
 
-  def send_api_request(self, endpoint, method, data=None, headers={}, timeout=120, space="default"):
-    if space != "default":
-      url = f'https://{self.host}:{self.port}/s/{space}/api/{endpoint}'
+  def send_api_request(self, endpoint, method, data=None, headers={}, timeout=120, space_id = "default", no_kbnver = False):
+    if space_id != "default":
+      url = f'https://{self.host}:{self.port}/s/{space_id}/api/{endpoint}'
     else:
       url = f'https://{self.host}:{self.port}/api/{endpoint}'
     payload = None
     if data:
       headers['Content-Type'] = 'application/json'
       payload = dumps(data)
-    if self.version:
+    if self.version and no_kbnver == False:
       headers['kbn-version'] = self.version
     try:
       response = open_url(url, data=payload, method=method, validate_certs=self.validate_certs, headers=headers,
@@ -73,7 +73,17 @@ class Kibana(object):
     if response.msg == 'No Content' and str(response.status).startswith('2'):
       return
     else:
-      return loads(response.read())
+      response_output = response.read()
+      response_str = response_output.decode()
+      response_return = str(response_str).split('\n')
+      response_list = []
+      for i in response_return:
+        return_load = loads(i)
+        response_list.append(return_load)
+      if len(response_list) > 1:
+        return response_list
+      else:
+        return response_list[0]
   
   def send_epr_api_request(self, endpoint, method, data=None, headers={}, timeout=120):
     url = f'https://epr.elastic.co/{endpoint}'
@@ -90,10 +100,10 @@ class Kibana(object):
       raise e ## This allows errors raised during the request to be inspected while debugging
     return loads(response.read())
 
-  def send_file_api_request(self, endpoint, method, data=None, file=None, space="default"):
+  def send_file_api_request(self, endpoint, method, data=None, file=None, space_id = "default"):
 
-    if space != "default":
-      url = f'https://{self.host}:{self.port}/s/{space}/api/{endpoint}'
+    if space_id != "default":
+      url = f'https://{self.host}:{self.port}/s/{space_id}/api/{endpoint}'
     else:
       url = f'https://{self.host}:{self.port}/api/{endpoint}'
       
@@ -695,39 +705,59 @@ class Kibana(object):
 
 # Elastic Saved Objects
 
-  def get_saved_object(self, object_type, object_name, space = 'default'):
+  def get_saved_object(
+    self, 
+    object_type, 
+    object_name = None, 
+    object_id = None, 
+    space_id = 'default', 
+    *args, 
+    **kwargs
+    ):
     page_size = 500
     page_number = 1
     target_object = ""
-    object_name_quote = urllib.parse.quote(object_name)
-    endpoint  = f'saved_objects/_find?type={object_type}&search_fields=name&search_fields=title&search={object_name_quote}&page={str(page_number)}&per_page={str(page_size)}'
-    found_objects = self.send_api_request(endpoint, 'GET', space = space)
-    for found_object in found_objects['saved_objects']:
-      if 'name' in found_object['attributes']:
-        if object_name == found_object['attributes']['name']:
-          target_object = found_object
-          break
-      if 'title' in found_object['attributes']:
-        if object_name == found_object['attributes']['title']:
-          target_object = found_object
-          break
+    if object_id == None:
+      object_name_quote = urllib.parse.quote(object_name)
+      endpoint  = f'saved_objects/_find?type={object_type}&search_fields=name&search_fields=title&search={object_name_quote}&page={str(page_number)}&per_page={str(page_size)}'
+      found_objects = self.send_api_request(endpoint, 'GET', space_id = space_id)
+      for found_object in found_objects['saved_objects']:
+        if 'name' in found_object['attributes']:
+          if object_name == found_object['attributes']['name']:
+            target_object = found_object
+            break
+        if 'title' in found_object['attributes']:
+          if object_name == found_object['attributes']['title']:
+            target_object = found_object
+            break
+    else:
+      endpoint  = f'saved_objects/{object_type}/{object_id}'
+      target_object = self.send_api_request(endpoint, 'GET', space_id = space_id)
     return target_object
 
-  def get_saved_objects_list(self, object_string, object_type, space = 'default'):
+  def get_saved_objects_list(self, object_string, object_type, space_id = 'default'):
     page_size = 500
     page_number = 1
     object_name_quote = urllib.parse.quote(object_string)
     endpoint  = f'saved_objects/_find?type={object_type}&search_fields=name&search_fields=title&search={object_name_quote}&page={str(page_number)}&per_page={str(page_size)}'
-    found_objects = self.send_api_request(endpoint, 'GET', space = space)
+    found_objects = self.send_api_request(endpoint, 'GET', space_id = space_id)
     return found_objects
 
-  def update_saved_object(self, saved_object_id, saved_object, object_type):
-    endpoint  = f'saved_objects/{object_type}/{saved_object_id}'
+  def update_saved_object(self, saved_object, object_type, object_id, object_attributes, *args, **kwargs):
+    endpoint  = f'saved_objects/{object_type}/{object_id}'
     body_JSON = dumps(saved_object)
     updated_object = self.send_api_request(endpoint, 'PUT', data = body_JSON)
     return updated_object
   
-  def export_saved_object(self, object_type, object_id, includeReferencesDeep = True, excludeExportDetails = False ):
+  def export_saved_object(self,
+      object_type, 
+      object_id, 
+      space_id, 
+      includeReferencesDeep = True, 
+      excludeExportDetails = True, 
+      *args, 
+      **kwargs 
+    ):
     endpoint = "saved_objects/_export"
     object = {
       "type": object_type,
@@ -742,16 +772,21 @@ class Kibana(object):
     body['objects'] = objects
     #body['excludeExportDetails'] = True
     body_JSON = dumps(body)
-    export_object = self.send_api_request(endpoint, 'POST', data=body_JSON)
+    headers = {}
+    headers['kbn-xsrf'] = True
+    export_object = self.send_api_request(endpoint, 'POST', data=body_JSON, headers = headers, space_id = space_id, no_kbnver = True)
     return export_object
 
-  def import_saved_object(self, object_attributes, space = "default", overwrite = False, createNewCopies = True):
+  def import_saved_object(self, object_attributes, space_id = "default", overwrite = False, createNewCopies = True):
     importObjectJSON = tempfile.NamedTemporaryFile(delete=False,suffix='.ndjson', prefix='saved_object_')
-    object_attributes_encode = object_attributes.encode()
-    importObjectJSON.write(object_attributes_encode)
+    object_attributes_json = loads(object_attributes)
+    import_file = open(importObjectJSON.name, 'a')
+    for i in object_attributes_json:
+      import_file.write(dumps(i) + '\n')
+    import_file.close()
     importObjectJSON.close()
     endpoint = f'saved_objects/_import?createNewCopies={createNewCopies}&overwrite={overwrite}'
-    import_object = self.send_file_api_request(endpoint, 'POST', file=importObjectJSON.name, space=space)
+    import_object = self.send_file_api_request(endpoint, 'POST', file=importObjectJSON.name, space_id = space_id)
     os.remove(importObjectJSON.name)
     return import_object
 
@@ -856,21 +891,20 @@ class Kibana(object):
 
 # Kibana Settings
 
-  def get_kibana_settings(self, space = 'default', *args, **kwargs ):
+  def get_kibana_settings(self, space_id = 'default', *args, **kwargs ):
     endpoint  = f'kibana/settings'
     if self.deployment_info:
-      kibana_settings = self.ece_api_proxy.send_api_request(endpoint, 'GET', space = space)
+      kibana_settings = self.ece_api_proxy.send_api_request(endpoint, 'GET', space_id = space_id)
     else:
-      kibana_settings = self.send_api_request(endpoint, 'GET', space)
+      kibana_settings = self.send_api_request(endpoint, 'GET', space_id = space_id)
     return kibana_settings
 
-  def update_kibana_settings(self, settings, space = 'default', *args, **kwargs ):
-    endpoint  = f'kibana/settings'
+  def update_kibana_settings(self, settings, space_id = 'default', *args, **kwargs ):
     for setting, value in settings.items():
-      endpoint = f'{endpoint}/{setting}'
+      endpoint  = f'kibana/settings/{setting}'
       body = {
         "value": value
       } 
       body_json = dumps(body)
-      result = self.send_api_request(endpoint, 'POST', data = body_json, space = space)
+      result = self.send_api_request(endpoint, 'POST', data = body_json, space_id = space_id)
     return result

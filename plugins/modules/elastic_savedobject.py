@@ -37,9 +37,10 @@ def main():
         password=dict(type='str', no_log=True, required=True),   
         verify_ssl_cert=dict(type='bool', default=True),
         object_name=dict(type='str'),
+        object_id=dict(type='str', default=None),
         search_string=dict(type='str'),
         object_attributes=dict(type='json'),
-        space=dict(type='str', default="default"),
+        space_id=dict(type='str', default="default"),
         object_type=dict(type='str', default="default"),
         overwrite=dict(type='bool', default=True),
         createNewCopies=dict(type='bool', default=False),
@@ -52,38 +53,40 @@ def main():
     
     module = AnsibleModule(argument_spec=module_args, supports_check_mode=True
                             ,mutually_exclusive=[(('object_name','search_string'),'object_attributes')]
-                            ,required_one_of=[('object_name','search_string','object_attributes')]
+                            ,required_one_of=[('object_name','search_string','object_attributes','object_id')]
                             )
     
     kibana = Kibana(module)
     results['changed'] = False
     object_name = module.params.get('object_name')
+    object_id = module.params.get('object_id')
     search_string = module.params.get('search_string')
     object_attributes = module.params.get('object_attributes')
     overwrite = module.params.get('overwrite')
     createNewCopies = module.params.get('createNewCopies')
-    space = module.params.get('space')
+    space_id = module.params.get('space_id')
     object_type = module.params.get('object_type')
     state = module.params.get('state')
 
     saved_object = None
     
-    if object_name and state == "present":
-      saved_object_info = kibana.get_saved_object(object_type, object_name, space)
-      saved_object = kibana.export_saved_object(object_type, saved_object_info['id'])
+    if (object_name or object_id) and state == "present":
+      saved_object_info = kibana.get_saved_object(object_type = object_type, object_id = object_id, object_name = object_name, space_id = space_id)
+      saved_object = kibana.export_saved_object(object_type = object_type, object_id = saved_object_info['id'], space_id = space_id)
 
     if search_string and state == "present":
       if search_string == "None":
         search_string == ""
-      saved_object = kibana.get_saved_objects_list(search_string, object_type, space)     
+      saved_object = kibana.get_saved_objects_list(search_string, object_type, space_id = space_id)     
 
     if object_attributes and state == "absent":
-      saved_object = kibana.import_saved_object(object_attributes, space, createNewCopies=createNewCopies, overwrite=overwrite)
+
+      saved_object = kibana.import_saved_object(object_attributes, space_id = space_id, createNewCopies=createNewCopies, overwrite=overwrite)
 
     if object_attributes and state == "update":
-      saved_object_info = kibana.get_saved_object(object_type, object_name, space)
+      saved_object_info = kibana.get_saved_object(object_type = object_type, object_id = object_id, object_name = object_name, space_id = space_id)
       saved_object_id = saved_object_info['id']
-      saved_object = kibana.update_saved_object(saved_object_id, object_attributes, object_type, space)
+      saved_object = kibana.update_saved_object(object_type = object_type, object_id = saved_object_id, object_name = object_name, space_id = space_id, object_attributes = object_attributes)
 
     if saved_object != "":
       results['object_status'] = "Saved Object Found"

@@ -35,7 +35,7 @@ def main():
         username=dict(type='str', required=True),
         password=dict(type='str', no_log=True, required=True),   
         verify_ssl_cert=dict(type='bool', default=True),
-        space=dict(type='str', default='default'),
+        space_id=dict(type='str', default='default'),
         deployment_info=dict(type='dict', default=None)
     )
     argument_dependencies = []
@@ -47,9 +47,9 @@ def main():
     results['changed'] = False
     
     kibana = Kibana(module)
-    space = module.params.get('space')
+    space_id = module.params.get('space_id')
     
-    kibana_settings = kibana.get_kibana_settings(space)
+    kibana_settings = kibana.get_kibana_settings(space_id)
     
     if kibana_settings:
       results['kibana_settings_status'] = "Kibana Settings found"
