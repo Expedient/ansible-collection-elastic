@@ -54,11 +54,21 @@ class Kibana(object):
     else:
       self.version = self.get_cluster_version()
 
-  def send_api_request(self, endpoint, method, data=None, headers={}, timeout=120, space_id = "default", no_kbnver = False):
+  def send_api_request(self, endpoint, method, data = None, headers = {}, timeout = 120, space_id = "default", no_kbnver = False,*args, **kwargs):
+    
+    if self.deployment_info:
+      result = self.ece_api_proxy.send_api_request(endpoint, method, data, headers, timeout, space_id, no_kbnver)
+    else:
+      result = self.send_kibana_api_request(endpoint, method, data, headers, timeout, space_id, no_kbnver)
+    return result
+
+  def send_kibana_api_request(self, endpoint, method, data=None, headers={}, timeout=120, space_id = "default", no_kbnver = False, *args, **kwargs):
+    
     if space_id != "default":
       url = f'https://{self.host}:{self.port}/s/{space_id}/api/{endpoint}'
     else:
       url = f'https://{self.host}:{self.port}/api/{endpoint}'
+
     payload = None
     if data:
       headers['Content-Type'] = 'application/json'
@@ -100,7 +110,15 @@ class Kibana(object):
       raise e ## This allows errors raised during the request to be inspected while debugging
     return loads(response.read())
 
-  def send_file_api_request(self, endpoint, method, data=None, file=None, space_id = "default"):
+  def send_file_api_request(self, endpoint, method, data = None,  headers = {}, file = None, timeout = 120, space_id = "default", no_kbnver = False,*args, **kwargs):
+    
+    if self.deployment_info:
+      result = self.ece_api_proxy.send_file_api_request(endpoint, method, data, headers, file, timeout, space_id, no_kbnver)
+    else:
+      result = self.send_kibana_file_api_request(endpoint, method, data, headers, file, space_id )
+    return result
+
+  def send_kibana_file_api_request(self, endpoint, method, data=None, headers={}, file=None, space_id = "default", *args, **kwargs):
 
     if space_id != "default":
       url = f'https://{self.host}:{self.port}/s/{space_id}/api/{endpoint}'
@@ -893,10 +911,7 @@ class Kibana(object):
 
   def get_kibana_settings(self, space_id = 'default', *args, **kwargs ):
     endpoint  = f'kibana/settings'
-    if self.deployment_info:
-      kibana_settings = self.ece_api_proxy.send_api_request(endpoint, 'GET', space_id = space_id)
-    else:
-      kibana_settings = self.send_api_request(endpoint, 'GET', space_id = space_id)
+    kibana_settings = self.send_api_request(endpoint, 'GET', space_id = space_id)
     return kibana_settings
 
   def update_kibana_settings(self, settings, space_id = 'default', *args, **kwargs ):

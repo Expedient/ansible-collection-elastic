@@ -36,7 +36,7 @@ def main():
         username=dict(type='str', required=True),
         password=dict(type='str', no_log=True, required=True),   
         verify_ssl_cert=dict(type='bool', default=True),
-        deployment_name=dict(type='str', required=True)
+        deployment_name=dict(type='str')
     )
     argument_dependencies = []
         #('state', 'present', ('enabled', 'alert_type', 'conditions', 'actions')),
@@ -47,20 +47,30 @@ def main():
     deployment_name = module.params.get('deployment_name')
     
     ElasticDeployments = ECE(module)
-    deployment_kibana_info = ElasticDeployments.get_deployment_kibana_info(deployment_name)
-    deployment_object = ElasticDeployments.get_deployment_info(deployment_name)
+    
+    if deployment_name:
+      deployment_kibana_info = ElasticDeployments.get_deployment_kibana_info(deployment_name)
+      deployment_object = ElasticDeployments.get_deployment_info(deployment_name)
+      if not deployment_kibana_info:
+        results['deployment_kibana_endpoint'] = None
+        results['deployment_kibana_url'] = None
+        results['deployment_kibana_object'] = None
+        results['deployment_kibana_info'] = "No deployment kibana was returned, check your deployment name"
+      else:
+        results['deployment_kibana_endpoint'] = deployment_kibana_info['info']['metadata'].get('aliased_endpoint') or deployment_kibana_info['info']['metadata']['endpoint']
+        results['deployment_kibana_url'] = deployment_kibana_info['info']['metadata'].get('aliased_endpoint')
+        results['deployment_kibana_object'] = deployment_object
+        results['deployment_kibana_info'] = "Deployment kibana was returned sucessfully"
+    else:
+      deployment_objects = ElasticDeployments.get_deployment_info()
+      if deployment_objects:
+        results['deployment_objects'] = deployment_objects
+      else:
+        results['deployment_kibana_info'] = "No deployments were returned, check your deployment name"
+      
     #results['deployment_kibana_info'] = deployment_kibana_info
 
-    if not deployment_kibana_info:
-      results['deployment_kibana_endpoint'] = None
-      results['deployment_kibana_url'] = None
-      results['deployment_kibana_object'] = None
-      results['deployment_kibana_info'] = "No deployment kibana was returned, check your deployment name"
-    else:
-      results['deployment_kibana_endpoint'] = deployment_kibana_info['info']['metadata'].get('aliased_endpoint') or deployment_kibana_info['info']['metadata']['endpoint']
-      results['deployment_kibana_url'] = deployment_kibana_info['info']['metadata'].get('aliased_endpoint')
-      results['deployment_kibana_object'] = deployment_object
-      results['deployment_kibana_info'] = "Deployment kibana was returned sucessfully"
+
       
       #try:
       #  results['deployment_kibana_endpoint'] = deployment_kibana_info['info']['metadata']['aliased_endpoint']

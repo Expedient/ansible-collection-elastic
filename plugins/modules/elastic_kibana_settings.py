@@ -53,7 +53,7 @@ def main():
     
     if new_settings:
       results['kibana_settings_status'] = "Kibana Settings found"
-      kibana_settings = kibana.update_kibana_settings(new_settings, space = space_id)
+      kibana_settings = kibana.update_kibana_settings(new_settings, space_id = space_id)
       results['kibana_settings_object'] = kibana_settings
     else:
       results['kibana_settings_status'] = "Integration Package NOT found"

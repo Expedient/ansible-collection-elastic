@@ -43,6 +43,7 @@ def main():
         space_id=dict(type='str', default="default"),
         object_type=dict(type='str', default="default"),
         overwrite=dict(type='bool', default=True),
+        deployment_info=dict(type='dict', default=None),
         createNewCopies=dict(type='bool', default=False),
         state=dict(type='str', default='present')
     )
