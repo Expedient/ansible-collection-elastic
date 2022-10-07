@@ -53,11 +53,15 @@ def main():
       deployment_object = ElasticDeployments.get_deployment_info(deployment_name)
       if not deployment_kibana_info:
         results['deployment_kibana_endpoint'] = None
+        results['deployment_kibana_http_port'] = None
+        results['deployment_kibana_https_port'] = None
         results['deployment_kibana_url'] = None
         results['deployment_kibana_object'] = None
         results['deployment_kibana_info'] = "No deployment kibana was returned, check your deployment name"
       else:
         results['deployment_kibana_endpoint'] = deployment_kibana_info['info']['metadata'].get('aliased_endpoint') or deployment_kibana_info['info']['metadata']['endpoint']
+        results['deployment_kibana_http_port'] = deployment_kibana_info['info']['metadata']['ports'].get('http')
+        results['deployment_kibana_https_port'] = deployment_kibana_info['info']['metadata']['ports'].get('https')
         results['deployment_kibana_url'] = deployment_kibana_info['info']['metadata'].get('aliased_endpoint')
         results['deployment_kibana_object'] = deployment_object
         results['deployment_kibana_info'] = "Deployment kibana was returned sucessfully"

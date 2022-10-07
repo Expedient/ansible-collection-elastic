@@ -39,7 +39,7 @@ def main():
         object_name=dict(type='str'),
         object_id=dict(type='str', default=None),
         search_string=dict(type='str'),
-        object_attributes=dict(type='json'),
+        object_attributes=dict(type='str'),
         space_id=dict(type='str', default="default"),
         object_type=dict(type='str', default="default"),
         overwrite=dict(type='bool', default=True),

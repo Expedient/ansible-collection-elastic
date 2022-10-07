@@ -797,10 +797,11 @@ class Kibana(object):
 
   def import_saved_object(self, object_attributes, space_id = "default", overwrite = False, createNewCopies = True):
     importObjectJSON = tempfile.NamedTemporaryFile(delete=False,suffix='.ndjson', prefix='saved_object_')
-    object_attributes_json = loads(object_attributes)
+    #object_attributes_json = loads(object_attributes)
     import_file = open(importObjectJSON.name, 'a')
-    for i in object_attributes_json:
-      import_file.write(dumps(i) + '\n')
+    #for i in object_attributes_json:
+    #  import_file.write(dumps(i) + '\n')
+    import_file.write(object_attributes)
     import_file.close()
     importObjectJSON.close()
     endpoint = f'saved_objects/_import?createNewCopies={createNewCopies}&overwrite={overwrite}'
