@@ -42,6 +42,7 @@ def main():
         disabledFeatures=dict(type='list'),
         initials=dict(type='str', default=None),
         color=dict(type='str', default=None),
+        deployment_info=dict(type='dict', default=None),
         state=dict(type='str', default='present')
     )
     
