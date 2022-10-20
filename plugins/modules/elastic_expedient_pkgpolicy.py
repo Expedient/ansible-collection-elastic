@@ -119,6 +119,7 @@ def main():
     pkg_policy_name = module.params.get('pkg_policy_name')
     pkg_policy_desc = module.params.get('pkg_policy_desc')
     namespace = module.params.get('namespace')
+    integration_object = {}
     integration_settings = module.params.get('integration_settings') # inputs policy settings only, aka Defaults
     
     if module.check_mode:
@@ -140,14 +141,9 @@ def main():
       results['changed'] = False
       module.exit_json(**results)
     
-    if module.params.get('integration_title'):
+    if ( integration_title and not ( integration_ver and integration_title )):
       integration_object = kibana.check_integration(integration_title)
-    else:
-      results['integration_status'] = "No Integration Name provided to get the integration object"
-      results['changed'] = False
-      module.exit_json(**results)
-    
-    if ( integration_name and integration_ver and integration_name) and not integration_object:
+    elif ( integration_name and integration_ver and integration_title ) and not integration_object:
       results['integration_status'] = "No integration found, but Integration Name, Version, and Title found"
       integration_object = {
         'name': integration_name,
@@ -168,6 +164,11 @@ def main():
         results['changed'] = False
       else:
         if module.check_mode == False: 
+          ### Make sure Integration is not set to "Keep integration policies up to date"
+          body = {
+            "keepPoliciesUpToDate": False
+          }
+          integration_settings = kibana.update_integration(integration_name, body)
           pkg_policy_object = kibana.create_pkg_policy(pkg_policy_name, pkg_policy_desc, agent_policy_id, integration_object, namespace)
           if 'item' in pkg_policy_object:
             pkg_policy_object = pkg_policy_object['item']

@@ -463,12 +463,23 @@ class Kibana(object):
           break
       return integration_detail_object
   
-  def get_integration(self, integration_name, version):
-      endpoint  = 'fleet/epm/packages/' + integration_name + "-" + version
+  def get_integration(self, integration_name, version = None):
+      if (version == None):
+        endpoint  = 'fleet/epm/packages/' + integration_name
+      else:
+         endpoint  = 'fleet/epm/packages/' + integration_name + "-" + version       
       integration_object = self.send_api_request(endpoint, 'GET')
       integration_object = integration_object['response']
       return integration_object
+
+  def update_integration(self, integration_id, body):
     
+      endpoint  = 'fleet/epm/packages/' + integration_id
+      body_JSON = dumps(body)
+      integration_object = self.send_api_request(endpoint, 'PUT', data=body_JSON)
+      integration_object = integration_object['response']
+      return integration_object
+        
   # Elastic Integration Package Policy functions
 
   def get_all_pkg_policies(self):
@@ -598,6 +609,7 @@ class Kibana(object):
         "name": pkg_policy_name,
         "namespace": namespace.lower(),
         "description": pkg_policy_desc,
+        "force": True,
         "enabled": True,
         "policy_id": agent_policy_id,
         "output_id": "",
@@ -889,13 +901,8 @@ class Kibana(object):
 # Elastic User Role
   
   def get_userrole(self, name):
-    endpoint  = f'security/role'
-    userroles = self.send_api_request(endpoint, 'GET')
-    userrole_object = None
-    for userrole in userroles:
-      if userrole['name'] == name:
-        userrole_object = userrole
-        break
+    endpoint  = f'security/role/{name}'
+    userrole_object = self.send_api_request(endpoint, 'GET')
     return userrole_object
 
   def create_userrole(self, 
