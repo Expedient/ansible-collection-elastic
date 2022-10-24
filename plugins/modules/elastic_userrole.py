@@ -37,11 +37,6 @@ def main():
         password=dict(type='str', no_log=True, required=True),   
         verify_ssl_cert=dict(type='bool', default=True),
         role_name=dict(type='str', required=True),
-        elasticsearch_cluster=dict(type='array'),
-        elasticsearch_indices=dict(type='array'),
-        kibana_base=dict(type='array'),
-        kibana_feature=dict(type='dict'),
-        kibana_spaces=dict(type='array'),
         body=dict(type='dict'),
         state=dict(type='str', default='present')
     )
@@ -61,12 +56,8 @@ def main():
     
     if role_name and state == "present":
       
-      userrole_object = kibana.get_userrole(role_name)
-      results['userrole_status'] = "User Role Object Found"
-      
-      if userrole_object == None:
-        userrole_object = kibana.create_userrole(role_name, body)
-        results['userrole_status'] = "User Role Object Created"
+      userrole_object = kibana.create_userrole(role_name, body)
+      results['userrole_status'] = "User Role Object Created"
         
     results['userrole_object'] = userrole_object
     

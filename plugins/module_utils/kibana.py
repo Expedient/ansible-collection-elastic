@@ -910,6 +910,17 @@ class Kibana(object):
                    body = None, 
                    *args, 
                    **kwargs ):
+    if body == None or body == "":
+      body = { 
+        "metadata": { 
+          "version" : 1 
+        }, 
+        "elasticsearch": { 
+          "cluster" : [],
+          "indices" : []
+        },
+        "kibana": []
+      }
     endpoint  = f'security/role/{name}'
     body_json = dumps(body)
     result = self.send_api_request(endpoint, 'PUT', data = body_json)
