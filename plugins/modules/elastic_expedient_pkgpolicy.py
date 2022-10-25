@@ -168,7 +168,7 @@ def main():
           body = {
             "keepPoliciesUpToDate": False
           }
-          integration_settings = kibana.update_integration(integration_name, body)
+          integration_object = kibana.update_integration(integration_object['name'], body)
           pkg_policy_object = kibana.create_pkg_policy(pkg_policy_name, pkg_policy_desc, agent_policy_id, integration_object, namespace)
           if 'item' in pkg_policy_object:
             pkg_policy_object = pkg_policy_object['item']
@@ -309,6 +309,10 @@ def main():
                
       pkg_policy_object_id = pkg_policy_object['id']  
       pkg_policy_info = kibana.update_pkg_policy(pkg_policy_object_id, pkg_policy_object)
+      body = {
+        "keepPoliciesUpToDate": True
+      }
+      integration_object = kibana.update_integration(integration_object['name'], body)
       results['pkg_policy_object_update'] = pkg_policy_info
 
     module.exit_json(**results)
