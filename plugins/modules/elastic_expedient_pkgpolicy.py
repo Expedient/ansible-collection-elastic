@@ -156,8 +156,13 @@ def main():
       module.exit_json(**results) 
     
     if state == "present":
+      body = {
+        "keepPoliciesUpToDate": False
+      }
+      integration_object = kibana.update_integration(integration_object['name'], body)
       pkg_policy_object = kibana.get_pkg_policy(pkg_policy_name)
       pkg_policy_object_orig = pkg_policy_object
+      applied_defaults = False
       if 'item' in pkg_policy_object:
         pkg_policy_object = pkg_policy_object['item']      
       if pkg_policy_object:
@@ -166,10 +171,6 @@ def main():
       else:
         if module.check_mode == False: 
           ### Make sure Integration is not set to "Keep integration policies up to date"
-          body = {
-            "keepPoliciesUpToDate": False
-          }
-          integration_object = kibana.update_integration(integration_object['name'], body)
           pkg_policy_object = kibana.create_pkg_policy(pkg_policy_name, pkg_policy_desc, agent_policy_id, integration_object, namespace)
           pkg_policy_object_orig = pkg_policy_object
           if 'item' in pkg_policy_object:
@@ -183,11 +184,12 @@ def main():
           results['pkg_policy_object'] = ""
           results['changed'] = False
 
-      if not integration_settings:
+      if not integration_settings or integration_settings is None:
         if pkg_policy_object['package']['name'] == 'system':
           i = 0
           for policy_input in pkg_policy_object['inputs']:
             if 'type' in policy_input:
+                applied_defaults = True
                 if policy_input['type'] == 'logfile':
                     pkg_policy_object['inputs'][i]['enabled'] = False
                 if policy_input['type'] == 'winlog':
@@ -240,6 +242,7 @@ def main():
           i = 0
           for policy_input in pkg_policy_object['inputs']:
             if 'type' in policy_input:
+                applied_defaults = True
                 if policy_input['type'] == 'winlog':
                     pkg_policy_object['inputs'][i]['enabled'] = False
                 if policy_input['type'] == 'httpjson':
@@ -259,6 +262,7 @@ def main():
           i = 0
           for policy_input in pkg_policy_object['inputs']:
             if 'type' in policy_input:
+                applied_defaults = True
                 if policy_input['type'] == 'system/metrics':
                   pkg_policy_object['inputs'][i]['enabled'] = True
                 if policy_input['type'] == 'linux/metrics':
@@ -295,6 +299,7 @@ def main():
           i = 0
           for policy_input in pkg_policy_object['inputs']:
             if 'config' in policy_input:
+                applied_defaults = True
                 pkg_policy_object['inputs'][i]['config']['policy']['value']['linux']['behavior_protection']['mode'] = mode
                 pkg_policy_object['inputs'][i]['config']['policy']['value']['linux']['malware']['mode'] = mode
                 pkg_policy_object['inputs'][i]['config']['policy']['value']['linux']['memory_protection']['mode'] = mode
@@ -308,10 +313,10 @@ def main():
                 pkg_policy_object['inputs'][i]['config']['policy']['value']['mac']['memory_protection']['mode'] = mode
             i = i+1
 
-      if pkg_policy_object == pkg_policy_object_orig:
-        results['pkg_policy_object_updated'] = False
+      if pkg_policy_object == pkg_policy_object_orig and applied_defaults is False:
+        results['pkg_policy_object_updated'] = "False"
       else:
-        results['pkg_policy_object_updated'] = True
+        results['pkg_policy_object_updated'] = "True"
       pkg_policy_object_id = pkg_policy_object['id']
       pkg_policy_info = kibana.update_pkg_policy(pkg_policy_object_id, pkg_policy_object)
       body = {
