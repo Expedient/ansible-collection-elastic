@@ -157,6 +157,7 @@ def main():
     
     if state == "present":
       pkg_policy_object = kibana.get_pkg_policy(pkg_policy_name)
+      pkg_policy_object_orig = pkg_policy_object
       if 'item' in pkg_policy_object:
         pkg_policy_object = pkg_policy_object['item']      
       if pkg_policy_object:
@@ -170,6 +171,7 @@ def main():
           }
           integration_object = kibana.update_integration(integration_object['name'], body)
           pkg_policy_object = kibana.create_pkg_policy(pkg_policy_name, pkg_policy_desc, agent_policy_id, integration_object, namespace)
+          pkg_policy_object_orig = pkg_policy_object
           if 'item' in pkg_policy_object:
             pkg_policy_object = pkg_policy_object['item']
           #pkg_policy_object = kibana.upgrade_pkg_policy(pkg_policy_object['id'])
@@ -306,8 +308,11 @@ def main():
                 pkg_policy_object['inputs'][i]['config']['policy']['value']['mac']['memory_protection']['mode'] = mode
             i = i+1
 
-               
-      pkg_policy_object_id = pkg_policy_object['id']  
+      if pkg_policy_object == pkg_policy_object_orig:
+        results['pkg_policy_object_updated'] = False
+      else:
+        results['pkg_policy_object_updated'] = True
+      pkg_policy_object_id = pkg_policy_object['id']
       pkg_policy_info = kibana.update_pkg_policy(pkg_policy_object_id, pkg_policy_object)
       body = {
         "keepPoliciesUpToDate": True

@@ -195,6 +195,12 @@ class ECE(object):
         break
     return target_deployment_object
 
+  def update_deployment_byid(self, deployment_id, body):
+    endpoint  = 'deployments/' + deployment_id
+    #body_JSON = dumps(body)
+    target_deployment_object = self.send_api_request(endpoint, 'PUT', body)
+    return target_deployment_object
+
   def create_cluster(self, 
                      cluster_name, 
                      version, 
