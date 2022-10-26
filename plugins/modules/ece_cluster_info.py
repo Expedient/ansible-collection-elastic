@@ -36,7 +36,9 @@ def main():
         username=dict(type='str', required=True),
         password=dict(type='str', no_log=True, required=True),   
         verify_ssl_cert=dict(type='bool', default=True),
-        deployment_name=dict(type='str', required=True)
+        deployment_name=dict(type='str'),
+        deployment_id=dict(type='str', default=None),
+        no_cluster_object=dict(type='bool', default=True)
     )
     argument_dependencies = []
         #('state', 'present', ('enabled', 'alert_type', 'conditions', 'actions')),
@@ -45,23 +47,54 @@ def main():
     module = AnsibleModule(argument_spec=module_args, required_if=argument_dependencies, supports_check_mode=True)
     
     deployment_name = module.params.get('deployment_name')
+    deployment_id = module.params.get('deployment_id')
+    no_cluster_object = module.params.get('no_cluster_object')  
     
     ElasticDeployments = ECE(module)
-    deployment_kibana_info = ElasticDeployments.get_deployment_kibana_info(deployment_name)
-    deployment_object = ElasticDeployments.get_deployment_info(deployment_name)
-    #results['deployment_kibana_info'] = deployment_kibana_info
-
-    if not deployment_kibana_info:
-      results['deployment_kibana_endpoint'] = None
-      results['deployment_kibana_url'] = None
-      results['deployment_kibana_object'] = None
-      results['deployment_kibana_info'] = "No deployment kibana was returned, check your deployment name"
+    deployment_objects = []
+    deployment_kibana_endpoint = None
+    deployment_kibana_http_port = None
+    deployment_kibana_https_port = None
+    deployment_kibana_url = None
+    
+    if deployment_id:
+      deployment_objects = [ElasticDeployments.get_deployment_byid(deployment_id)]
+    elif deployment_name:
+      deployment_objects = [ElasticDeployments.get_deployment_info(deployment_name)]
     else:
-      results['deployment_kibana_endpoint'] = deployment_kibana_info['info']['metadata'].get('aliased_endpoint') or deployment_kibana_info['info']['metadata']['endpoint']
-      results['deployment_kibana_url'] = deployment_kibana_info['info']['metadata'].get('aliased_endpoint')
-      results['deployment_kibana_object'] = deployment_object
-      results['deployment_kibana_info'] = "Deployment kibana was returned sucessfully"
-      
+      deployment_objects = ElasticDeployments.get_deployment_info()
+      deployment_objects = deployment_objects['deployments']
+    
+    if len(deployment_objects) == 1:
+      kibana_info = deployment_objects[0]['resources']['kibana']
+      for i in kibana_info:
+        if i['ref_id'] == "kibana" or i['ref_id'] == "main-kibana":
+          deployment_kibana_endpoint = i['info']['metadata'].get('aliased_endpoint') or i['info']['metadata']['endpoint']
+          deployment_kibana_http_port = i['info']['metadata']['ports'].get('http')
+          deployment_kibana_https_port = i['info']['metadata']['ports'].get('https')
+          deployment_kibana_url = i['info']['metadata'].get('aliased_endpoint')
+      results['deployment_kibana_endpoint'] = deployment_kibana_endpoint
+      results['deployment_kibana_http_port'] = deployment_kibana_http_port
+      results['deployment_kibana_https_port'] = deployment_kibana_https_port
+      results['deployment_kibana_url'] = deployment_kibana_url
+      if no_cluster_object == False:
+        results['deployment_object'] = deployment_objects[0]
+      else:
+        results['deployment_object'] = "No Cluster Object is True by default to reduce output"
+      results['deployment_kibana_info'] = "Deployment was returned sucessfully"
+    elif len(deployment_objects) == 0:
+      results['deployment_kibana_endpoint'] = None
+      results['deployment_kibana_http_port'] = None
+      results['deployment_kibana_https_port'] = None
+      results['deployment_kibana_url'] = None
+      results['deployment_object'] = None
+      results['deployment_kibana_info'] = "No deployment was returned, check your deployment name"
+    else:
+      results['deployment_objects'] = deployment_objects
+
+
+
+    #results['deployment_kibana_info'] = deployment_kibana_info
       #try:
       #  results['deployment_kibana_endpoint'] = deployment_kibana_info['info']['metadata']['aliased_endpoint']
       #  results['deployment_kibana_url'] = deployment_kibana_info['info']['metadata']['aliased_url']

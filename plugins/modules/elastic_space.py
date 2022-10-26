@@ -36,9 +36,14 @@ def main():
         username=dict(type='str', required=True),
         password=dict(type='str', no_log=True, required=True),   
         verify_ssl_cert=dict(type='bool', default=True),
-        dashboard_name=dict(type='str'),
-        dashboard_attributes=dict(type='json'),
-        state=dict(type='str', default='present'),
+        space_name=dict(type='str', required=True),
+        space_description=dict(type='str', default="None"),
+        space_id=dict(type='str', required=True),
+        disabledFeatures=dict(type='list'),
+        initials=dict(type='str', default=None),
+        color=dict(type='str', default=None),
+        deployment_info=dict(type='dict', default=None),
+        state=dict(type='str', default='present')
     )
     
     argument_dependencies = []
@@ -46,29 +51,28 @@ def main():
         #('alert-type', 'metrics_threshold', ('conditions'))
     
     module = AnsibleModule(argument_spec=module_args, supports_check_mode=True
-                            ,mutually_exclusive=[('dashboard_name', 'dashboard_attributes')]
-                            ,required_one_of=[('dashboard_name', 'dashboard_attributes')]
                             )
     
     kibana = Kibana(module)
     results['changed'] = False
-    dashboard_name = module.params.get('dashboard_name')
-    dashboard_attributes = module.params.get('dashboard_attributes')
+    space_name = module.params.get('space_name')
+    space_description = module.params.get('space_description')
+    space_id = module.params.get('space_id')
+    disabledFeatures = module.params.get('disabledFeatures')
+    initials = module.params.get('initials')
+    color = module.params.get('color')
     state = module.params.get('state')
-
-    if dashboard_name and state == "present":
-      dashboard_object_info = kibana.get_saved_object("dashboard", dashboard_name)
-      dashboard_object = kibana.export_saved_object("dashboard", dashboard_object_info['id'])
-
-    if dashboard_attributes and state == "absent":
-      dashboard_object = kibana.import_saved_object(dashboard_attributes)
-
-    if dashboard_object:
-      results['dashboard_status'] = "Dashboard Found"
-      results['dashboard_object'] = dashboard_object
-    else:
-      results['dashboard_status'] = "No Dashboard was returned, check your Dashboard Info"
-      results['dashboard_object'] = None
+    
+    space_object = None
+    
+    if space_id and state == "present":
+      
+      space_object = kibana.get_space(space_id)
+      results['space_status'] = "Space Object Found"
+      
+      if space_object == None:
+        space_object = kibana.create_space(space_id, space_name, space_description, disabledFeatures, initials, color)
+        results['space_status'] = "Space Object Created"
       
     module.exit_json(**results)
 

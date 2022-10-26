@@ -180,7 +180,7 @@ def main():
           results['pkg_policy_object'] = ""
           results['changed'] = False
 
-    if integration_settings:
+    if integration_settings and pkg_policy_object:
       input_no = 0
       for orig_input in pkg_policy_object['inputs']:
         for update_input in integration_settings['inputs']:

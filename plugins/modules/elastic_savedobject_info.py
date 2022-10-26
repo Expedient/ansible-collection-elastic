@@ -36,7 +36,9 @@ def main():
         username=dict(type='str', required=True),
         password=dict(type='str', no_log=True, required=True),   
         verify_ssl_cert=dict(type='bool', default=True),
-        dashboard_name=dict(type='str')
+        object_name=dict(type='str'),
+        space=dict(type='str', default='default'),
+        object_type=dict(type='str', default="default")
     )
     
     argument_dependencies = []
@@ -50,17 +52,18 @@ def main():
     
     kibana = Kibana(module)
     results['changed'] = False
-    dashboard_name = module.params.get('dashboard_name')
+    object_name = module.params.get('object_name')
+    object_type = module.params.get('object_type')
 
-    if module.params.get('dashboard_name'):
-      dashboard_object = kibana.get_saved_object("dashboard", dashboard_name)
+    if module.params.get('object_name'):
+      saved_object = kibana.get_saved_object(object_type, object_name)
       
-    if dashboard_object:
-      results['dashboard_status'] = "Dashboard Found"
-      results['dashboard_object'] = dashboard_object
+    if saved_object:
+      results['object_status'] = "Saved Object Found"
+      results['saved_object'] = saved_object
     else:
-      results['dashboard_status'] = "No Dashboard was returned, check your Dashboard Name"
-      results['dashboard_object'] = None
+      results['object_status'] = "No Saved Object was returned, check your Saved Object Name"
+      results['saved_object'] = None
       
     module.exit_json(**results)
 
