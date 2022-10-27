@@ -71,12 +71,18 @@ def main():
       }
       if 'tags' not in deployment_object[0]['metadata']:
         deployment_object[0]['metadata']['tags'] = []
-        
-      deployment_object[0]['metadata']['tags'].append(tag_body)
+      
+      i = 0
+      tag_list = []
+      for tag in deployment_object[0]['metadata']['tags']:
+        if deployment_object[0]['metadata']['tags'][i]['key'] != tag_body['key']:
+          tag_list.append(tag)
+        i = i + 1
+      tag_list.append(tag_body)
 
       body = {
         "metadata": {
-          "tags": deployment_object[0]['metadata']['tags']
+          "tags": tag_list
         },
         "prune_orphans": False
       }
