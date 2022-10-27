@@ -69,7 +69,11 @@ def main():
         "key": tag_label,
         "value": tag_value
       }
+      if 'tags' not in deployment_object[0]['metadata']:
+        deployment_object[0]['metadata']['tags'] = []
+        
       deployment_object[0]['metadata']['tags'].append(tag_body)
+
       body = {
         "metadata": {
           "tags": deployment_object[0]['metadata']['tags']
