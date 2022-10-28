@@ -109,7 +109,7 @@ class Elastic(object):
     pipelines = self.send_api_request(endpoint, 'GET')
     return pipelines.get(ingest_pipeline_name)
 
-  def create_role_mapping(self, role_mapping_name, assigned_roles, role_mapping_rules, enable_mapping=True, metadata={}, *args, **kwargs):
+  def create_role_mapping(self, role_mapping_name, assigned_roles, role_mapping_rules, metadata={}, enable_mapping=True, *args, **kwargs):
     endpoint = f'_security/role_mapping/{role_mapping_name}'
     data = {
       'enabled': enable_mapping,

@@ -38,8 +38,8 @@ def main():
         verify_ssl_cert=dict(type='bool', default=True),
         role_mapping_name=dict(type='str', required=True),
         enable_mapping=dict(type='bool', default=True),
-        assigned_roles=dict(type='list'),
-        role_mapping_rules=dict(type='dict'),
+        assigned_roles=dict(type='list', required=True),
+        role_mapping_rules=dict(type='dict', required=True),
         metadata=dict(type='dict'),
         state=dict(type='str', default='present')
     )
