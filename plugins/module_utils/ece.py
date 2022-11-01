@@ -351,9 +351,12 @@ class ECE(object):
       endpoint = 'deployments'
       cluster_creation_result = self.send_api_request(endpoint, 'POST', data=data)
       if wait_for_completion:
+        
         elastic_deployment_result = self. wait_for_cluster_state(cluster_creation_result['id'],'elasticsearch','main-elasticsearch','started', completion_timeout)
         kibana_deployment_result = self.wait_for_cluster_state(cluster_creation_result['id'],'kibana','main-kibana','started', completion_timeout)
-        if not elastic_deployment_result and not kibana_deployment_result:
+        apm_deployment_result = self.wait_for_cluster_state(cluster_creation_result['id'],'kibana','main-apm','started', completion_timeout)
+        
+        if not elastic_deployment_result and not kibana_deployment_result and not apm_deployment_result:
           return False
       return cluster_creation_result
 

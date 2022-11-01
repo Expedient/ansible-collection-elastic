@@ -56,6 +56,16 @@ def main():
     deployment_kibana_http_port = None
     deployment_kibana_https_port = None
     deployment_kibana_url = None
+    deployment_kibana_service_url = None
+    deployment_elasticsearch_endpoint = None
+    deployment_elasticsearch_http_port = None
+    deployment_elasticsearch_https_port = None
+    deployment_elasticsearch_service_url = None
+    deployment_elasticsearch_url = None
+    deployment_apm_http_port = None
+    deployment_apm_https_port = None
+    deployment_apm_service_url = None
+    deployment_fleet_service_url = None
     
     if deployment_id:
       deployment_objects = [ElasticDeployments.get_deployment_byid(deployment_id)]
@@ -118,7 +128,9 @@ def main():
       results['deployment_kibana_http_port'] = None
       results['deployment_kibana_https_port'] = None
       results['deployment_kibana_url'] = None
-      results['deployment_object'] = None
+      results['deployment_elasticsearch_url'] = None
+      results['deployment_apm_service_url'] = None
+      results['deployment_fleet_service_url'] = None
       results['deployment_kibana_info'] = "No deployment was returned, check your deployment name"
     else:
       results['deployment_objects'] = deployment_objects
