@@ -124,14 +124,16 @@ def main():
         results['deployment_object'] = "No Cluster Object is True by default to reduce output"
       results['deployment_kibana_info'] = "Deployment was returned sucessfully"
     elif len(deployment_objects) == 0:
+      results['deployment_kibana_info'] = "No deployment was returned, check your deployment name"
       results['deployment_kibana_endpoint'] = None
       results['deployment_kibana_http_port'] = None
       results['deployment_kibana_https_port'] = None
       results['deployment_kibana_url'] = None
+      results['deployment_kibana_service_url'] = None
       results['deployment_elasticsearch_url'] = None
+      results['deployment_elasticsearch_service_url'] = None
       results['deployment_apm_service_url'] = None
       results['deployment_fleet_service_url'] = None
-      results['deployment_kibana_info'] = "No deployment was returned, check your deployment name"
     else:
       results['deployment_objects'] = deployment_objects
 
