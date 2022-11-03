@@ -14,7 +14,6 @@
 # limitations under the License.
 
 from ansible.module_utils.basic import AnsibleModule
-from importlib_metadata import metadata
 
 try:
   from ansible_collections.expedient.elastic.plugins.module_utils.ece import ECE
