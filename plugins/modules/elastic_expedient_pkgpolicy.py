@@ -255,6 +255,14 @@ def main():
                     pkg_policy_object['inputs'][i]['streams'][j]['enabled'] = True
                   if stream['data_stream']['dataset'] == 'windows.perfmon':
                     pkg_policy_object['inputs'][i]['streams'][j]['enabled'] = False
+                  if stream['data_stream']['dataset'] == 'windows.forwarded':
+                      pkg_policy_object['inputs'][i]['streams'][j]['enabled'] = False
+                  if stream['data_stream']['dataset'] == 'windows.powershell':
+                      pkg_policy_object['inputs'][i]['streams'][j]['enabled'] = False
+                  if stream['data_stream']['dataset'] == 'windows.powershell_operational':
+                      pkg_policy_object['inputs'][i]['streams'][j]['enabled'] = False
+                  if stream['data_stream']['dataset'] == 'windows.sysmon_operational':
+                      pkg_policy_object['inputs'][i]['streams'][j]['enabled'] = False
                   j=j+1
             i = i+1
 
