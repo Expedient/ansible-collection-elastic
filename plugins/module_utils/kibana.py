@@ -452,15 +452,22 @@ class Kibana(object):
         integration_install = "Cannot proceed with check_mode set to " + self.module.check_mode
       return integration_install
   
-  def check_integration(self, integration_title):
+  def check_integration(self, integration_title = None, integration_name = None, *args, **kwargs):
       integration_objects = self.get_integrations()
       integration_detail_object = None
       for integration in integration_objects['response']:
-        if integration['title'].upper() in integration_title.upper():
-          if integration['status'] != 'installed':
-            integration_install = self.install_integration(integration['name'],integration['version'])
-          integration_detail_object = self.get_integration(integration['name'],integration['version'])
-          break
+        if integration_title:
+          if integration['title'].upper() in integration_title.upper():
+            if integration['status'] != 'installed':
+              integration_install = self.install_integration(integration['name'],integration['version'])
+            integration_detail_object = self.get_integration(integration['name'],integration['version'])
+            break
+        if integration_name:
+          if integration['name'].upper() in integration_name.upper():
+            if integration['status'] != 'installed':
+              integration_install = self.install_integration(integration['name'],integration['version'])
+            integration_detail_object = self.get_integration(integration['name'],integration['version'])
+            break
       return integration_detail_object
   
   def get_integration(self, integration_name, version = None):
