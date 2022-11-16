@@ -92,7 +92,7 @@ def main():
         verify_ssl_cert=dict(type='bool', default=True),
         agent_policy_id=dict(type='str'),
         agent_policy_name=dict(type='str'),
-        integration_title=dict(type='str', required=True),
+        integration_title=dict(type='str'),
         integration_ver=dict(type='str'),
         integration_name=dict(type='str'),
         pkg_policy_name=dict(type='str', required=True),
@@ -108,7 +108,8 @@ def main():
     module = AnsibleModule(argument_spec=module_args, supports_check_mode=True,
                             mutually_exclusive=[('agent_policy_name', 'agent_policy_id')],
                             required_one_of=[('agent_policy_name', 'agent_policy_id')],
-                            required_together=[('integration_ver','integration_name')])
+                            required_together=[('integration_ver','integration_name')]
+                          )
     
     state = module.params.get('state')
     agent_policy_name = module.params.get('agent_policy_name')
@@ -143,7 +144,8 @@ def main():
     
     if ( integration_title and not ( integration_ver and integration_title )):
       integration_object = kibana.check_integration(integration_title)
-    elif ( integration_name and integration_ver and integration_title ) and not integration_object:
+    elif (( integration_name and integration_ver and integration_title ) and not integration_object) or \
+      (( integration_name and integration_ver ) and not integration_object):
       results['integration_status'] = "No integration found, but Integration Name, Version, and Title found"
       integration_object = {
         'name': integration_name,
