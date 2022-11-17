@@ -544,8 +544,10 @@ class Kibana(object):
   def create_pkg_policy(self,pkg_policy_name, pkg_policy_desc, agent_policy_id, integration_object, namespace="default"):
     pkg_policy_object = self.get_pkg_policy(pkg_policy_name)
     epr_object = self.get_elatic_package_repository_package_info(integration_object['name'], integration_object['version'])
+
     inputs_body = []
     if not pkg_policy_object:
+
       if 'policy_templates' in epr_object:
         for epr_policy_template in epr_object['policy_templates']:
           if 'inputs' in epr_policy_template:

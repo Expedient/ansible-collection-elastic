@@ -123,6 +123,11 @@ def main():
     integration_object = {}
     integration_settings = module.params.get('integration_settings') # inputs policy settings only, aka Defaults
     
+    if integration_settings:
+      if 'integration_vars' in integration_settings:
+        integration_vars = integration_settings['integration_vars']
+        integration_settings.pop('integration_vars')
+    
     if module.check_mode:
         results['changed'] = False
     else:
@@ -142,18 +147,19 @@ def main():
       results['changed'] = False
       module.exit_json(**results)
     
-    if ( integration_title and not ( integration_ver and integration_title )):
-      integration_object = kibana.check_integration(integration_title)
-    elif (( integration_name and integration_ver and integration_title ) and not integration_object) or \
-      (( integration_name and integration_ver ) and not integration_object):
+    if ( integration_title or integration_name ):
+      integration_object = kibana.check_integration(integration_title, integration_name)
+    
+    if (( integration_name and integration_ver and integration_title ) and (integration_object == None or integration_object == "")):
       results['integration_status'] = "No integration found, but Integration Name, Version, and Title found"
       integration_object = {
         'name': integration_name,
         'title': integration_title,
         'version': integration_ver
       }
-    elif not integration_object and not ( integration_title and integration_ver and integration_name):
-      results['integration_status'] = 'Integration Title is not valid and integration name and integration version are not found'
+    
+    if integration_object == None or integration_object == "":
+      results['integration_status'] = 'Integration title is not valid and integration name and integration version are not found'
       results['changed'] = False
       module.exit_json(**results) 
     
@@ -185,8 +191,36 @@ def main():
           results['pkg_policy_status'] = "No Integration Package found, Package Policy not created because check_mode is set to true"
           results['pkg_policy_object'] = ""
           results['changed'] = False
-
+          
       if not integration_settings or integration_settings is None:
+        if pkg_policy_object['package']['name'] == 'synthetics':
+          i = 0
+          for policy_input in pkg_policy_object['inputs']:
+            if 'type' in policy_input:
+              applied_defaults = True
+              pkg_policy_object['inputs'][i]['enabled'] = False
+              if policy_input['type'] == 'synthetics/http' and integration_vars['type'] == "synthetics/http":
+                j = 0
+                for stream in policy_input['streams']:
+                  if stream['data_stream']['dataset'] == 'http':
+                    pkg_policy_object['inputs'][i]['streams'][j]['enabled'] = True
+                    pkg_policy_object['inputs'][i]['streams'][j]['vars']['urls']['value'] = integration_vars['target_url']
+                  j=j+1
+                pkg_policy_object['inputs'][i]['enabled'] = False
+              if policy_input['type'] == 'synthetics/tcp' and integration_vars['type'] == "synthetics/tcp":
+                pkg_policy_object['inputs'][i]['enabled'] = False
+              if policy_input['type'] == 'synthetics/icmp' and integration_vars['type'] == "synthetics/icmp":
+                pkg_policy_object['inputs'][i]['enabled'] = True
+                k = 0
+                for stream in policy_input['streams']:
+                  if stream['data_stream']['dataset'] == 'icmp':
+                    pkg_policy_object['inputs'][i]['streams'][k]['enabled'] = True
+                    pkg_policy_object['inputs'][i]['streams'][k]['vars']['hosts']['value'] = integration_vars['target_server']
+                  k=k+1
+              if policy_input['type'] == 'synthetics/browser' and integration_vars['type'] == "synthetics/browser":
+                pkg_policy_object['inputs'][i]['enabled'] = False
+            i = i+1    
+            
         if pkg_policy_object['package']['name'] == 'system':
           i = 0
           for policy_input in pkg_policy_object['inputs']:
