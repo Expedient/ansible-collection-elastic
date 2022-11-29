@@ -457,13 +457,13 @@ class Kibana(object):
       integration_detail_object = None
       for integration in integration_objects['response']:
         if integration_title:
-          if integration['title'].upper() in integration_title.upper():
+          if integration['title'].upper() == integration_title.upper():
             if integration['status'] != 'installed':
               integration_install = self.install_integration(integration['name'],integration['version'])
             integration_detail_object = self.get_integration(integration['name'],integration['version'])
             break
         if integration_name:
-          if integration['name'].upper() in integration_name.upper():
+          if integration['name'].upper() == integration_name.upper():
             if integration['status'] != 'installed':
               integration_install = self.install_integration(integration['name'],integration['version'])
             integration_detail_object = self.get_integration(integration['name'],integration['version'])
@@ -541,11 +541,16 @@ class Kibana(object):
     epr_object = self.send_epr_api_request(endpoint, 'GET', timeout=300)
     return epr_object
   
-  def create_pkg_policy(self,pkg_policy_name, pkg_policy_desc, agent_policy_id, integration_object, namespace="default"):
+  def create_pkg_policy(self,pkg_policy_name, pkg_policy_desc, agent_policy_id, integration_object, namespace="default", var_list=None):
     pkg_policy_object = self.get_pkg_policy(pkg_policy_name)
     epr_object = self.get_elatic_package_repository_package_info(integration_object['name'], integration_object['version'])
 
     inputs_body = []
+    if var_list:
+      var_list_JSON = loads(var_list)
+    else:
+      var_list_JSON = None
+      
     if not pkg_policy_object:
 
       if 'policy_templates' in epr_object:
@@ -608,6 +613,12 @@ class Kibana(object):
                           if 'default' in epr_stream_var:
                             epr_stream_var['value'] = epr_stream_var['default']
                             epr_stream_var.pop('default')
+                          if var_list_JSON != None:
+                            for var_JSON in var_list_JSON:
+                              for var_key, var_value in var_JSON.items():
+                                var_key_type, var_key_name = var_key.split(':')
+                                if var_key_type == epr_inputs['type'] and var_name == var_key_name:
+                                  epr_stream_var['value'] = var_value
                           inputs_body_streams_var_entry[var_name] = epr_stream_var
                           inputs_body_streams_entry['vars'].update(inputs_body_streams_var_entry)
                       if inputs_body_streams_entry:

@@ -97,6 +97,7 @@ def main():
         integration_name=dict(type='str'),
         pkg_policy_name=dict(type='str', required=True),
         pkg_policy_desc=dict(type='str'),
+        pkg_policy_vars=dict(type='json'),
         namespace=dict(type='str', default='default'),
         state=dict(type='str', default='present'),
         integration_settings=dict(type='dict')
@@ -119,6 +120,7 @@ def main():
     integration_name = module.params.get('integration_name')
     pkg_policy_name = module.params.get('pkg_policy_name')
     pkg_policy_desc = module.params.get('pkg_policy_desc')
+    pkg_policy_vars = module.params.get('pkg_policy_vars')
     namespace = module.params.get('namespace')
     integration_object = {}
     integration_settings = module.params.get('integration_settings') # inputs policy settings only, aka Defaults
@@ -179,7 +181,7 @@ def main():
       else:
         if module.check_mode == False: 
           ### Make sure Integration is not set to "Keep integration policies up to date"
-          pkg_policy_object = kibana.create_pkg_policy(pkg_policy_name, pkg_policy_desc, agent_policy_id, integration_object, namespace)
+          pkg_policy_object = kibana.create_pkg_policy(pkg_policy_name, pkg_policy_desc, agent_policy_id, integration_object, namespace, pkg_policy_vars)
           pkg_policy_object_orig = pkg_policy_object
           if 'item' in pkg_policy_object:
             pkg_policy_object = pkg_policy_object['item']
@@ -219,6 +221,27 @@ def main():
                   k=k+1
               if policy_input['type'] == 'synthetics/browser' and integration_vars['type'] == "synthetics/browser":
                 pkg_policy_object['inputs'][i]['enabled'] = False
+            i = i+1    
+            
+        if pkg_policy_object['package']['name'] == 'winlog':
+          i = 0
+          for policy_input in pkg_policy_object['inputs']:
+            if 'type' in policy_input:
+              applied_defaults = True
+              if policy_input['type'] == 'winlog':
+                pkg_policy_object['inputs'][i]['enabled'] = True
+                j = 0
+                for stream in policy_input['streams']:
+                  if stream['data_stream']['dataset'] == 'winlog.winlog':
+                    pkg_policy_object['inputs'][i]['streams'][j]['enabled'] = True
+                  j = j + 1
+              if policy_input['type'] == 'httpjson':
+                pkg_policy_object['inputs'][i]['enabled'] = False
+                j = 0
+                for stream in policy_input['streams']:
+                  if stream['data_stream']['dataset'] == 'winlog.winlog':
+                    pkg_policy_object['inputs'][i]['streams'][j]['enabled'] = False
+                  j = j + 1
             i = i+1    
             
         if pkg_policy_object['package']['name'] == 'system':
