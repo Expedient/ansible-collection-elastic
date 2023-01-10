@@ -215,10 +215,11 @@ def main():
     state=dict(type='str', default='present', choices=['present', 'absent']),
     alert_name=dict(type='str', required=True),
     enabled=dict(type='bool', default=True),
-    alert_type=dict(type='str', choices=['metrics_threshold', 'uptime_monitor_status']), #more types will be added as we gain the ability to support them
+    alert_type=dict(type='str', choices=['metrics_threshold', 'uptime_monitor_status','elastic_query']), #more types will be added as we gain the ability to support them
     tags=dict(type='list', elements='str', default=[]),
     check_every=dict(type='str', default='1m'),
     notify_on=dict(type='str', default='status_change', choices=['status_change']),
+    rule_params=dict(type='dict'),
     conditions=dict(type='list', elements='dict', options=dict(
       when=dict(type='str', required=True, choices=['max', 'min', 'avg', 'cardinality', 'rate', 'count', 'sum', '95th_percentile', '99th_percentile']),
       field=dict(type='str', required=False),
@@ -246,7 +247,7 @@ def main():
     group_by=dict(type='list', elements='str', required=False),
     actions=dict(type='list', elements='dict', options=dict(
       action_type=dict(type='str', required=True, choices=['email', 'index', 'webhook']), #Only supporting these types for now, if we need more options later we can deal with them as-needed
-      run_when=dict(type='str', default='alert', choices=['alert', 'warning', 'recovered','uptime_down_monitor']),
+      run_when=dict(type='str', default='alert', choices=['alert', 'warning', 'recovered','uptime_down_monitor','query_matched']),
       connector=dict(type='str', required=True),
       body=dict(type='str', required=False),
       body_json=dict(type='dict', required=False)
