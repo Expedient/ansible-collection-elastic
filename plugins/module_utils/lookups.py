@@ -40,5 +40,6 @@ state_lookup = {
 }
 
 notify_lookup = {
-  'status_change': 'onActionGroupChange'
+  'status_change': 'onActionGroupChange',
+  'active_alert': 'onActiveAlert'
 }
