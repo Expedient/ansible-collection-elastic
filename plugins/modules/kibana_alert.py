@@ -218,7 +218,7 @@ def main():
     alert_type=dict(type='str', choices=['metrics_threshold', 'uptime_monitor_status','elastic_query']), #more types will be added as we gain the ability to support them
     tags=dict(type='list', elements='str', default=[]),
     check_every=dict(type='str', default='1m'),
-    notify_on=dict(type='str', default='status_change', choices=['status_change']),
+    notify_on=dict(type='str', default='status_change', choices=['status_change','active_alert']),
     rule_params=dict(type='dict'),
     conditions=dict(type='list', elements='dict', options=dict(
       when=dict(type='str', required=True, choices=['max', 'min', 'avg', 'cardinality', 'rate', 'count', 'sum', '95th_percentile', '99th_percentile']),
