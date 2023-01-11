@@ -10,6 +10,7 @@ time_unit_lookup = {
 }
 
 alert_type_lookup = {
+  'elastic_query': '.es-query',
   'metrics_threshold': 'metrics.alert.threshold',
   'uptime_monitor_status': 'xpack.uptime.alerts.monitorStatus'
 }
@@ -22,6 +23,7 @@ action_type_lookup = {
 
 # Need to get warning thresholds added here too
 action_group_lookup = {
+  'query_matched': 'query matched',
   'alert': 'metrics.threshold.fired',
   'recovered': 'metrics.threshold.recovered',
   'uptime_down_monitor': "xpack.uptime.alerts.actionGroups.monitorStatus"
@@ -38,5 +40,6 @@ state_lookup = {
 }
 
 notify_lookup = {
-  'status_change': 'onActionGroupChange'
+  'status_change': 'onActionGroupChange',
+  'active_alert': 'onActiveAlert'
 }

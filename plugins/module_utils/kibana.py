@@ -276,6 +276,7 @@ class Kibana(object):
   def format_alert_params(self):
     formatted_params = {}
     alert_type = self.module.params.get('alert_type')
+    rule_params = self.module.params.get('rule_params')
 
     if alert_type == 'metrics_threshold':
       criteria = self.format_alert_conditions()
@@ -296,6 +297,9 @@ class Kibana(object):
         'timerangeCount': self.module.params.get('timerangeCount'),
         'timerangeUnit': lookups.time_unit_lookup[self.module.params.get('timerangeUnit')]
       }
+    
+    else:
+      formatted_params = rule_params
 
     if self.module.params.get('filter'):
       formatted_params['filterQueryText'] = self.module.params.get('filter')
