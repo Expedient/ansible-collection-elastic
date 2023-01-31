@@ -169,7 +169,10 @@ def main():
       body = {
         "keepPoliciesUpToDate": False
       }
-      integration_object = kibana.update_integration(integration_object['name'], body)
+      integration_object = kibana.update_integration(
+          integration_name = integration_object['name'], 
+          integration_version=integration_object['version'], 
+          body = body)
       pkg_policy_object = kibana.get_pkg_policy(pkg_policy_name)
       pkg_policy_object_orig = pkg_policy_object
       applied_defaults = False
@@ -389,7 +392,10 @@ def main():
       body = {
         "keepPoliciesUpToDate": True
       }
-      integration_object = kibana.update_integration(integration_object['name'], body)
+      integration_object = kibana.update_integration(
+          integration_name = integration_object['name'], 
+          integration_version=integration_object['version'], 
+          body = body)
       results['pkg_policy_object_update'] = pkg_policy_info
 
     module.exit_json(**results)

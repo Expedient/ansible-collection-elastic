@@ -53,6 +53,7 @@ class Kibana(object):
       self.ece_api_proxy = ECE_API_Proxy(module)
     else:
       self.version = self.get_cluster_version()
+      self.major_version,self.minor_version,self.patch_version = self.version.split(".")
 
   def send_api_request(self, endpoint, method, data = None, headers = {}, timeout = 120, space_id = "default", no_kbnver = False,*args, **kwargs):
     
@@ -440,16 +441,21 @@ class Kibana(object):
   # Elastic Integration functions
 
   def get_integrations(self):
-      endpoint  = 'fleet/epm/packages?experimental=true'
-      integration_objects = self.send_api_request(endpoint, 'GET')
-      return integration_objects
+    if int(self.major_version) > 8 or (int(self.major_version) == 8 and int(self.minor_version) >= 6):
+      all_integration_flag = "prerelease"
+    else:
+      all_integration_flag = "experimental"
+    endpoint  = f'fleet/epm/packages?{all_integration_flag}=true'
+    integration_objects = self.send_api_request(endpoint, 'GET')
+    return integration_objects
   
   def install_integration(self, integration_name, version):
       body = {
           "force": True
       }
       body_JSON = dumps(body)
-      endpoint  = 'fleet/epm/packages/' + integration_name + "-" + version
+
+      endpoint  = 'fleet/epm/packages/' + integration_name + "/" + version
       if not self.module.check_mode:
         integration_install = self.send_api_request(endpoint, 'POST', data=body_JSON)
       else:
@@ -459,7 +465,7 @@ class Kibana(object):
   def check_integration(self, integration_title = None, integration_name = None, *args, **kwargs):
       integration_objects = self.get_integrations()
       integration_detail_object = None
-      for integration in integration_objects['response']:
+      for integration in integration_objects['items']:
         if integration_title:
           if integration['title'].upper() == integration_title.upper():
             if integration['status'] != 'installed':
@@ -475,21 +481,18 @@ class Kibana(object):
       return integration_detail_object
   
   def get_integration(self, integration_name, version = None):
-      if (version == None):
-        endpoint  = 'fleet/epm/packages/' + integration_name
-      else:
-         endpoint  = 'fleet/epm/packages/' + integration_name + "-" + version       
-      integration_object = self.send_api_request(endpoint, 'GET')
-      integration_object = integration_object['response']
-      return integration_object
+    endpoint  = 'fleet/epm/packages/' + integration_name + "/" + version       
+    integration_object = self.send_api_request(endpoint, 'GET')
+    integration_object = integration_object['item']
+    return integration_object
 
-  def update_integration(self, integration_id, body):
+  def update_integration(self, integration_name, integration_version, body, *args, **kwargs):
     
-      endpoint  = 'fleet/epm/packages/' + integration_id
-      body_JSON = dumps(body)
-      integration_object = self.send_api_request(endpoint, 'PUT', data=body_JSON)
-      integration_object = integration_object['response']
-      return integration_object
+    endpoint  = f'fleet/epm/packages/{integration_name}/{integration_version}'
+    body_JSON = dumps(body)
+    integration_object = self.send_api_request(endpoint, 'PUT', data=body_JSON)
+    integration_object = integration_object['item']
+    return integration_object
         
   # Elastic Integration Package Policy functions
 
