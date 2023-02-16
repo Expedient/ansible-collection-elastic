@@ -124,6 +124,7 @@ def main():
     namespace = module.params.get('namespace')
     integration_object = {}
     integration_settings = module.params.get('integration_settings') # inputs policy settings only, aka Defaults
+    integration_vars = {}
     
     if integration_settings:
       if 'integration_vars' in integration_settings:
@@ -247,56 +248,51 @@ def main():
                   j = j + 1
             i = i+1    
             
+        if pkg_policy_object['package']['name'] == 'osquery_manager':
+          i = 0
+          for policy_input in pkg_policy_object['inputs']:
+            pkg_policy_object['inputs'][i]['streams'] = []
+            pkg_policy_object['inputs'][i].pop('vars')
+            pkg_policy_object['inputs'][i].pop('config')
+            i = i+1  
+          
         if pkg_policy_object['package']['name'] == 'system':
           i = 0
           for policy_input in pkg_policy_object['inputs']:
             if 'type' in policy_input:
                 applied_defaults = True
-                if policy_input['type'] == 'logfile':
-                    pkg_policy_object['inputs'][i]['enabled'] = False
-                if policy_input['type'] == 'winlog':
-                    pkg_policy_object['inputs'][i]['enabled'] = False
-                if policy_input['type'] == 'httpjson':
-                    pkg_policy_object['inputs'][i]['enabled'] = False
-                    #pkg_policy_object['inputs'][i]['vars']['ssl']['value'] = None
+                pkg_policy_object['inputs'][i]['enabled'] = False
+                if policy_input['type'] == 'logfile' or \
+                  policy_input['type'] == 'winlog':
+                  if 'service' in integration_vars:
+                    if integration_vars['service'] == 'SIEM':
+                      pkg_policy_object['inputs'][i]['enabled'] = True
                 if policy_input['type'] == 'system/metrics':
-                  pkg_policy_object['inputs'][i]['enabled'] = True
+                    pkg_policy_object['inputs'][i]['enabled'] = True
                 j = 0
                 for stream in policy_input['streams']:
-                  if stream['data_stream']['dataset'] == 'system.security':
-                    pkg_policy_object['inputs'][i]['streams'][j]['enabled'] = False
-                  if stream['data_stream']['dataset'] == 'system.system':
-                    pkg_policy_object['inputs'][i]['streams'][j]['enabled'] = False
-                  if stream['data_stream']['dataset'] == 'system.application':
-                    pkg_policy_object['inputs'][i]['streams'][j]['enabled'] = False
-                  if stream['data_stream']['dataset'] == 'system.auth':
-                    pkg_policy_object['inputs'][i]['streams'][j]['enabled'] = False
-                  if stream['data_stream']['dataset'] == 'system.syslog':
-                    pkg_policy_object['inputs'][i]['streams'][j]['enabled'] = False
-                  if stream['data_stream']['dataset'] == 'system.core':
-                    pkg_policy_object['inputs'][i]['streams'][j]['enabled'] = False
-                  if stream['data_stream']['dataset'] == 'system.cpu':
-                    pkg_policy_object['inputs'][i]['streams'][j]['enabled'] = True
-                  if stream['data_stream']['dataset'] == 'system.diskio':
-                    pkg_policy_object['inputs'][i]['streams'][j]['enabled'] = True
-                  if stream['data_stream']['dataset'] == 'system.filesystem':
-                    pkg_policy_object['inputs'][i]['streams'][j]['enabled'] = True
-                  if stream['data_stream']['dataset'] == 'system.fsstat':
-                    pkg_policy_object['inputs'][i]['streams'][j]['enabled'] = True
-                  if stream['data_stream']['dataset'] == 'system.load':
-                    pkg_policy_object['inputs'][i]['streams'][j]['enabled'] = True
-                  if stream['data_stream']['dataset'] == 'system.memory':
-                    pkg_policy_object['inputs'][i]['streams'][j]['enabled'] = True
-                  if stream['data_stream']['dataset'] == 'system.network':
-                    pkg_policy_object['inputs'][i]['streams'][j]['enabled'] = True
-                  if stream['data_stream']['dataset'] == 'system.process':
-                    pkg_policy_object['inputs'][i]['streams'][j]['enabled'] = True
-                  if stream['data_stream']['dataset'] == 'system.process.summary':
-                    pkg_policy_object['inputs'][i]['streams'][j]['enabled'] = True
-                  if stream['data_stream']['dataset'] == 'system.socket_summary':
-                    pkg_policy_object['inputs'][i]['streams'][j]['enabled'] = True
-                  if stream['data_stream']['dataset'] == 'system.uptime':
-                    pkg_policy_object['inputs'][i]['streams'][j]['enabled'] = True
+                  pkg_policy_object['inputs'][i]['streams'][j]['enabled'] = False      
+                  if 'service' in integration_vars:
+                    if integration_vars['service'] == 'SIEM':
+                      if stream['data_stream']['dataset'] == 'system.auth' or \
+                        stream['data_stream']['dataset'] == 'system.syslog' or \
+                        stream['data_stream']['dataset'] == 'system.application' or \
+                        stream['data_stream']['dataset'] == 'system.security' or \
+                        stream['data_stream']['dataset'] == 'system.system':
+                        pkg_policy_object['inputs'][i]['streams'][j]['enabled'] = True
+
+                  if stream['data_stream']['dataset'] == 'system.cpu' or \
+                    stream['data_stream']['dataset'] == 'system.diskio' or \
+                    stream['data_stream']['dataset'] == 'system.filesystem' or \
+                    stream['data_stream']['dataset'] == 'system.fsstat' or \
+                    stream['data_stream']['dataset'] == 'system.load' or \
+                    stream['data_stream']['dataset'] == 'system.memory' or \
+                    stream['data_stream']['dataset'] == 'system.network' or \
+                    stream['data_stream']['dataset'] == 'system.process' or \
+                    stream['data_stream']['dataset'] == 'system.process.summary' or \
+                    stream['data_stream']['dataset'] == 'system.socket_summary' or \
+                    stream['data_stream']['dataset'] == 'system.uptime':
+                      pkg_policy_object['inputs'][i]['streams'][j]['enabled'] = True
                   j=j+1
             i = i+1      
 
@@ -305,62 +301,46 @@ def main():
           for policy_input in pkg_policy_object['inputs']:
             if 'type' in policy_input:
                 applied_defaults = True
+                pkg_policy_object['inputs'][i]['enabled'] = False
                 if policy_input['type'] == 'winlog':
-                    pkg_policy_object['inputs'][i]['enabled'] = False
-                if policy_input['type'] == 'httpjson':
-                    pkg_policy_object['inputs'][i]['enabled'] = False
+                  if 'service' in integration_vars:
+                    if integration_vars['service'] == 'SIEM':
+                      pkg_policy_object['inputs'][i]['enabled'] = True
                 if policy_input['type'] == 'windows/metrics':
                   pkg_policy_object['inputs'][i]['enabled'] = True
                 j = 0
+
                 for stream in policy_input['streams']:
+                  pkg_policy_object['inputs'][i]['streams'][j]['enabled'] = False
+                  if 'service' in integration_vars:
+                    if integration_vars['service'] == 'SIEM':
+                      if stream['data_stream']['dataset'] == 'windows.forwarded' or \
+                        stream['data_stream']['dataset'] == 'windows.powershell' or \
+                        stream['data_stream']['dataset'] == 'windows.powershell_operational' or \
+                        stream['data_stream']['dataset'] == 'windows.sysmon_operational':
+                          pkg_policy_object['inputs'][i]['streams'][j]['enabled'] = True
                   if stream['data_stream']['dataset'] == 'windows.service':
                     pkg_policy_object['inputs'][i]['streams'][j]['enabled'] = True
-                  if stream['data_stream']['dataset'] == 'windows.perfmon':
-                    pkg_policy_object['inputs'][i]['streams'][j]['enabled'] = False
-                  if stream['data_stream']['dataset'] == 'windows.forwarded':
-                      pkg_policy_object['inputs'][i]['streams'][j]['enabled'] = False
-                  if stream['data_stream']['dataset'] == 'windows.powershell':
-                      pkg_policy_object['inputs'][i]['streams'][j]['enabled'] = False
-                  if stream['data_stream']['dataset'] == 'windows.powershell_operational':
-                      pkg_policy_object['inputs'][i]['streams'][j]['enabled'] = False
-                  if stream['data_stream']['dataset'] == 'windows.sysmon_operational':
-                      pkg_policy_object['inputs'][i]['streams'][j]['enabled'] = False
                   j=j+1
             i = i+1
 
         if pkg_policy_object['package']['name'] == 'linux':
           i = 0
           for policy_input in pkg_policy_object['inputs']:
+            pkg_policy_object['inputs'][i]['enabled'] = False
             if 'type' in policy_input:
                 applied_defaults = True
-                if policy_input['type'] == 'system/metrics':
-                  pkg_policy_object['inputs'][i]['enabled'] = True
-                if policy_input['type'] == 'linux/metrics':
-                  pkg_policy_object['inputs'][i]['enabled'] = True
+                if policy_input['type'] == 'system/metrics' or \
+                  policy_input['type'] == 'linux/metrics':
+                    pkg_policy_object['inputs'][i]['enabled'] = True
                 j = 0
                 for stream in policy_input['streams']:
-                  if stream['data_stream']['dataset'] == 'linux.service':
-                    pkg_policy_object['inputs'][i]['streams'][j]['enabled'] = True
-                  if stream['data_stream']['dataset'] == 'linux.users':
-                    pkg_policy_object['inputs'][i]['streams'][j]['enabled'] = True
-                  if stream['data_stream']['dataset'] == 'linux.entropy':
-                    pkg_policy_object['inputs'][i]['streams'][j]['enabled'] = False
-                  if stream['data_stream']['dataset'] == 'linux.raid':
-                    pkg_policy_object['inputs'][i]['streams'][j]['enabled'] = False
-                  if stream['data_stream']['dataset'] == 'linux.network_summary':
-                    pkg_policy_object['inputs'][i]['streams'][j]['enabled'] = True
-                  if stream['data_stream']['dataset'] == 'linux.socket':
-                    pkg_policy_object['inputs'][i]['streams'][j]['enabled'] = True     
-                  if stream['data_stream']['dataset'] == 'linux.pageinfo':
-                    pkg_policy_object['inputs'][i]['streams'][j]['enabled'] = False
-                  if stream['data_stream']['dataset'] == 'linux.iostat':
-                    pkg_policy_object['inputs'][i]['streams'][j]['enabled'] = False
-                  if stream['data_stream']['dataset'] == 'linux.memory':
-                    pkg_policy_object['inputs'][i]['streams'][j]['enabled'] = False
-                  if stream['data_stream']['dataset'] == 'linux.ksm':
-                    pkg_policy_object['inputs'][i]['streams'][j]['enabled'] = False
-                  if stream['data_stream']['dataset'] == 'linux.conntrack':
-                    pkg_policy_object['inputs'][i]['streams'][j]['enabled'] = False
+                  pkg_policy_object['inputs'][i]['streams'][j]['enabled'] = False
+                  if stream['data_stream']['dataset'] == 'linux.service' or \
+                    stream['data_stream']['dataset'] == 'linux.users' or \
+                    stream['data_stream']['dataset'] == 'linux.network_summary' or \
+                    stream['data_stream']['dataset'] == 'linux.socket':
+                      pkg_policy_object['inputs'][i]['streams'][j]['enabled'] = True     
                   j=j+1
             i = i+1
 
@@ -381,6 +361,22 @@ def main():
                 pkg_policy_object['inputs'][i]['config']['policy']['value']['mac']['behavior_protection']['mode'] = mode
                 pkg_policy_object['inputs'][i]['config']['policy']['value']['mac']['malware']['mode'] = mode
                 pkg_policy_object['inputs'][i]['config']['policy']['value']['mac']['memory_protection']['mode'] = mode
+            i = i+1
+
+        if pkg_policy_object['package']['name'] == 'panw':
+          i = 0
+          for policy_input in pkg_policy_object['inputs']:
+            if 'type' in policy_input:
+                applied_defaults = True
+                if policy_input['type'] == 'tcp':
+                    pkg_policy_object['inputs'][i]['enabled'] = False
+                if policy_input['type'] == 'udp':
+                    pkg_policy_object['inputs'][i]['enabled'] = True
+                    j = 0
+                    for stream in policy_input['streams']:
+                      if 'internal_zones' in stream['vars']:
+                        pkg_policy_object['inputs'][i]['streams'][j]['vars']['internal_zones']['value'].append("Customer-Private") 
+                      j=j+1
             i = i+1
 
       if pkg_policy_object == pkg_policy_object_orig and applied_defaults is False:
