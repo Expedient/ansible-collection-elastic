@@ -368,14 +368,16 @@ def main():
           for policy_input in pkg_policy_object['inputs']:
             if 'type' in policy_input:
                 applied_defaults = True
-                if policy_input['type'] == 'tcp':
-                    pkg_policy_object['inputs'][i]['enabled'] = False
+                pkg_policy_object['inputs'][i]['enabled'] = False
                 if policy_input['type'] == 'udp':
                     pkg_policy_object['inputs'][i]['enabled'] = True
                     j = 0
                     for stream in policy_input['streams']:
                       if 'internal_zones' in stream['vars']:
-                        pkg_policy_object['inputs'][i]['streams'][j]['vars']['internal_zones']['value'].append("Customer-Private") 
+                        pkg_policy_object['inputs'][i]['streams'][j]['vars']['internal_zones']['value'].append("Customer-Private")
+                      if 'syslog_host' in stream['vars']:
+                        pkg_policy_object['inputs'][i]['streams'][j]['vars']['internal_zones']['value'] = "0.0.0.0" 
+                        
                       j=j+1
             i = i+1
 
