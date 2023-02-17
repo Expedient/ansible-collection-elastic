@@ -376,7 +376,7 @@ def main():
                       if 'internal_zones' in stream['vars']:
                         pkg_policy_object['inputs'][i]['streams'][j]['vars']['internal_zones']['value'].append("Customer-Private")
                       if 'syslog_host' in stream['vars']:
-                        pkg_policy_object['inputs'][i]['streams'][j]['vars']['internal_zones']['value'] = "0.0.0.0" 
+                        pkg_policy_object['inputs'][i]['streams'][j]['vars']['syslog_host']['value'] = "0.0.0.0" 
                         
                       j=j+1
             i = i+1
