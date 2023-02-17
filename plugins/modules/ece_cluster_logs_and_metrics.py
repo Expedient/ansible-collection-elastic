@@ -15,6 +15,8 @@
 
 from ansible.module_utils.basic import AnsibleModule
 
+import time
+
 try:
   from ansible_collections.expedient.elastic.plugins.module_utils.ece import ECE
 except:
@@ -91,6 +93,16 @@ def main():
         'prune_orphans': False
       }
       ElasticDeployments.update_deployment_byid(deployment_object[0]['id'], body)
+      
+      deployment_healthy = ElasticDeployments.wait_for_cluster_state(deployment_object[0]['id'], "elasticsearch" )
+      deployment_healthy = ElasticDeployments.wait_for_cluster_state(deployment_object[0]['id'], "kibana" )
+      deployment_healthy = ElasticDeployments.wait_for_cluster_state(deployment_object[0]['id'], "kibana","main-apm")
+      
+      if deployment_healthy == False:
+        results['cluster_data']['msg'] = "Cluster information may be incomplete because the cluster is not healthy"
+      else:
+        time.sleep(30)
+        
     results['changed'] = True
     module.exit_json(**results)
 
