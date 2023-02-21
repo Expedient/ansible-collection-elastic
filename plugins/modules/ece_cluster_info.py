@@ -99,11 +99,12 @@ def main():
         if i['ref_id'] == "apm" or i['ref_id'] == "main-apm":
           deployment_apm_http_port = i['info']['metadata']['ports'].get('http')
           deployment_apm_https_port = i['info']['metadata']['ports'].get('https')
-          for j in i['info']['metadata']['services_urls']:
-            if j['service'] == "apm":
-              deployment_apm_service_url = j.get('url')
-            if j['service'] == "fleet":
-              deployment_fleet_service_url = j.get('url')
+          if 'services_urls' in i['info']['metadata']:
+            for j in i['info']['metadata']['services_urls']:
+              if j['service'] == "apm":
+                deployment_apm_service_url = j.get('url')
+              if j['service'] == "fleet":
+                deployment_fleet_service_url = j.get('url')
       results['deployment_kibana_endpoint'] = deployment_kibana_endpoint
       results['deployment_kibana_http_port'] = deployment_kibana_http_port
       results['deployment_kibana_https_port'] = deployment_kibana_https_port
