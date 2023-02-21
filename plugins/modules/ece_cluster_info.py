@@ -94,6 +94,7 @@ def main():
           deployment_elasticsearch_https_port = i['info']['metadata']['ports'].get('https')
           deployment_elasticsearch_service_url = i['info']['metadata'].get('service_url')
           deployment_elasticsearch_url = i['info']['metadata'].get('aliased_endpoint')
+          deployment_elasticsearch_version = i['info']['plan_info']['current']['plan']['elasticsearch'].get('version')
       apm_info = deployment_objects[0]['resources']['apm']
       for i in apm_info:
         if i['ref_id'] == "apm" or i['ref_id'] == "main-apm":
@@ -105,6 +106,7 @@ def main():
                 deployment_apm_service_url = j.get('url')
               if j['service'] == "fleet":
                 deployment_fleet_service_url = j.get('url')
+      results['deployment_elasticsearch_version'] = deployment_elasticsearch_version
       results['deployment_kibana_endpoint'] = deployment_kibana_endpoint
       results['deployment_kibana_http_port'] = deployment_kibana_http_port
       results['deployment_kibana_https_port'] = deployment_kibana_https_port

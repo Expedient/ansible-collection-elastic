@@ -74,11 +74,15 @@ def main():
     for fleet_agent in fleet_agent_list['list']:
       for agent_policy in agent_policy_list['items']:
         if fleet_agent['policy_id'] == agent_policy['id']:
+          if 'agent' not in fleet_agent:
+            fleet_agent['agent'] = {}
+            fleet_agent['agent']['version'] = "N/A"
           agent_entry = {
             'agent_name': fleet_agent['local_metadata']['host']['name'],
             'host_name':fleet_agent['local_metadata']['host']['hostname'],
             'agent_active': fleet_agent['active'],
             'agent_status': fleet_agent['status'],
+            'agent_version': fleet_agent['agent']['version'],
             'agent_policy': agent_policy['name'],
             'pkg_policy_info': agent_policy['package_policy_info']
           }
