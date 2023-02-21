@@ -76,6 +76,7 @@ def main():
         if fleet_agent['policy_id'] == agent_policy['id']:
           if 'agent' not in fleet_agent:
             fleet_agent['agent'] = {}
+          if 'version' not in fleet_agent['agent']:
             fleet_agent['agent']['version'] = "N/A"
           agent_entry = {
             'agent_name': fleet_agent['local_metadata']['host']['name'],
