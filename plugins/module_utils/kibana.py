@@ -496,9 +496,8 @@ class Kibana(object):
         
   # Elastic Integration Package Policy functions
 
-  def get_all_pkg_policies(self):
-      perPage = "500"
-      endpoint  = 'fleet/package_policies?perPage='+ perPage
+  def get_all_pkg_policies(self, perPage = 500):
+      endpoint  = 'fleet/package_policies?perPage='+ str(perPage)
       pkgpolicy_objects = self.send_api_request(endpoint, 'GET')
       return pkgpolicy_objects
   
@@ -681,13 +680,12 @@ class Kibana(object):
     
 # Elastic Agent Policy functions
 
-  def get_all_agent_policys(self):
-    perPage = "500"
-    endpoint  = 'fleet/agent_policies?perPage='+ perPage
+  def get_all_agent_policys(self, perPage = 500):
+    endpoint  = 'fleet/agent_policies?perPage='+ str(perPage)
     agent_policy_objects = self.send_api_request(endpoint, 'GET')
     return agent_policy_objects
 
-  def create_agent_policy(self, agent_policy_id, agent_policy_name, agent_policy_desc, namespace="default"):
+  def create_agent_policy(self, agent_policy_id, agent_policy_name, agent_policy_desc, namespace="default", monitoring=[]):
     if agent_policy_id:
       agent_policy_object = self.get_agent_policy_byid(agent_policy_id)
     else:
@@ -698,7 +696,7 @@ class Kibana(object):
           "name": agent_policy_name,
           "namespace": namespace.lower(),
           "description": agent_policy_desc,
-          "monitoring_enabled": []
+          "monitoring_enabled": monitoring
       }
       body_JSON = dumps(body)
       
@@ -742,9 +740,7 @@ class Kibana(object):
 
 # Elastic Agent functions
 
-  def get_agent_list(self):
-    page_size = 50
-    page_number = 1
+  def get_agent_list(self, page_size = 500, page_number = 1) :
     endpoint  = "fleet/agents?page=" + str(page_number) + "&perPage=" + str(page_size)
     agent_list = self.send_api_request(endpoint, 'GET')
     noOfAgents = agent_list['total']

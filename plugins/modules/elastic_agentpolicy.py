@@ -37,7 +37,8 @@ def main():
         agent_policy_name=dict(type='str', required=True),
         agent_policy_desc=dict(type='str', default='None'),
         state=dict(type='str', default='present'),
-        namespace=dict(type='str', default='default')
+        namespace=dict(type='str', default='default'),
+        monitoring=dict(type='list', default=[])
     )
     
     argument_dependencies = []
@@ -54,6 +55,7 @@ def main():
     agent_policy_desc = module.params.get('agent_policy_desc')
     agent_policy_id = module.params.get('agent_policy_id')
     namespace = module.params.get('namespace')
+    monitoring = module.params.get('monitoring')
     
     if module.check_mode:
         results['changed'] = False
@@ -66,7 +68,7 @@ def main():
         results['agent_policy_status'] = "Agent Policy already exists"
         results['changed'] = False
       else:
-        agent_policy_object = kibana.create_agent_policy(agent_policy_id, agent_policy_name, agent_policy_desc, namespace)
+        agent_policy_object = kibana.create_agent_policy(agent_policy_id, agent_policy_name, agent_policy_desc, namespace, monitoring)
         results['agent_policy_status'] = "Agent Policy created"
       results['agent_policy_object'] = agent_policy_object
     elif state == "absent":
