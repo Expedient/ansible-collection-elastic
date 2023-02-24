@@ -118,3 +118,15 @@ class Elastic(object):
     }
     role_mapping_object = self.send_api_request(endpoint, data=data, method='POST')
     return role_mapping_object
+  
+  ########### Index Lifecycle Policies
+  
+  def get_index_lifecycle_policy(self, policy_name):
+    endpoint = '_ilm/policy/' + policy_name
+    index_lifecycle_policy = self.send_api_request(endpoint, 'GET')
+    return index_lifecycle_policy
+  
+  def update_index_lifecycle_policy(self, policy_name, index_lifecycle_policy_data):
+    endpoint = '_ilm/policy/' + policy_name
+    index_lifecycle_policy = self.send_api_request(endpoint, 'PUT', data=index_lifecycle_policy_data)
+    return index_lifecycle_policy

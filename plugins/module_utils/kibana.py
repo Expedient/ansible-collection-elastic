@@ -680,6 +680,11 @@ class Kibana(object):
     
 # Elastic Agent Policy functions
 
+  def get_agentpolicy_enrollment_tokens(self, perPage = 500):
+    endpoint  = 'fleet/enrollment_api_keys?perPage='+ str(perPage)
+    enrollment_api_objects = self.send_api_request(endpoint, 'GET')
+    return enrollment_api_objects
+
   def get_all_agent_policys(self, perPage = 500):
     endpoint  = 'fleet/agent_policies?perPage='+ str(perPage)
     agent_policy_objects = self.send_api_request(endpoint, 'GET')
