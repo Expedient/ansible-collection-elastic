@@ -106,6 +106,7 @@ def main():
                 deployment_apm_service_url = j.get('url')
               if j['service'] == "fleet":
                 deployment_fleet_service_url = j.get('url')
+      results['deployment_id'] = deployment_objects[0]['id']
       results['deployment_elasticsearch_version'] = deployment_elasticsearch_version
       results['deployment_kibana_endpoint'] = deployment_kibana_endpoint
       results['deployment_kibana_http_port'] = deployment_kibana_http_port

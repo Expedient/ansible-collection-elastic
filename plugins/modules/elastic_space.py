@@ -26,8 +26,6 @@ except:
 
 results = {}
                 
-import json
-
 def main():
 
     module_args=dict(    
