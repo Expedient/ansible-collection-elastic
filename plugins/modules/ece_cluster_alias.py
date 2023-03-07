@@ -41,7 +41,8 @@ def main():
         deployment_name=dict(type='str'),
         deployment_id=dict(type='str', default=None),
         no_cluster_object=dict(type='bool', default=True),
-        alias_name=dict(type='str', required=True)
+        alias_name=dict(type='str', required=True),
+        deployment_info=dict(type='dict', default=None)
     )
     argument_dependencies = []
         #('state', 'present', ('enabled', 'alert_type', 'conditions', 'actions')),
