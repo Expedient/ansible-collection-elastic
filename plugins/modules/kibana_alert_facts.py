@@ -66,13 +66,14 @@ from ansible.module_utils.basic import AnsibleModule
 
 def main():
   module_args=dict(
-    host=dict(type='str', required=True),
-    port=dict(type='int', default=9243),
+    host=dict(type='str',default='elastic-admin.expedient.cloud'),
+    port=dict(type='int', default=12443),
     username=dict(type='str', required=True),
     password=dict(type='str', required=True, no_log=True),
     verify_ssl_cert=dict(type='bool', default=True),
     state=dict(type='str', default='present', choices=['present', 'absent']),
     alert_name=dict(type='str', required=True),
+    deployment_info=dict(type='dict', default=None)
   )
 
   results = {'changed': False}

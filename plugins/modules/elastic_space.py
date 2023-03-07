@@ -29,8 +29,8 @@ results = {}
 def main():
 
     module_args=dict(    
-        host=dict(type='str',required=True),
-        port=dict(type='int', default=9243),
+        host=dict(type='str',default='elastic-admin.expedient.cloud'),
+        port=dict(type='int', default=12443),
         username=dict(type='str', required=True),
         password=dict(type='str', no_log=True, required=True),   
         verify_ssl_cert=dict(type='bool', default=True),

@@ -196,7 +196,6 @@ class KibanaAlert(Kibana):
     self.consumer = self.module.params.get('consumer')
     self.filter = self.module.params.get('filter')
     self.filter_query = self.module.params.get('filter_query')
-
     self.alert = self.get_alert_by_name(self.alert_name)
 
 
@@ -207,8 +206,8 @@ class KibanaAlert(Kibana):
 
 def main():
   module_args=dict(
-    host=dict(type='str', required=True),
-    port=dict(type='int', default=9243),
+    host=dict(type='str',default='elastic-admin.expedient.cloud'),
+    port=dict(type='int', default=12443),
     username=dict(type='str', required=True),
     password=dict(type='str', required=True, no_log=True),
     verify_ssl_cert=dict(type='bool', default=True),
@@ -253,6 +252,8 @@ def main():
       body_json=dict(type='dict', required=False)
     )),
     consumer=dict(type='str', default='alerts'), ## This seems to always be the default value at this time, just future-proofing
+    deployment_info=dict(type='dict', default=None)
+
   )
 
   # https://docs.ansible.com/ansible/latest/dev_guide/developing_program_flow_modules.html#argument-spec-dependencies

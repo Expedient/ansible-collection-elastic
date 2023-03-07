@@ -59,7 +59,7 @@ class ElasticRoleMapping(Elastic):
 
 def main():
   module_args=dict(
-    host=dict(type='str', required=True),
+    host=dict(type='str',default='elastic-admin.expedient.cloud'),
     port=dict(type='int', default=12443),
     username=dict(type='str', required=True),
     password=dict(type='str', required=True, no_log=True),
@@ -69,7 +69,8 @@ def main():
     enabled=dict(type='bool', default=True),
     roles=dict(type='list', required=True),
     rules=dict(type='dict', required=True),
-    metadata=dict(type='dict', default={})
+    metadata=dict(type='dict', default={}),
+    deployment_info=dict(type='dict', default=None)
   )
 
   results = {'changed': False}
