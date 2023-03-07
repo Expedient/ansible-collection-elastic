@@ -71,7 +71,8 @@ class ECE_API_Proxy(object):
       data=payload, 
       headers=headers, 
       method=method, 
-      validate_certs=self.validate_certs
+      validate_certs=self.validate_certs,
+      timeout=120
       )
     if response.reason != 'No Content':
       content = loads(response.read())

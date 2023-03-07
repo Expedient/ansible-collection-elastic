@@ -123,14 +123,15 @@ class KibanaFleet(Kibana):
 
 def main():
     module_args=dict(
-        host=dict(type='str', required=True),
-        port=dict(type='int', required=True),
+        host=dict(type='str',default='elastic-admin.expedient.cloud'),
+        port=dict(type='int', default=12443),
         username=dict(type='str', required=True),
         password=dict(type='str', required=True, no_log=True),
         verify_ssl_cert=dict(type='bool', default=True),
         url_type=dict(type='str', choices=['fleet_server', 'elasticsearch'], required=True),
         urls=dict(type='list', elements='str', required=True),
-        action=dict(type='str', choices=['add', 'overwrite', 'remove'], default='add')
+        action=dict(type='str', choices=['add', 'overwrite', 'remove'], default='add'),
+        deployment_info=dict(type='dict', default=None)
     )
 
     results = {
