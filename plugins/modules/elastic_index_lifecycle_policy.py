@@ -15,13 +15,15 @@
 
 DOCUMENTATION='''
 
+Add an elasticseach data lifecycle policy to deployment
+
 Input example:
 
 elastic_deployment_info:
   deployment_id: "{{ deployment_id }}"
   deployment_name: "{{ deployment_name }}"
-  resource_type: kibana
-  ref_id: "{{ cluster_kibana_info.deployment_object.resources.kibana[0].ref_id }}"
+  resource_type: elasticsearch
+  ref_id: "{{ cluster_kibana_info.deployment_object.resources.elasticsearch[0].ref_id }}"
 
       host: "{{ ece_host }}"
       port: "{{ ece_port }}"
