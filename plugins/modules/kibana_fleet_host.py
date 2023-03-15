@@ -123,7 +123,7 @@ class KibanaFleet(Kibana):
 
 def main():
     module_args=dict(
-        host=dict(type='str',default='elastic-admin.expedient.cloud'),
+        host=dict(type='str'),
         port=dict(type='int', default=12443),
         username=dict(type='str', required=True),
         password=dict(type='str', required=True, no_log=True),
