@@ -100,9 +100,9 @@ def main():
       
       ElasticDeployments.update_deployment_byid(deployment_object['id'], update_body)
       
-      deployment_healthy = ElasticDeployments.wait_for_cluster_state(deployment_object['id'], "elasticsearch" )
-      deployment_healthy = ElasticDeployments.wait_for_cluster_state(deployment_object['id'], "kibana" )
-      deployment_healthy = ElasticDeployments.wait_for_cluster_state(deployment_object['id'], "kibana","main-apm")
+      ElasticDeployments.wait_for_cluster_state(deployment_object['id'], "elasticsearch" ) # Wait for ElasticSearch
+      ElasticDeployments.wait_for_cluster_state(deployment_object['id'], "kibana" ) # Wait for Kibana
+      deployment_healthy = ElasticDeployments.wait_for_cluster_state(deployment_object['id'], "kibana","main-apm") # If APM is healthy then the deployment is healthy since apm is last to come up
       
       if deployment_healthy == False:
         results['cluster_alias_status'] = "Cluster information may be incomplete because the cluster is not healthy"
