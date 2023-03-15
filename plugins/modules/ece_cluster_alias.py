@@ -12,7 +12,20 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+DOCUMENTATION='''
 
+Updates Elastic Deployment and adds the indicated Alias
+
+Input example:
+
+      port: "{{ deployment_port }}"
+      host: "{{ deployment_host }}"
+      deployment_name: "{{ deployment_name}}"
+      username: "{{ ece_username }}"
+      password: "{{ ece_password }}"
+      alias_name: "{{ alias_name }}"
+
+'''
 from ansible.module_utils.basic import AnsibleModule
 
 import time
@@ -33,7 +46,7 @@ results = {}
 def main():
 
     module_args=dict(
-        host=dict(type='str',default='elastic-admin.expedient.cloud'),
+        host=dict(type='str'),
         port=dict(type='int', default=12443),
         username=dict(type='str', required=True),
         password=dict(type='str', no_log=True, required=True),   
