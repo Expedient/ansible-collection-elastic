@@ -14,10 +14,17 @@
 # limitations under the License.
 DOCUMENTATION='''
 
-Updates Elastic Deployment and adds the indicated Alias
+module: ece_cluster_alias
 
-Input example:
+author: Ian Scott
 
+description: 
+  - Updates Elastic Deployment and adds the indicated Alias
+
+requirements:
+  - python3
+
+options:
       port: "{{ deployment_port }}"
       host: "{{ deployment_host }}"
       deployment_name: "{{ deployment_name}}"
