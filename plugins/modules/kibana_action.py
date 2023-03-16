@@ -38,8 +38,8 @@ from ansible.module_utils.basic import AnsibleModule
 
 def main():
   module_args=dict(
-    host=dict(type='str', required=True),
-    port=dict(type='int', default=9243),
+    host=dict(type='str'),
+    port=dict(type='int', default=12443),
     username=dict(type='str', required=True),
     password=dict(type='str', required=True, no_log=True),
     verify_ssl_cert=dict(type='bool', default=True),
@@ -47,6 +47,7 @@ def main():
     action_name=dict(type='str'),
     action_type=dict(type='str', choices=['Email', 'Webhook']), #only the listed choices have been implemented
     config=dict(type='dict'),
+    deployment_info=dict(type='dict', default=None),
     secrets=dict(type='dict')
   )
 

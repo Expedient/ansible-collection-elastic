@@ -31,8 +31,8 @@ import json
 def main():
 
     module_args=dict(    
-        host=dict(type='str',required=True),
-        port=dict(type='int', default=9243),
+        host=dict(type='str'),
+        port=dict(type='int', default=12443),
         username=dict(type='str', required=True),
         password=dict(type='str', no_log=True, required=True),   
         verify_ssl_cert=dict(type='bool', default=True),
@@ -41,7 +41,8 @@ def main():
         assigned_roles=dict(type='list', required=True),
         role_mapping_rules=dict(type='dict', required=True),
         metadata=dict(type='dict'),
-        state=dict(type='str', default='present')
+        state=dict(type='str', default='present'),
+        deployment_info=dict(type='dict', default=None)
     )
     
     argument_dependencies = []

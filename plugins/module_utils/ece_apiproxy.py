@@ -45,13 +45,15 @@ class ECE_API_Proxy(object):
     self.ref_id = self.deployment_info['ref_id']
     self.validate_certs = module.params.get('verify_ssl_cert')
     self.ece_auth = ECE(module)
-    self.version = None # this is a hack to make it so that we can run the first request to get the clutser version without erroring out
-    self.version = self.get_cluster_version()
 
 
   def send_api_request(self, endpoint, method, data=None, headers={}, timeout=120, space_id='default', no_kbnver=False, version=None):
+    
+    if endpoint.startswith('_'):
+      url = f'https://{self.host}:{self.port}/api/v1/deployments/{self.deployment_id}/{self.resource_type}/{self.ref_id}/proxy/{endpoint}'
+    else:
+      url = f'https://{self.host}:{self.port}/api/v1/deployments/{self.deployment_id}/{self.resource_type}/{self.ref_id}/proxy/s/{space_id}/api/{endpoint}'
       
-    url = f'https://{self.host}:{self.port}/api/v1/deployments/{self.deployment_id}/{self.resource_type}/{self.ref_id}/proxy/s/{space_id}/api/{endpoint}'
     headers = {'Authorization': f'Bearer {self.ece_auth.token}'}
     payload = None
     headers['Content-Type'] = 'application/json'
@@ -67,9 +69,13 @@ class ECE_API_Proxy(object):
       data=payload, 
       headers=headers, 
       method=method, 
-      validate_certs=self.validate_certs
+      validate_certs=self.validate_certs,
+      timeout=120
       )
-    content = loads(response.read())
+    if response.reason != 'No Content':
+      content = loads(response.read())
+    else:
+      content = ''
     return content
 
   def send_file_api_request(self, endpoint, method, data=None, headers={}, file=None, timeout=120, space_id = "default", no_kbnver=False, version=None, *args, **kwargs):

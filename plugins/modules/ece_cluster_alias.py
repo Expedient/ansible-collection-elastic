@@ -12,7 +12,27 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+DOCUMENTATION='''
 
+module: ece_cluster_alias
+
+author: Ian Scott
+
+description: 
+  - Updates Elastic Deployment and adds the indicated Alias
+
+requirements:
+  - python3
+
+options:
+      port: "{{ deployment_port }}"
+      host: "{{ deployment_host }}"
+      deployment_name: "{{ deployment_name}}"
+      username: "{{ ece_username }}"
+      password: "{{ ece_password }}"
+      alias_name: "{{ alias_name }}"
+
+'''
 from ansible.module_utils.basic import AnsibleModule
 
 import time
@@ -41,10 +61,7 @@ def main():
         deployment_name=dict(type='str'),
         deployment_id=dict(type='str', default=None),
         no_cluster_object=dict(type='bool', default=True),
-        logging_dest=dict(type='str', required=True),
-        metrics_dest=dict(type='str', required=True),
-        logging_ref_id=dict(type='str', default="elasticsearch"),
-        metrics_ref_id=dict(type='str', default="elasticsearch")
+        alias_name=dict(type='str', required=True)
     )
     argument_dependencies = []
         #('state', 'present', ('enabled', 'alert_type', 'conditions', 'actions')),
@@ -54,10 +71,7 @@ def main():
     
     deployment_name = module.params.get('deployment_name')
     deployment_id = module.params.get('deployment_id')
-    logging_dest = module.params.get('logging_dest')
-    metrics_dest = module.params.get('metrics_dest')
-    logging_ref_id = module.params.get('logging_ref_id')
-    metrics_ref_id = module.params.get('metrics_ref_id')
+    alias_name = module.params.get('alias_name')
     results = { 'changed': True }
         
     ElasticDeployments = ECE(module)
@@ -67,43 +81,45 @@ def main():
     elif deployment_name:
       deployment_object = [ElasticDeployments.get_deployment_info(deployment_name)]
       
-    logging_object = [ElasticDeployments.get_deployment_info(logging_dest)]
-    metrics_object = [ElasticDeployments.get_deployment_info(metrics_dest)]
-    
-    if deployment_object:
+    if len(deployment_object) == 1:
+      deployment_object = deployment_object[0]
       update_body = {
-        'logging': {
-          'destination': {
-            'deployment_id': logging_object[0]['resources'][logging_ref_id][0]['id'],
-            'ref_id': logging_ref_id
-          }
-          },
-        'metrics': {
-          'destination': {
-            'deployment_id': metrics_object[0]['resources'][metrics_ref_id][0]['id'],
-            'ref_id': metrics_ref_id
-          }
+        'alias': alias_name,
+        'prune_orphans': False,
+        'resources': {
+          'elasticsearch': [
+            {
+              'region':  deployment_object['resources']['elasticsearch'][0]['region'],
+              'ref_id':  deployment_object['resources']['elasticsearch'][0]['ref_id'],
+              'plan': deployment_object['resources']['elasticsearch'][0]['info']['plan_info']['current']['plan']
+            }
+          ],
+          'kibana': [
+            {
+              'region':  deployment_object['resources']['kibana'][0]['region'],
+              'ref_id':  deployment_object['resources']['kibana'][0]['ref_id'],
+              'elasticsearch_cluster_ref_id':  deployment_object['resources']['elasticsearch'][0]['ref_id'],
+              'plan': deployment_object['resources']['kibana'][0]['info']['plan_info']['current']['plan']
+            }
+          ]
         }
       }
-
-      body = {
-        'settings': {
-          'observability': update_body
-        },
-        'prune_orphans': False
-      }
-      ElasticDeployments.update_deployment_byid(deployment_object[0]['id'], body)
       
-      deployment_healthy = ElasticDeployments.wait_for_cluster_state(deployment_object[0]['id'], "elasticsearch" )
-      deployment_healthy = ElasticDeployments.wait_for_cluster_state(deployment_object[0]['id'], "kibana" )
-      deployment_healthy = ElasticDeployments.wait_for_cluster_state(deployment_object[0]['id'], "kibana","main-apm")
+      ElasticDeployments.update_deployment_byid(deployment_object['id'], update_body)
+      
+      ElasticDeployments.wait_for_cluster_state(deployment_object['id'], "elasticsearch" ) # Wait for ElasticSearch
+      ElasticDeployments.wait_for_cluster_state(deployment_object['id'], "kibana" ) # Wait for Kibana
+      deployment_healthy = ElasticDeployments.wait_for_cluster_state(deployment_object['id'], "kibana","main-apm") # If APM is healthy then the deployment is healthy since apm is last to come up
       
       if deployment_healthy == False:
-        results['cluster_data']['msg'] = "Cluster information may be incomplete because the cluster is not healthy"
+        results['cluster_alias_status'] = "Cluster information may be incomplete because the cluster is not healthy"
       else:
         time.sleep(30)
         
-    results['changed'] = True
+      results['changed'] = True
+    else:
+      results['changed'] = False
+      results['cluster_alias_status'] = "0 or more than 1 deployment was matched with the name " + deployment_name + " or id " + deployment_id
     module.exit_json(**results)
 
 if __name__ == "__main__":

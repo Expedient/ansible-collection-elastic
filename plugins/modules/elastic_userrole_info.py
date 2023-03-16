@@ -31,13 +31,14 @@ import json
 def main():
 
     module_args=dict(    
-        host=dict(type='str',required=True),
-        port=dict(type='int', default=9243),
+        host=dict(type='str'),
+        port=dict(type='int', default=12443),
         username=dict(type='str', required=True),
         password=dict(type='str', no_log=True, required=True),   
         verify_ssl_cert=dict(type='bool', default=True),
         role_name=dict(type='str', required=True),
-        state=dict(type='str', default='present')
+        state=dict(type='str', default='present'),
+        deployment_info=dict(type='dict', default=None)
     )
     
     argument_dependencies = []
@@ -50,7 +51,6 @@ def main():
     kibana = Kibana(module)
     results['changed'] = False
     role_name = module.params.get('role_name')
-    body = module.params.get('body')
     state = module.params.get('state')
     
     if role_name and state == "present":
