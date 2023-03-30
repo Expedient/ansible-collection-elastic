@@ -355,9 +355,26 @@ class Kibana(object):
    
   # Elastic Security Rules functions
 
+  def get_security_rule_byid(self, rule_id):
+    endpoint = "detection_engine/rules?id=" + str(rule_id)
+    rule_object = self.send_api_request(endpoint, 'GET')
+    return rule_object
+
   def update_security_rule(self, body):
     endpoint = "detection_engine/rules"
-    update_rule = self.send_api_request(endpoint, 'PATCH', data=body)
+    rule_object = self.get_security_rule_byid(body['id'])
+    rule_object.pop('updated_at')
+    rule_object.pop('updated_by')
+    rule_object.pop('created_at')
+    rule_object.pop('created_by')
+    rule_object.pop('execution_summary')
+    rule_object.pop('rule_id')
+    rule_object.pop('related_integrations')
+    rule_object.pop('immutable')
+    rule_object.pop('required_fields')
+    rule_object.pop('setup')
+    rule_object.update(body)
+    update_rule = self.send_api_request(endpoint, 'PUT', data=rule_object)
     return update_rule
 
   def get_security_rules(self, page_size, page_no):
@@ -417,11 +434,10 @@ class Kibana(object):
     update_rule = self.update_security_rule(body)
     return update_rule
 
-  def activate_security_rule(self, rule_name):
+  def activate_security_rule(self, rule_name, page_size = 500):
 
     #### Getting first page of rules
     page_number = 1
-    page_size = 100
     rules = self.get_security_rules_byfilter(rule_name)
     noOfRules = rules['total']
     allrules = rules['data']
@@ -441,7 +457,13 @@ class Kibana(object):
   # Elastic Integration functions
 
   def get_integrations(self):
-    if int(self.major_version) > 8 or (int(self.major_version) == 8 and int(self.minor_version) >= 6):
+    if 'self.major_version' in locals():
+      major_version = self.major_version
+      minor_version = self.minor_version
+    else:
+      [major_version,minor_version,patch_version] = self.deployment_info['version'].split('.')
+      
+    if int(major_version) > 8 or (int(major_version) == 8 and int(minor_version) >= 6):
       all_integration_flag = "prerelease"
     else:
       all_integration_flag = "experimental"

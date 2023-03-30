@@ -35,7 +35,8 @@ def main():
         username=dict(type='str', required=True),
         password=dict(type='str', no_log=True, required=True),   
         verify_ssl_cert=dict(type='bool', default=True),
-        pkg_policy_name=dict(type='str')
+        pkg_policy_name=dict(type='str'),
+        deployment_info=dict(type='dict', default=None)
     )
     argument_dependencies = []
         #('state', 'present', ('enabled', 'alert_type', 'conditions', 'actions')),

@@ -12,7 +12,29 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+DOCUMENTATION='''
 
+module: ece_cluster_info
+
+author: Ian Scott
+
+short_description: Get Elastic Deployment from ECE
+
+description: 
+  - Get Elastic Deployment from ECE
+
+requirements:
+  - python3
+
+options:
+      host: ECE Host
+      port: ECE Port
+      deployment_name or deployment_id
+      username: ECE Username
+      password: ECE Password
+      no_cluster_object: True/False # Sometimes it is not neccesary to return all the data of a deployment
+
+'''
 from ansible.module_utils.basic import AnsibleModule
 
 try:
@@ -106,6 +128,20 @@ def main():
                 deployment_apm_service_url = j.get('url')
               if j['service'] == "fleet":
                 deployment_fleet_service_url = j.get('url')
+      results['deployment_info'] = {
+        "deployment_id": deployment_objects[0]['id'],
+        "deployment_name": deployment_objects[0]['name'],
+        "resource_type": "kibana",
+        "ref_id": deployment_objects[0]['resources']['kibana'][0]['ref_id'],
+        "version":  deployment_objects[0]['resources']['kibana'][0]['info']['plan_info']['current']['plan']['kibana']['version']
+      }
+      results['elastic_deployment_info'] = {
+        "deployment_id": deployment_objects[0]['id'],
+        "deployment_name": deployment_objects[0]['name'],
+        "resource_type": "elasticsearch",
+        "ref_id": deployment_objects[0]['resources']['elasticsearch'][0]['ref_id'],
+        "version":  deployment_objects[0]['resources']['elasticsearch'][0]['info']['plan_info']['current']['plan']['elasticsearch']['version']
+      }
       results['deployment_id'] = deployment_objects[0]['id']
       results['deployment_elasticsearch_version'] = deployment_elasticsearch_version
       results['deployment_kibana_endpoint'] = deployment_kibana_endpoint

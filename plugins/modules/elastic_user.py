@@ -152,7 +152,8 @@ def main():
     full_name=dict(type='str', required=False),
     email=dict(type='str', required=False),
     metadata=dict(type='dict', default={}),
-    enabled=dict(type='bool', default=True)
+    enabled=dict(type='bool', default=True),
+    deployment_info=dict(type='dict', default=None)
   )
 
   results = {'changed': False}

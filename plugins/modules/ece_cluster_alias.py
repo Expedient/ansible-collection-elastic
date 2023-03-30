@@ -18,19 +18,21 @@ module: ece_cluster_alias
 
 author: Ian Scott
 
+short_description: Create Elastic Deployment Alias from ECE
+
 description: 
-  - Updates Elastic Deployment and adds the indicated Alias
+  - Create Elastic Deployment Alias from ECE
 
 requirements:
   - python3
 
 options:
-      port: "{{ deployment_port }}"
-      host: "{{ deployment_host }}"
-      deployment_name: "{{ deployment_name}}"
-      username: "{{ ece_username }}"
-      password: "{{ ece_password }}"
-      alias_name: "{{ alias_name }}"
+      host: ECE Host
+      port: ECE Port
+      deployment_name or deployment_id
+      username: ECE Username
+      password: ECE Password
+      alias_name: Deployment Alias String
 
 '''
 from ansible.module_utils.basic import AnsibleModule
@@ -60,7 +62,6 @@ def main():
         verify_ssl_cert=dict(type='bool', default=True),
         deployment_name=dict(type='str'),
         deployment_id=dict(type='str', default=None),
-        no_cluster_object=dict(type='bool', default=True),
         alias_name=dict(type='str', required=True)
     )
     argument_dependencies = []

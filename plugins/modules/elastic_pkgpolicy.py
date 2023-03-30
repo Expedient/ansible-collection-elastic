@@ -99,7 +99,8 @@ def main():
         pkg_policy_desc=dict(type='str'),
         namespace=dict(type='str', default='default'),
         state=dict(type='str', default='present'),
-        integration_settings=dict(type='dict')
+        integration_settings=dict(type='dict'),
+        deployment_info=dict(type='dict', default=None)
     )
     argument_dependencies = []
         #('state', 'present', ('enabled', 'alert_type', 'conditions', 'actions')),

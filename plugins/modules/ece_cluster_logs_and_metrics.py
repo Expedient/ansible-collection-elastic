@@ -12,7 +12,32 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+DOCUMENTATION='''
 
+module: ece_cluster_logs_and_metrics
+
+author: Ian Scott
+
+short_description: Update Elastic Deployment Logging and Metrics Settings
+
+description: 
+  - Update Elastic Deployment Logging and Metrics Settings
+
+requirements:
+  - python3
+
+options:
+      host: ECE Host
+      port: ECE Port
+      deployment_name or deployment_id
+      username: ECE Username
+      password: ECE Password
+      logging_dest: Destination Deployment name for Logging
+      metrics_dest: Destination Deployment name for Metrics
+      logging_ref_id: Reference ID for Logging
+      metrics_ref_id: Reference ID for Metrics
+
+'''
 from ansible.module_utils.basic import AnsibleModule
 
 import time
@@ -40,7 +65,6 @@ def main():
         verify_ssl_cert=dict(type='bool', default=True),
         deployment_name=dict(type='str'),
         deployment_id=dict(type='str', default=None),
-        no_cluster_object=dict(type='bool', default=True),
         logging_dest=dict(type='str', required=True),
         metrics_dest=dict(type='str', required=True),
         logging_ref_id=dict(type='str', default="elasticsearch"),

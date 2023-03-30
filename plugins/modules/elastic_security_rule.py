@@ -41,7 +41,8 @@ def main():
         action_group=dict(type='str'),
         replace_or_append=dict(type='str'),
         state=dict(type='str', default='present'),
-        existing_actions=dict(type='str')
+        existing_actions=dict(type='str'),
+        deployment_info=dict(type='dict', default=None)
     ) 
     
     argument_dependencies = []
@@ -89,7 +90,15 @@ def main():
         results['rule_object'] = target_rule
       
       existing_actions = target_rule['actions']
-      rule_action_object = kibana.enable_security_rule_action(target_rule['id'],connector_exists['id'],connector_exists['connector_type_id'], action_body, replace_or_append, existing_actions, action_group)
+      rule_action_object = kibana.enable_security_rule_action(
+        target_rule['id'],
+        connector_exists['id'],
+        connector_exists['connector_type_id'], 
+        action_body, 
+        replace_or_append, 
+        existing_actions, 
+        action_group
+      )
       results['rule_action_status'] = "Created Rule Action Connector"
       results['rule_action_object'] = rule_action_object
       
