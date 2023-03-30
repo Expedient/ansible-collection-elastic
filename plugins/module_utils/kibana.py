@@ -55,7 +55,7 @@ class Kibana(object):
       self.version = self.get_cluster_version()
       self.major_version,self.minor_version,self.patch_version = self.version.split(".")
 
-  def send_api_request(self, endpoint, method, data = None, headers = {}, timeout = 120, space_id = "default", no_kbnver = False,*args, **kwargs):
+  def send_api_request(self, endpoint, method, data = None, headers = {}, timeout = 300, space_id = "default", no_kbnver = False,*args, **kwargs):
     
     if self.deployment_info:
       result = self.ece_api_proxy.send_api_request(endpoint, method, data, headers, timeout, space_id, no_kbnver)
@@ -63,7 +63,7 @@ class Kibana(object):
       result = self.send_kibana_api_request(endpoint, method, data, headers, timeout, space_id, no_kbnver)
     return result
 
-  def send_kibana_api_request(self, endpoint, method, data=None, headers={}, timeout=120, space_id = "default", no_kbnver = False, *args, **kwargs):
+  def send_kibana_api_request(self, endpoint, method, data=None, headers={}, timeout=300, space_id = "default", no_kbnver = False, *args, **kwargs):
     
     if space_id != "default":
       url = f'https://{self.host}:{self.port}/s/{space_id}/api/{endpoint}'
@@ -77,8 +77,16 @@ class Kibana(object):
     if self.version and no_kbnver == False:
       headers['kbn-version'] = self.version
     try:
-      response = open_url(url, data=payload, method=method, validate_certs=self.validate_certs, headers=headers,
-                          force_basic_auth=True, url_username=self.username, url_password=self.password, timeout=timeout)
+      response = open_url(
+        url, 
+        data=payload, 
+        method=method, 
+        validate_certs=self.validate_certs, 
+        headers=headers,
+        force_basic_auth=True, 
+        url_username=self.username, 
+        url_password=self.password, 
+        timeout=timeout)
     except HTTPError as e:
       raise e ## This allows errors raised during the request to be inspected while debugging
     if response.msg == 'No Content' and str(response.status).startswith('2'):
@@ -96,7 +104,7 @@ class Kibana(object):
       else:
         return response_list[0]
   
-  def send_epr_api_request(self, endpoint, method, data=None, headers={}, timeout=120):
+  def send_epr_api_request(self, endpoint, method, data=None, headers={}, timeout=300):
     url = f'https://epr.elastic.co/{endpoint}'
     payload = None
     if data:
@@ -111,15 +119,15 @@ class Kibana(object):
       raise e ## This allows errors raised during the request to be inspected while debugging
     return loads(response.read())
 
-  def send_file_api_request(self, endpoint, method, data = None,  headers = {}, file = None, timeout = 120, space_id = "default", no_kbnver = False,*args, **kwargs):
+  def send_file_api_request(self, endpoint, method, data = None,  headers = {}, file = None, timeout = 300, space_id = "default", no_kbnver = False,*args, **kwargs):
     
     if self.deployment_info:
       result = self.ece_api_proxy.send_file_api_request(endpoint, method, data, headers, file, timeout, space_id, no_kbnver)
     else:
-      result = self.send_kibana_file_api_request(endpoint, method, data, headers, file, space_id )
+      result = self.send_kibana_file_api_request(endpoint, method, data, headers, file, space_id, timeout )
     return result
 
-  def send_kibana_file_api_request(self, endpoint, method, data=None, headers={}, file=None, space_id = "default", *args, **kwargs):
+  def send_kibana_file_api_request(self, endpoint, method, data=None, headers={}, file=None, space_id = "default", timeout = 300, *args, **kwargs):
 
     if space_id != "default":
       url = f'https://{self.host}:{self.port}/s/{space_id}/api/{endpoint}'
@@ -143,7 +151,7 @@ class Kibana(object):
           auth=(self.username, self.password),
           files={'file': open(file,'rb')}, 
           headers=headers,
-          timeout=60
+          timeout=timeout
         )
       except HTTPError as e:
         raise e ## This allows errors raised during the request to be inspected while debugging

@@ -67,7 +67,8 @@ def main():
         agent_policy_desc=dict(type='str', default='None'),
         state=dict(type='str', default='present'),
         monitoring=dict(type='list', default=[]),
-        deployment_info=dict(type='dict', default=None)
+        deployment_info=dict(type='dict', default=None),
+        namespace=dict(type='str', default='default')
     )
     
     argument_dependencies = []
@@ -84,6 +85,7 @@ def main():
     agent_policy_desc = module.params.get('agent_policy_desc')
     agent_policy_id = module.params.get('agent_policy_id')
     monitoring = module.params.get('monitoring')
+    namespace = module.params.get('namespace')
     
     if module.check_mode:
         results['changed'] = False

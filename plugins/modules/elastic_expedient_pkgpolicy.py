@@ -281,9 +281,12 @@ def main():
         if pkg_policy_object['package']['name'] == 'osquery_manager':
           i = 0
           for policy_input in pkg_policy_object['inputs']:
+            applied_defaults = True
             pkg_policy_object['inputs'][i]['streams'] = []
-            pkg_policy_object['inputs'][i].pop('vars')
-            pkg_policy_object['inputs'][i].pop('config')
+            if 'vars' in pkg_policy_object['inputs'][i]:
+              pkg_policy_object['inputs'][i].pop('vars')
+            if 'config' in pkg_policy_object['inputs'][i]:
+              pkg_policy_object['inputs'][i].pop('config')
             i = i+1  
           
         if pkg_policy_object['package']['name'] == 'system':
