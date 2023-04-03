@@ -60,7 +60,6 @@ def main():
         port=dict(type='int', default=9243),
         username=dict(type='str', required=True),
         password=dict(type='str', no_log=True, required=True),
-        deployment_info=dict(type='dict', default=None),
         verify_ssl_cert=dict(type='bool', default=True),
         deployment_info=dict(type='dict', default=None)
     )
