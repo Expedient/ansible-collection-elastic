@@ -12,7 +12,40 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+DOCUMENTATION='''
 
+module: elastic_savedobject
+
+author: Ian Scott
+
+short_description: Get Elastic Saved Object List or Create Saved Object.
+
+description: 
+  - Get Elastic Saved Object List or Create Saved Object.
+
+requirements:
+  - python3
+
+options:
+      host: ECE Host or Deployment Host
+      port: ECE Port or Deployment Port
+      username: ECE Username or Deployment Username
+      password: ECE Password or Deployment Password
+      deployment_info: (when using ECE host:port and credentials)
+        deployment_id: ECE Deployment ID
+        deployment_name: ECE Deployment Name
+        resource_type: kibana
+        ref_id: REF ID for kibana cluster, most likely main-kibana
+        version: Deployment Kibana Version
+      object_name: Saved Object name
+      object_id: Saved Object ID
+      object_type: Type of Object
+      search_string: Saved Object Search String
+      object_attributes: Object Attributes. These vary widely based on the object to create.
+      space_id: Space to search for the Saved Object List or create the Saved Object in
+      overwrite: True/False When Importing, if a Saved Object is found with the same ID whether or not to overwrite that object
+      createNewCopies: True/False When Importing, Whether or not to create a new copy
+'''
 from ansible.module_utils.basic import _ANSIBLE_ARGS, AnsibleModule
 
 try:
@@ -38,10 +71,10 @@ def main():
         verify_ssl_cert=dict(type='bool', default=True),
         object_name=dict(type='str'),
         object_id=dict(type='str', default=None),
+        object_type=dict(type='str'),
         search_string=dict(type='str'),
         object_attributes=dict(type='str'),
         space_id=dict(type='str', default="default"),
-        object_type=dict(type='str', default="default"),
         overwrite=dict(type='bool', default=True),
         deployment_info=dict(type='dict', default=None),
         createNewCopies=dict(type='bool', default=False),
@@ -72,8 +105,15 @@ def main():
     saved_object = None
     
     if (object_name or object_id) and state == "present":
-      saved_object_info = kibana.get_saved_object(object_type = object_type, object_id = object_id, object_name = object_name, space_id = space_id)
-      saved_object = kibana.export_saved_object(object_type = object_type, object_id = saved_object_info['id'], space_id = space_id)
+      saved_object_info = kibana.get_saved_object(
+        object_type = object_type, 
+        object_id = object_id, 
+        object_name = object_name, 
+        space_id = space_id)
+      saved_object = kibana.export_saved_object(
+        object_type = object_type, 
+        object_id = saved_object_info['id'], 
+        space_id = space_id)
 
     if search_string and state == "present":
       if search_string == "None":
@@ -82,12 +122,25 @@ def main():
 
     if object_attributes and state == "absent":
 
-      saved_object = kibana.import_saved_object(object_attributes, space_id = space_id, createNewCopies=createNewCopies, overwrite=overwrite)
+      saved_object = kibana.import_saved_object(
+        object_attributes, 
+        space_id = space_id, 
+        createNewCopies=createNewCopies, 
+        overwrite=overwrite)
 
     if object_attributes and state == "update":
-      saved_object_info = kibana.get_saved_object(object_type = object_type, object_id = object_id, object_name = object_name, space_id = space_id)
+      saved_object_info = kibana.get_saved_object(
+        object_type = object_type, 
+        object_id = object_id, 
+        object_name = object_name, 
+        space_id = space_id)
       saved_object_id = saved_object_info['id']
-      saved_object = kibana.update_saved_object(object_type = object_type, object_id = saved_object_id, object_name = object_name, space_id = space_id, object_attributes = object_attributes)
+      saved_object = kibana.update_saved_object(
+        object_type = object_type, 
+        object_id = saved_object_id, 
+        object_name = object_name, 
+        space_id = space_id, 
+        object_attributes = object_attributes)
 
     if saved_object != "":
       results['object_status'] = "Saved Object Found"

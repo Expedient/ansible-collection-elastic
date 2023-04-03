@@ -15,23 +15,31 @@
 
 DOCUMENTATION='''
 
-Add an elasticseach data lifecycle policy to deployment
+module: elastic_index_lifecycle_policy
 
-Input example:
+author: Ian Scott
 
-elastic_deployment_info:
-  deployment_id: "{{ deployment_id }}"
-  deployment_name: "{{ deployment_name }}"
-  resource_type: elasticsearch
-  ref_id: "{{ cluster_kibana_info.deployment_object.resources.elasticsearch[0].ref_id }}"
+short_description: Add an elasticseach data lifecycle policy to deployment
 
-      host: "{{ ece_host }}"
-      port: "{{ ece_port }}"
-      username: "{{ ece_username }}"
-      password: "{{ ece_password }}"
-      deployment_info: "{{ elastic_deployment_info }}"
-      index_lifecycle_policy_name: logs
-      settings: 
+description: 
+  - Add an elasticseach data lifecycle policy to deployment
+
+requirements:
+  - python3
+
+options:
+      host: ECE Host or Deployment Host
+      port: ECE Port or Deployment Port
+      username: ECE Username or Deployment Username
+      password: ECE Password or Deployment Password
+      deployment_info: (when using ECE host:port and credentials)
+        deployment_id: ECE Deployment ID
+        deployment_name: ECE Deployment Name
+        resource_type: kibana
+        ref_id: REF ID for kibana cluster, most likely main-kibana
+        version: Deployment Kibana Version
+      index_lifecycle_policy_name: Name of lifecycle policy
+      settings: (Example)
         policy:
           phases:
             hot:

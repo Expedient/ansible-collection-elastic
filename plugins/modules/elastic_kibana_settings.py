@@ -12,7 +12,32 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+DOCUMENTATION='''
 
+module: elastic_kibana_settings
+
+author: Ian Scott
+
+short_description: Set Elastic Kibana Settings
+
+description: 
+  - Set Elastic Kibana Settings
+
+requirements:
+  - python3
+
+options:
+      host: ECE Host or Deployment Host
+      port: ECE Port or Deployment Port
+      username: ECE Username or Deployment Username
+      password: ECE Password or Deployment Password
+      deployment_info: (when using ECE host:port and credentials)
+        deployment_id: ECE Deployment ID
+        deployment_name: ECE Deployment Name
+        resource_type: kibana
+        ref_id: REF ID for kibana cluster, most likely main-kibana
+        version: Deployment Kibana Version
+'''
 from ansible.module_utils.basic import _ANSIBLE_ARGS, AnsibleModule
 #from ansible.module_utils.basic import *
 
