@@ -56,61 +56,6 @@ except:
 
 results = {}
 
-def deep_update(original, updated):
-    """
-    Attempts to update deeply nested dictionaries + lists
-    :param original/the object to be updated:
-    :param updated/changes to be applied:
-    :return:
-    """
-
-    def match_shallow_structure(dictionary_1, dictionary_2):
-        """
-        utility function to check if all the non-dictionary keys and values in a
-        dictionary match those of the other
-        :param dictionary_1:
-        :param dictionary_2:
-        :return:
-        """
-        shallow_1 = {
-            key: value for key, value in dictionary_1.items() if
-            not isinstance(value, dict)
-        }
-        shallow_2 = {
-            key: value for key, value in dictionary_2.items() if
-            not isinstance(value, dict)
-        }
-        return shallow_1 == shallow_2
-
-    if isinstance(updated, dict):
-        for key, value in updated.items():
-            if (isinstance(value, dict) or isinstance(value, list)) and original.get(
-                key
-            ) is not None:
-                deep_update(original.get(key), updated[key])
-            else:
-                original.update({key: updated[key]})
-    elif isinstance(updated, list) and isinstance(original, list):
-        if all([isinstance(item, dict) for item in updated]):
-            for updated_dictionary_list_item in updated:
-                try:
-                    deep_update(
-                        next(
-                            original_dictionary_list_item
-                            for original_dictionary_list_item in original
-                            if match_shallow_structure(
-                                updated_dictionary_list_item,
-                                original_dictionary_list_item,
-                            )
-                        ),
-                        updated_dictionary_list_item,
-                    )
-                except StopIteration:
-                    original.append(updated_dictionary_list_item)
-        else:
-            original += [i for i in updated if i not in original]
-    return
-
 def main():
 
     module_args=dict(   

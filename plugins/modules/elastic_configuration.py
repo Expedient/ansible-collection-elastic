@@ -12,17 +12,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 DOCUMENTATION='''
 
-module: elastic_index_lifecycle_policy
+module: elastic_kibana_settings
 
 author: Ian Scott
 
-short_description: Add an elasticseach data lifecycle policy to deployment
+short_description: Set Elastic Kibana Settings
 
 description: 
-  - Add an elasticseach data lifecycle policy to deployment
+  - Set Elastic Kibana Settings
 
 requirements:
   - python3
@@ -38,25 +37,7 @@ options:
         resource_type: kibana
         ref_id: REF ID for kibana cluster, most likely main-kibana
         version: Deployment Kibana Version
-      index_lifecycle_policy_name: Name of lifecycle policy
-      settings: (Example)
-        policy:
-          phases:
-            hot:
-              min_age: 0ms
-              actions:
-                rollover:
-                  max_size: 100gb
-                  max_primary_shard_size: 50gb
-                  max_age: 7d
-            delete:
-              min_age: 30d
-              actions:
-                delete:
-                  delete_searchable_snapshot: true
-
 '''
-
 from ansible.module_utils.basic import _ANSIBLE_ARGS, AnsibleModule
 #from ansible.module_utils.basic import *
 
@@ -73,14 +54,27 @@ results = {}
 
 def main():
 
+    elastic_index_lifecycle_policy_spec=dict(
+      index_lifecycle_policy_name=dict(type='str', required=True),
+      settings=dict(type='dict', default="None")
+    ) 
+    elastic_role_mapping_spec=dict(
+        role_mapping_name=dict(type='str', required=True),
+        enable_mapping=dict(type='bool', default=True),
+        assigned_roles=dict(type='list', required=True),
+        role_mapping_rules=dict(type='dict', required=True),
+        metadata=dict(type='dict')
+    )
+
     module_args=dict(   
-        host=dict(type='str'),
-        port=dict(type='int', default=12443),
+        host=dict(type='str',required=True),
+        port=dict(type='int', default=9243),
         username=dict(type='str', required=True),
         password=dict(type='str', no_log=True, required=True),   
         verify_ssl_cert=dict(type='bool', default=True),
-        index_lifecycle_policy_name=dict(type='str'),
-        settings=dict(type='dict'),
+        elastic_index_lifecycle_policy_settings=dict(type='list', required=False, options=elastic_index_lifecycle_policy_spec),
+        elastic_role_mapping_settings=dict(type='list', required=False, options=elastic_role_mapping_spec),
+        state=dict(type='str', default='present'),
         deployment_info=dict(type='dict', default=None)
     )
     argument_dependencies = []
@@ -92,17 +86,27 @@ def main():
     results['changed'] = False
     
     elastic = Elastic(module)
-    index_lifecycle_policy_name = module.params.get('index_lifecycle_policy_name')
-    new_settings = module.params.get('settings')
-    
-    if index_lifecycle_policy_name and new_settings:
+
+    elastic_index_lifecycle_policy_settings = module.params.get('kibana_index_lifecycle_policy_settings')
+    elastic_role_mapping_settings = module.params.get('elastic_role_mapping_settings')
+
+    if elastic_index_lifecycle_policy_settings:
       results['elastic_index_lifecycle_status'] = "Elastic Index Lifecycle Policy found"
-      elastic_index_lifecycle_policy_object = elastic.update_index_lifecycle_policy(index_lifecycle_policy_name, new_settings)
+      elastic_index_lifecycle_policy_object = elastic.get_index_lifecycle_policy(elastic_index_lifecycle_policy_settings['index_lifecycle_policy_name'])
       results['index_lifecycle_policy_object'] = elastic_index_lifecycle_policy_object
-      results['changed'] = True
-    else:
-      results['elastic_index_lifecycle_status'] = "Elastic Index Lifecycle Policy NOT found"
-      results['index_lifecycle_policy_object'] = ""
+      if not module.check_mode:
+        elastic_index_lifecycle_policy_object = elastic.update_index_lifecycle_policy(elastic_index_lifecycle_policy_settings['index_lifecycle_policy_name'], elastic_index_lifecycle_policy_settings['settings'])
+        results['index_lifecycle_policy_object'] = elastic_index_lifecycle_policy_object
+        results['changed'] = True
+    if elastic_role_mapping_settings:
+      role_mapping_object = elastic.create_role_mapping(
+        elastic_role_mapping_settings['role_mapping_name'], 
+        elastic_role_mapping_settings['assigned_roles'], 
+        elastic_role_mapping_settings['role_mapping_rules'], 
+        elastic_role_mapping_settings['metadata'], 
+        elastic_role_mapping_settings['enable_mapping'])
+      results['userrole_status'] = "Role Mapping Created"
+      results['role_mapping_object'] = role_mapping_object
     
     module.exit_json(**results)
 

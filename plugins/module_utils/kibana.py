@@ -390,9 +390,8 @@ class Kibana(object):
     rules = self.send_api_request(endpoint, 'GET')
     return rules
 
-  def get_security_rules_byfilter(self, rule_name):
+  def get_security_rules_byfilter(self, rule_name, page_size = 500):
     page_no = 1
-    page_size = 100
     filter_scrubbed = urllib.parse.quote(str(rule_name))
     endpoint = "detection_engine/rules/_find?page=" + str(page_no) + "&per_page=" + str(page_size) + "&filter=alert.attributes.name:" + filter_scrubbed
     rules = self.send_api_request(endpoint, 'GET')
@@ -865,18 +864,16 @@ class Kibana(object):
     export_object = self.send_api_request(endpoint, 'POST', data=body_JSON, headers = headers, space_id = space_id, no_kbnver = True)
     return export_object
 
-  def import_saved_object(self, object_attributes, space_id = "default", overwrite = False, createNewCopies = True):
-    importObjectJSON = tempfile.NamedTemporaryFile(delete=False,suffix='.ndjson', prefix='saved_object_')
-    #object_attributes_json = loads(object_attributes)
-    import_file = open(importObjectJSON.name, 'a')
-    #for i in object_attributes_json:
-    #  import_file.write(dumps(i) + '\n')
-    import_file.write(object_attributes)
-    import_file.close()
-    importObjectJSON.close()
-    endpoint = f'saved_objects/_import?createNewCopies={createNewCopies}&overwrite={overwrite}'
-    import_object = self.send_file_api_request(endpoint, 'POST', file=importObjectJSON.name, space_id = space_id)
-    os.remove(importObjectJSON.name)
+  def import_saved_object(self, object_attributes = [], space_id = "default", overwrite = False, createNewCopies = True):
+    for object_attribute in object_attributes:
+      importObjectJSON = tempfile.NamedTemporaryFile(delete=False,suffix='.ndjson', prefix='saved_object_')
+      import_file = open(importObjectJSON.name, 'a')
+      import_file.write(object_attribute)
+      import_file.close()
+      importObjectJSON.close()
+      endpoint = f'saved_objects/_import?createNewCopies={createNewCopies}&overwrite={overwrite}'
+      import_object = self.send_file_api_request(endpoint, 'POST', file=importObjectJSON.name, space_id = space_id)
+      os.remove(importObjectJSON.name)
     return import_object
 
   def get_fleet_server_hosts(self):
@@ -956,12 +953,16 @@ class Kibana(object):
     result = self.send_api_request(endpoint, 'POST', data = body_json)
     return result
  
-# Elastic User Role
+#  User Role
   
   def get_userrole(self, name):
-    endpoint  = f'security/role/{name}'
-    userrole_object = self.send_api_request(endpoint, 'GET')
-    return userrole_object
+    endpoint  = f'security/role'    
+    userrole_objects = self.send_api_request(endpoint, 'GET')
+    target_userrole = None
+    for userrole_object in userrole_objects:
+      if userrole_object['name'].lower() == name.lower():
+        target_userrole = userrole_object
+    return target_userrole
 
   def create_userrole(self, 
                    name, 

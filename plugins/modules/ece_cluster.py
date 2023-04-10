@@ -46,7 +46,7 @@ options:
     choices: ['present', 'absent']
     default: present
     type: str
-  cluster_name:
+  deployment_name:
     description:
       - Name for the cluster to create or modify
     required: True
@@ -183,6 +183,15 @@ options:
           - number of zones to deploy Kibana into
         default: 1
         type: int
+  logs_and_metric_settings:
+    logging_dest: Destination Deployment name for Logging
+    metrics_dest: Destination Deployment name for Metrics
+    logging_ref_id: Reference ID for Logging
+    metrics_ref_id: Reference ID for Metrics
+  alias_name: Deployment Alias String
+  tag_settings:
+  - tag_label: Name of tag
+    tag_value: Value of tag 
   wait_for_completion:
     description:
       - Whether to wait for the completion of the cluster operations before exiting the module
@@ -242,7 +251,16 @@ def main():
     instance_config=dict(type='str', default='ml'),
     zone_count=dict(type='int', default=1),
   )
-
+  logs_and_metric_spec=dict(
+    logging_dest=dict(type='str', required=True),
+    metrics_dest=dict(type='str', required=True),
+    logging_ref_id=dict(type='str', default="elasticsearch"),
+    metrics_ref_id=dict(type='str', default="elasticsearch")
+  )
+  tags_spec=dict(
+    tag_label=dict(type='str', required=True),
+    tag_value=dict(type='str', required=True),
+  )
   module_args = dict(
     host=dict(type='str', required=True),
     port=dict(type='int', default=12443),
@@ -250,7 +268,9 @@ def main():
     password=dict(type='str', required=True, no_log=True),
     verify_ssl_cert=dict(type='bool', default=True),
     state=dict(type='str', default='present'),
-    cluster_name=dict(type='str', required=True),
+    no_cluster_object=dict(type='bool', default=True),
+    customers_only=dict(type='bool', required=False),
+    deployment_name=dict(type='str', required=False),
     elastic_settings=dict(type='list', required=False, elements='dict', options=elastic_settings_spec),
     elastic_user_settings=dict(type='dict', default={}),  # does not have sub-options defined as there are far too many elastic options to capture here
     snapshot_settings=dict(type='dict', required=False, options=snapshot_settings_spec),
@@ -258,8 +278,11 @@ def main():
     kibana_settings=dict(type='dict', required=False, options=kibana_settings_spec),
     apm_settings=dict(type='dict', required=False, options=apm_settings_spec),
     ml_settings=dict(type='dict', required=False, options=ml_settings_spec),
-    version=dict(type='str', default='8.3.3'),
-    deployment_template=dict(type='str', required=True),
+    logs_and_metric_settings=dict(type='dict', required=False, options=logs_and_metric_spec),
+    alias_name=dict(type='str', required=False),
+    tag_settings=dict(type='list', required=False, elements='dict', options=tags_spec),
+    version=dict(type='str', default='8.6.0'),
+    deployment_template=dict(type='str', required=False),
     wait_for_completion=dict(type='bool', default=False),
     completion_timeout=dict(type='int', default=600),
   )
@@ -269,7 +292,7 @@ def main():
   module = AnsibleModule(argument_spec=module_args, supports_check_mode=True)
   
   state = module.params.get('state')
-  cluster_name = module.params.get('cluster_name')
+  deployment_name = module.params.get('deployment_name')
   version = module.params.get('version')
   elastic_settings = module.params.get('elastic_settings')
   elastic_user_settings = module.params.get('elastic_user_settings')
@@ -278,40 +301,163 @@ def main():
   kibana_settings = module.params.get('kibana_settings')
   apm_settings = module.params.get('apm_settings')
   ml_settings = module.params.get('ml_settings')
+  logs_and_metric_settings = module.params.get('logs_and_metric_settings')
+  alias_name = module.params.get('alias_name')
+  tag_settings = module.params.get('tag_settings')
   deployment_template = module.params.get('deployment_template')
   wait_for_completion = module.params.get('wait_for_completion')
   completion_timeout = module.params.get('completion_timeout')
   
   ece_cluster = ECE(module)
   
-
-  matching_clusters = ece_cluster.get_matching_clusters(cluster_name)
+  deployment_object = ece_cluster.get_deployment_info(deployment_name)
   #if len(matching_clusters) > 1:
-  if matching_clusters:
-    #results['msg'] = f'found multiple clusters matching name {module.params.get("cluster_name")}'
-    results['msg'] = f'found cluster matching name {module.params.get("cluster_name")}'
-    #module.fail_json(**results)
+  if deployment_object:
+    deployment_name = module.params.get('deployment_name')
+    deployment_id = module.params.get('deployment_id')
+    no_cluster_object = module.params.get('no_cluster_object')  
+    
+    ElasticDeployments = ECE(module)
+    deployment_objects = []
+    deployment_kibana_endpoint = None
+    deployment_kibana_http_port = None
+    deployment_kibana_https_port = None
+    deployment_kibana_url = None
+    deployment_kibana_service_url = None
+    deployment_elasticsearch_endpoint = None
+    deployment_elasticsearch_http_port = None
+    deployment_elasticsearch_https_port = None
+    deployment_elasticsearch_service_url = None
+    deployment_elasticsearch_url = None
+    deployment_apm_http_port = None
+    deployment_apm_https_port = None
+    deployment_apm_service_url = None
+    deployment_fleet_service_url = None
+    smc_id = None
+    
+    if deployment_id:
+      deployment_objects = [ElasticDeployments.get_deployment_byid(deployment_id)]
+    elif deployment_name:
+      deployment_objects_results = ElasticDeployments.get_deployment_info(deployment_name)
+      if deployment_objects_results != None:
+        deployment_objects = [ElasticDeployments.get_deployment_info(deployment_name)]
+    else:
+      deployment_objects = ElasticDeployments.get_deployment_info()
+      deployment_objects = deployment_objects['deployments']
+    
+    if len(deployment_objects) == 1:
+      kibana_info = deployment_objects[0]['resources']['kibana']
+      if deployment_objects[0]['resources']['kibana'][0]['info']['status'] != "stopped":
+        if 'tags' in deployment_objects[0]['metadata']:
+          for tag in deployment_objects[0]['metadata']['tags']:
+            if tag['key'] == 'SMC_ID':
+              smc_id = tag['value']
+        for i in kibana_info:
+          if i['ref_id'] == "kibana" or i['ref_id'] == "main-kibana":
+            deployment_kibana_endpoint = i['info']['metadata'].get('aliased_endpoint') or i['info']['metadata']['endpoint']
+            deployment_kibana_http_port = i['info']['metadata']['ports'].get('http')
+            deployment_kibana_https_port = i['info']['metadata']['ports'].get('https')
+            deployment_kibana_service_url = i['info']['metadata'].get('service_url')
+            deployment_kibana_url = i['info']['metadata'].get('aliased_endpoint')
+        elasticsearch_info = deployment_objects[0]['resources']['elasticsearch']
+        for i in elasticsearch_info:
+          if i['ref_id'] == "elasticsearch" or i['ref_id'] == "main-elasticsearch":
+            deployment_elasticsearch_endpoint = i['info']['metadata'].get('aliased_endpoint') or i['info']['metadata']['endpoint']
+            deployment_elasticsearch_http_port = i['info']['metadata']['ports'].get('http')
+            deployment_elasticsearch_https_port = i['info']['metadata']['ports'].get('https')
+            deployment_elasticsearch_service_url = i['info']['metadata'].get('service_url')
+            deployment_elasticsearch_url = i['info']['metadata'].get('aliased_endpoint')
+            deployment_elasticsearch_version = i['info']['plan_info']['current']['plan']['elasticsearch'].get('version')
+        apm_info = deployment_objects[0]['resources']['apm']
+        for i in apm_info:
+          if i['ref_id'] == "apm" or i['ref_id'] == "main-apm":
+            deployment_apm_http_port = i['info']['metadata']['ports'].get('http')
+            deployment_apm_https_port = i['info']['metadata']['ports'].get('https')
+            if 'services_urls' in i['info']['metadata']:
+              for j in i['info']['metadata']['services_urls']:
+                if j['service'] == "apm":
+                  deployment_apm_service_url = j.get('url')
+                if j['service'] == "fleet":
+                  deployment_fleet_service_url = j.get('url')
+        results['deployment_info'] = {
+          "deployment_id": deployment_objects[0]['id'],
+          "deployment_name": deployment_objects[0]['name'],
+          "resource_type": "kibana",
+          "ref_id": deployment_objects[0]['resources']['kibana'][0]['ref_id'],
+          "version":  deployment_objects[0]['resources']['kibana'][0]['info']['plan_info']['current']['plan']['kibana']['version']
+        }
+        results['elastic_deployment_info'] = {
+          "deployment_id": deployment_objects[0]['id'],
+          "deployment_name": deployment_objects[0]['name'],
+          "resource_type": "elasticsearch",
+          "ref_id": deployment_objects[0]['resources']['elasticsearch'][0]['ref_id'],
+          "version":  deployment_objects[0]['resources']['elasticsearch'][0]['info']['plan_info']['current']['plan']['elasticsearch']['version']
+        }
+        results['SMC_ID'] = smc_id
+        results['deployment_id'] = deployment_objects[0]['id']
+        results['deployment_elasticsearch_version'] = deployment_elasticsearch_version
+        results['deployment_kibana_endpoint'] = deployment_kibana_endpoint
+        results['deployment_kibana_http_port'] = deployment_kibana_http_port
+        results['deployment_kibana_https_port'] = deployment_kibana_https_port
+        results['deployment_kibana_service_url'] = deployment_kibana_service_url
+        results['deployment_kibana_url'] = deployment_kibana_url
+        results['deployment_elasticsearch_endpoint'] = deployment_elasticsearch_endpoint
+        results['deployment_elasticsearch_http_port'] = deployment_elasticsearch_http_port
+        results['deployment_elasticsearch_https_port'] = deployment_elasticsearch_https_port
+        results['deployment_elasticsearch_service_url'] = deployment_elasticsearch_service_url
+        results['deployment_elasticsearch_url'] = deployment_elasticsearch_url
+        results['deployment_apm_http_port'] = deployment_apm_http_port
+        results['deployment_apm_https_port'] = deployment_apm_https_port
+        results['deployment_apm_service_url'] = deployment_apm_service_url
+        results['deployment_fleet_service_url'] = deployment_fleet_service_url
+        if no_cluster_object == False:
+          results['deployment_object'] = deployment_objects[0]
+        else:
+          results['deployment_object'] = "No Cluster Object is True by default to reduce output"
+        results['deployment_kibana_info'] = "Deployment was returned sucessfully"
+      else:
+        results['deployment_kibana_info'] = "Unhealthy Deployment Returned"
+        results['deployment_kibana_endpoint'] = None
+        results['deployment_kibana_http_port'] = None
+        results['deployment_kibana_https_port'] = None
+        results['deployment_kibana_url'] = None
+        results['deployment_kibana_service_url'] = None
+        results['deployment_elasticsearch_url'] = None
+        results['deployment_elasticsearch_service_url'] = None
+        results['deployment_apm_service_url'] = None
+        results['deployment_fleet_service_url'] = None
+        results['deployment_objects'] = deployment_objects
+    elif len(deployment_objects) == 0:
+      results['deployment_kibana_info'] = "No deployment was returned, check your deployment name"
+      results['deployment_kibana_endpoint'] = None
+      results['deployment_kibana_http_port'] = None
+      results['deployment_kibana_https_port'] = None
+      results['deployment_kibana_url'] = None
+      results['deployment_kibana_service_url'] = None
+      results['deployment_elasticsearch_url'] = None
+      results['deployment_elasticsearch_service_url'] = None
+      results['deployment_apm_service_url'] = None
+      results['deployment_fleet_service_url'] = None
+    else:
+      results['deployment_objects'] = deployment_objects
 
   if state == 'present':
     #if len(matching_clusters) > 0:
-    if matching_clusters:
+    if deployment_object and (elastic_settings or kibana_settings or apm_settings):
       results['msg'] = 'cluster exists'
-      ## This code handles edge cases poorly, in the interest of being able to match the data format of the cluster creation result
-      elastic_creds = ece_cluster.set_elastic_user_password(matching_clusters['id'])
       results['cluster_data'] = {
-        'elasticsearch_cluster_id': matching_clusters['resources']['elasticsearch'][0]['id'],
-        'kibana_cluster_id': matching_clusters['resources']['kibana'][0]['id'],
-        'credentials': elastic_creds
+        'elasticsearch_cluster_id': deployment_object['resources']['elasticsearch'][0]['id'],
+        'kibana_cluster_id': deployment_object['resources']['kibana'][0]['id']
       }
-      if len( matching_clusters['resources']['apm']) > 0:
-        results['cluster_data']['apm_id'] = matching_clusters['resources']['apm'][0]['id']
+      if len( deployment_object['resources']['apm']) > 0:
+        results['cluster_data']['apm_id'] = deployment_object['resources']['apm'][0]['id']
       module.exit_json(**results)
 
     results['changed'] = True
-    results['msg'] = f'cluster {module.params.get("cluster_name")} will be created'
-    if not module.check_mode:
+    results['msg'] = f'cluster {module.params.get("deployment_name")} will be created and/or updated'
+    if not module.check_mode and (elastic_settings or kibana_settings or apm_settings):
       cluster_data = ece_cluster.create_cluster(
-          cluster_name,
+          deployment_name,
           version,
           deployment_template, 
           elastic_settings, 
@@ -349,19 +495,136 @@ def main():
               results['cluster_data'][service_url['service'] + '_cluster_url'] = service_url['url']
           elif 'service_url' in kind_object['info']['metadata']:
             results['cluster_data'][kind_object_name + '_cluster_url'] = kind_object['info']['metadata']['service_url']
-      results['msg'] = f'cluster {module.params.get("cluster_name")} created'
+      results['msg'] = f'cluster {module.params.get("deployment_name")} created'
+    
+    update_body  = {}
+    
+    if logs_and_metric_settings:
+      
+      logging_object = [ece_cluster.get_deployment_info(logs_and_metric_settings['logging_dest'])]
+      metrics_object = [ece_cluster.get_deployment_info(logs_and_metric_settings['metrics_dest'])]
+      logging_ref_id = logs_and_metric_settings['logging_ref_id']
+      metrics_ref_id = logs_and_metric_settings['metrics_ref_id']
+      
+      if deployment_object:
+        logs_update_body = {
+          'logging': {
+            'destination': {
+              'deployment_id': logging_object[0]['resources'][logging_ref_id][0]['id'],
+              'ref_id': logging_ref_id
+            }
+            },
+          'metrics': {
+            'destination': {
+              'deployment_id': metrics_object[0]['resources'][metrics_ref_id][0]['id'],
+              'ref_id': metrics_ref_id
+            }
+          }
+        }
+
+        body = {
+          'settings': {
+            'observability': logs_update_body
+          },
+          'prune_orphans': False
+        }
+        update_body.update(body)
+
+    if tag_settings:
+      tag_list = []
+      
+      if 'tags' in deployment_object['metadata']:
+        for tag in deployment_object['metadata']['tags']:
+          tag_list.append(tag)
+          
+      for each_tag in tag_settings:
+        if 'tag_label' in each_tag and 'tag_value' in each_tag:
+          tag_body = {
+            "key": each_tag['tag_label'],
+            "value": each_tag['tag_value']
+          }
+          tag_list.append(tag_body)
+
+      tag_list_next = tag_list
+
+      for each_orig_tag in tag_list:
+        match = 0
+        for each_updated_tag in tag_list_next:
+          if each_updated_tag['key'] == each_orig_tag['key']:
+            match = match + 1
+            if match > 1:
+              tag_list.remove(each_updated_tag)
+
+      tag_update_body = {
+        "metadata": {
+          "tags": tag_list
+        },
+        "prune_orphans": False
+      }
+
+      update_body.update(tag_update_body)
+          
+    if alias_name:
+      
+      if alias_name == 'default':
+        if tag_update_body:
+          tag_body = tag_update_body
+        else: 
+          tag_body = deployment_object
+        if tag_body:
+          for tag in tag_body['metadata']['tags']:
+            if tag['key'] == "SMC_ID":
+              SMC_ID = tag['value']
+        if alias_name == 'default':
+          alias_name = 'elastic-' + deployment_object['id'] + '-' + SMC_ID
+
+      alias_update_body = {
+        'alias': alias_name,
+        'prune_orphans': False,
+        'resources': {
+          'elasticsearch': [
+            {
+              'region':  deployment_object['resources']['elasticsearch'][0]['region'],
+              'ref_id':  deployment_object['resources']['elasticsearch'][0]['ref_id'],
+              'plan': deployment_object['resources']['elasticsearch'][0]['info']['plan_info']['current']['plan']
+            }
+          ],
+          'kibana': [
+            {
+              'region':  deployment_object['resources']['kibana'][0]['region'],
+              'ref_id':  deployment_object['resources']['kibana'][0]['ref_id'],
+              'elasticsearch_cluster_ref_id':  deployment_object['resources']['elasticsearch'][0]['ref_id'],
+              'plan': deployment_object['resources']['kibana'][0]['info']['plan_info']['current']['plan']
+            }
+          ]
+        }
+      }
+      update_body.update(alias_update_body)
+    
+    if update_body:
+      
+      ece_cluster.update_deployment_byid(deployment_object['id'], update_body)
+      ece_cluster.wait_for_cluster_state(deployment_object['id'], "elasticsearch" ) # Wait for ElasticSearch
+      ece_cluster.wait_for_cluster_state(deployment_object['id'], "kibana" ) # Wait for Kibana
+      deployment_healthy = ece_cluster.wait_for_cluster_state(deployment_object['id'], "kibana","main-apm") # If APM is healthy then the deployment is healthy since apm is last to come up
+
+      if deployment_healthy == False:
+        results['cluster_alias_status'] = "Cluster information may be incomplete because the cluster is not healthy"
+      else:
+        time.sleep(30)
+        
     module.exit_json(**results)
 
   if state == 'absent':
-    if len(matching_clusters) == 0:
-      results['msg'] = f'cluster {module.params.get("cluster_name")} does not exist'
+    if len(deployment_object) == 0:
+      results['msg'] = f'cluster {module.params.get("deployment_name")} does not exist'
       module.exit_json(**results)
 
-    results['msg'] = f'cluster {module.params.get("cluster_name")} will be deleted'
+    results['msg'] = f'cluster {module.params.get("deployment_name")} will be deleted'
     if not module.check_mode:
       results['changed'] = True
-      ece_cluster.delete_cluster(matching_clusters['id'])
-      results['msg'] = f'cluster {module.params.get("cluster_name")} deleted'
+      ece_cluster.delete_cluster(deployment_object['id'])
+      results['msg'] = f'cluster {module.params.get("deployment_name")} deleted'
       module.exit_json(**results)
 
 if __name__ == '__main__':
