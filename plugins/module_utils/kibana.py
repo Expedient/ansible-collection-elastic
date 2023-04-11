@@ -881,16 +881,16 @@ class Kibana(object):
     result = self.send_api_request(endpoint, 'GET')
     return result['item']['fleet_server_hosts']
 
-  def set_fleet_server_hosts(self, hosts: list):
-    endpoint = 'fleet/settings'
+  def set_fleet_server_hosts(self, hosts: list, name='Default', default=True):
+    endpoint = 'fleet/fleet_server_hosts/fleet-default-fleet-server-host' 
     headers = {'kbn-xsrf': True}
     body = {
-        'fleet_server_hosts': hosts
+        'is_default': default,
+        'name': name,
+        'host_urls': hosts
       }
 
-    body_json = dumps(body)
-
-    result = self.send_api_request(endpoint, 'PUT', headers=headers, data=body_json)
+    result = self.send_api_request(endpoint, 'PUT', headers=headers, data=body)
     return result
 
   def get_fleet_elasticsearch_hosts(self):
