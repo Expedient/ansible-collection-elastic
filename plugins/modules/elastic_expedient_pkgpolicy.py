@@ -13,6 +13,35 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+DOCUMENTATION='''
+
+module: elastic_detection_rule
+
+author: Ian Scott
+
+short_description: Activate Security Rule such as Endpoint Security
+
+description: 
+  - Activate Security Rule such as Endpoint Security
+
+requirements:
+  - python3
+
+options:
+      host: ECE Host or Deployment Host
+      port: ECE Port or Deployment Port
+      username: ECE Username or Deployment Username
+      password: ECE Password or Deployment Password
+      deployment_info: (when using ECE host:port and credentials)
+        deployment_id: ECE Deployment ID
+        deployment_name: ECE Deployment Name
+        resource_type: kibana
+        ref_id: REF ID for kibana cluster, most likely main-kibana
+        version: Deployment Kibana Version
+      security_rule_name: Name of Security Rule
+
+'''
+
 from ansible.module_utils.basic import _ANSIBLE_ARGS, AnsibleModule
 #from ansible.module_utils.basic import *
 
@@ -26,61 +55,6 @@ except:
   from kibana import Kibana
 
 results = {}
-
-def deep_update(original, updated):
-    """
-    Attempts to update deeply nested dictionaries + lists
-    :param original/the object to be updated:
-    :param updated/changes to be applied:
-    :return:
-    """
-
-    def match_shallow_structure(dictionary_1, dictionary_2):
-        """
-        utility function to check if all the non-dictionary keys and values in a
-        dictionary match those of the other
-        :param dictionary_1:
-        :param dictionary_2:
-        :return:
-        """
-        shallow_1 = {
-            key: value for key, value in dictionary_1.items() if
-            not isinstance(value, dict)
-        }
-        shallow_2 = {
-            key: value for key, value in dictionary_2.items() if
-            not isinstance(value, dict)
-        }
-        return shallow_1 == shallow_2
-
-    if isinstance(updated, dict):
-        for key, value in updated.items():
-            if (isinstance(value, dict) or isinstance(value, list)) and original.get(
-                key
-            ) is not None:
-                deep_update(original.get(key), updated[key])
-            else:
-                original.update({key: updated[key]})
-    elif isinstance(updated, list) and isinstance(original, list):
-        if all([isinstance(item, dict) for item in updated]):
-            for updated_dictionary_list_item in updated:
-                try:
-                    deep_update(
-                        next(
-                            original_dictionary_list_item
-                            for original_dictionary_list_item in original
-                            if match_shallow_structure(
-                                updated_dictionary_list_item,
-                                original_dictionary_list_item,
-                            )
-                        ),
-                        updated_dictionary_list_item,
-                    )
-                except StopIteration:
-                    original.append(updated_dictionary_list_item)
-        else:
-            original += [i for i in updated if i not in original]
-    return
 
 def main():
 
@@ -100,7 +74,8 @@ def main():
         pkg_policy_vars=dict(type='json'),
         namespace=dict(type='str', default='default'),
         state=dict(type='str', default='present'),
-        integration_settings=dict(type='dict')
+        integration_settings=dict(type='dict'),
+        deployment_info=dict(type='dict', default=None)
     )
     argument_dependencies = []
         #('state', 'present', ('enabled', 'alert_type', 'conditions', 'actions')),
@@ -251,9 +226,12 @@ def main():
         if pkg_policy_object['package']['name'] == 'osquery_manager':
           i = 0
           for policy_input in pkg_policy_object['inputs']:
+            applied_defaults = True
             pkg_policy_object['inputs'][i]['streams'] = []
-            pkg_policy_object['inputs'][i].pop('vars')
-            pkg_policy_object['inputs'][i].pop('config')
+            if 'vars' in pkg_policy_object['inputs'][i]:
+              pkg_policy_object['inputs'][i].pop('vars')
+            if 'config' in pkg_policy_object['inputs'][i]:
+              pkg_policy_object['inputs'][i].pop('config')
             i = i+1  
           
         if pkg_policy_object['package']['name'] == 'system':

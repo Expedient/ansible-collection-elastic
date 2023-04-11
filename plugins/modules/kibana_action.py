@@ -14,6 +14,36 @@
 # limitations under the License.
 
 # -*- coding: utf-8 -*-
+DOCUMENTATION='''
+
+module: kibana_action
+
+author: Ian Scott
+
+short_description: Create Kibana Action
+
+description: 
+  - Create Kibana Action
+
+requirements:
+  - python3
+
+options:
+      host: ECE Host or Deployment Host
+      port: ECE Port or Deployment Port
+      username: ECE Username or Deployment Username
+      password: ECE Password or Deployment Password
+      deployment_info: (when using ECE host:port and credentials)
+        deployment_id: ECE Deployment ID
+        deployment_name: ECE Deployment Name
+        resource_type: kibana
+        ref_id: REF ID for kibana cluster, most likely main-kibana
+        version: Deployment Kibana Version
+      action_name: Name of Action to be Created
+      action_type: Tyep of Action
+      config: Changes based on type of action
+      secrets: Secrets for the Action
+'''
 
 from ansible.module_utils.six import assertRaisesRegex
 #from plugins.modules.ece_cluster import DOCUMENTATION
@@ -39,7 +69,7 @@ from ansible.module_utils.basic import AnsibleModule
 def main():
   module_args=dict(
     host=dict(type='str'),
-    port=dict(type='int', default=12443),
+    port=dict(type='int'),
     username=dict(type='str', required=True),
     password=dict(type='str', required=True, no_log=True),
     verify_ssl_cert=dict(type='bool', default=True),

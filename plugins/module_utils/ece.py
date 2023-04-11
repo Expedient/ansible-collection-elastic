@@ -38,7 +38,7 @@ class ECE(object):
       }
       payload = dumps(data)
       headers = {'Content-Type': 'application/json'}
-      response = open_url(url, data=payload, headers=headers, method='POST', validate_certs=self.validate_certs, timeout=120)
+      response = open_url(url, data=payload, headers=headers, method='POST', validate_certs=self.validate_certs, timeout=300)
       content = loads(response.read())
       self.token = content['token']
 

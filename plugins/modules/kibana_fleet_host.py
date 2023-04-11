@@ -85,41 +85,16 @@ extends_documentation_fragment:
   - expedient.elastic.elastic_auth_options.documentation
 '''
 
+from ansible.module_utils.basic import _ANSIBLE_ARGS, AnsibleModule
 
 try:
   from ansible_collections.expedient.elastic.plugins.module_utils.kibana import Kibana
-  import ansible_collections.expedient.elastic.plugins.module_utils.lookups
 except:
   import sys
   import os
   util_path = new_path = f'{os.getcwd()}/plugins/module_utils'
   sys.path.append(util_path)
   from kibana import Kibana
-
-from ansible.module_utils.basic import AnsibleModule
-from json import dumps
-
-class KibanaFleet(Kibana):
-    def __init__(self, module):
-        super().__init__(module)
-        self.url_type = self.module.params.get('url_type')
-
-    def get_current_urls(self):
-        if self.url_type == 'fleet_server':
-            current_urls = self.get_fleet_server_hosts()
-        if self.url_type == 'elasticsearch':
-            current_urls = self.get_fleet_elasticsearch_hosts()
-        return current_urls
-
-    def send_urls(self, urls: list):
-        if self.url_type == 'fleet_server':
-            result = self.set_fleet_server_hosts(urls)
-
-        if self.url_type == 'elasticsearch':
-            result = self.set_fleet_elasticsearch_hosts(urls)
-
-        return result
-
 
 def main():
     module_args=dict(
@@ -140,15 +115,17 @@ def main():
         }
 
     module = AnsibleModule(argument_spec=module_args, supports_check_mode=True)
-    kibana_fleet = KibanaFleet(module)
+    kibana = Kibana(module)
+    
     action = module.params.get('action')
-    current_urls = kibana_fleet.get_current_urls() # The urls as they exist in kibana at start
+    url_type = module.params.get('url_type')
     provided_urls = module.params.get('urls') # Urls provided by the user
 
     # final_urls is a list that gets calculated depending on the provided action.
     final_urls = []
-
+    current_urls = kibana.get_fleet_server_hosts()
     if action == 'add':
+        
         final_urls.extend(current_urls)
         for item in provided_urls:
             if item in current_urls:
@@ -170,14 +147,19 @@ def main():
     if set(current_urls) == set(final_urls):
         results['msg'] += "\n No action needed"
     else:
-        send_url_result = kibana_fleet.send_urls(final_urls)
+        if url_type == 'fleet_server':
+            send_url_result = kibana.set_fleet_server_hosts(provided_urls)
+
+        if url_type == 'elasticsearch':
+            send_url_result = kibana.set_fleet_elasticsearch_hosts(provided_urls)
+            
         if 'message' in send_url_result:
             module.fail_json(f"Unable to {action} urls. Error: {send_url_result['message']}")
         else:
             results['changed'] = True
             results['msg'] += f"\nSuccessful {action}"
-            results['fleet_server_urls'] = kibana_fleet.get_fleet_server_hosts()
-            results['fleet_elasticsearch_urls'] = kibana_fleet.get_fleet_elasticsearch_hosts()
+            results['fleet_server_urls'] = kibana.get_fleet_server_hosts()
+            results['fleet_elasticsearch_urls'] = kibana.get_fleet_elasticsearch_hosts()
 
     module.exit_json(**results)
 
