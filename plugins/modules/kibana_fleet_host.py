@@ -85,7 +85,7 @@ extends_documentation_fragment:
   - expedient.elastic.elastic_auth_options.documentation
 '''
 
-from ansible.module_utils.basic import _ANSIBLE_ARGS, AnsibleModule
+from ansible.module_utils.basic import AnsibleModule
 
 try:
   from ansible_collections.expedient.elastic.plugins.module_utils.kibana import Kibana
