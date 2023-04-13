@@ -39,7 +39,7 @@ options:
         version: Deployment Kibana Version
 
 '''
-from ansible.module_utils.basic import _ANSIBLE_ARGS, AnsibleModule
+from ansible.module_utils.basic import AnsibleModule
 import json
 
 try:
