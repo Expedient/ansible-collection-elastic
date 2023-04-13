@@ -12,7 +12,33 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+DOCUMENTATION='''
 
+module: elastic_agentlist_info
+
+author: Ian Scott
+
+short_description: Create Fleet Agent List for Elastic Deployment
+
+description: 
+  - Create Fleet Agent List for Elastic Deployment
+
+requirements:
+  - python3
+
+options:
+      host: ECE Host or Deployment Host
+      port: ECE Port or Deployment Port
+      username: ECE Username or Deployment Username
+      password: ECE Password or Deployment Password
+      deployment_info: (when using ECE host:port and credentials)
+        deployment_id: ECE Deployment ID
+        deployment_name: ECE Deployment Name
+        resource_type: kibana
+        ref_id: REF ID for kibana cluster, most likely main-kibana
+        version: Deployment Kibana Version
+
+'''
 from ansible.module_utils.basic import _ANSIBLE_ARGS, AnsibleModule
 import json
 
@@ -34,7 +60,8 @@ def main():
         port=dict(type='int', default=9243),
         username=dict(type='str', required=True),
         password=dict(type='str', no_log=True, required=True),   
-        verify_ssl_cert=dict(type='bool', default=True)
+        verify_ssl_cert=dict(type='bool', default=True),
+        deployment_info=dict(type='dict', default=None)
     )
     
     argument_dependencies = []

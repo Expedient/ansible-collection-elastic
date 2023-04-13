@@ -12,7 +12,42 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+DOCUMENTATION='''
 
+module: elastic_pkgpolicy
+
+author: Ian Scott
+
+short_description: Create an Elastic Package Policy.
+
+description: 
+  - Create an Elastic Package Policy. A Package Policy is an instance of an Integration in an Agent Policy
+
+requirements:
+  - python3
+
+options:
+      host: ECE Host or Deployment Host
+      port: ECE Port or Deployment Port
+      username: ECE Username or Deployment Username
+      password: ECE Password or Deployment Password
+      deployment_info: (when using ECE host:port and credentials)
+        deployment_id: ECE Deployment ID
+        deployment_name: ECE Deployment Name
+        resource_type: kibana
+        ref_id: REF ID for kibana cluster, most likely main-kibana
+        version: Deployment Kibana Version
+      pkg_policy_name: Package Policy name (Required)
+      pkg_policy_desc: Package Policy description
+      agent_policy_id: Agent Policy ID. (Required if agent_policy_name is not present)
+      agent_policy_name: Agent Policy Name. (Required if agent_policy_id is not present)
+      integration_title: Integration Title/Label (Required)
+      integration_name: Integration Name 
+      integration_ver: Integration Version. The version will determine what integration settings are valid
+      namespace: Elastic namespace, always default for now (Optional)
+      integration_settings: Integration settings (Optional)
+      
+'''
 from ansible.module_utils.basic import _ANSIBLE_ARGS, AnsibleModule
 #from ansible.module_utils.basic import *
 
@@ -99,7 +134,8 @@ def main():
         pkg_policy_desc=dict(type='str'),
         namespace=dict(type='str', default='default'),
         state=dict(type='str', default='present'),
-        integration_settings=dict(type='dict')
+        integration_settings=dict(type='dict'),
+        deployment_info=dict(type='dict', default=None)
     )
     argument_dependencies = []
         #('state', 'present', ('enabled', 'alert_type', 'conditions', 'actions')),

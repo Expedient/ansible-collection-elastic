@@ -55,7 +55,7 @@ class Kibana(object):
       self.version = self.get_cluster_version()
       self.major_version,self.minor_version,self.patch_version = self.version.split(".")
 
-  def send_api_request(self, endpoint, method, data = None, headers = {}, timeout = 120, space_id = "default", no_kbnver = False,*args, **kwargs):
+  def send_api_request(self, endpoint, method, data = None, headers = {}, timeout = 600, space_id = "default", no_kbnver = False,*args, **kwargs):
     
     if self.deployment_info:
       result = self.ece_api_proxy.send_api_request(endpoint, method, data, headers, timeout, space_id, no_kbnver)
@@ -63,7 +63,7 @@ class Kibana(object):
       result = self.send_kibana_api_request(endpoint, method, data, headers, timeout, space_id, no_kbnver)
     return result
 
-  def send_kibana_api_request(self, endpoint, method, data=None, headers={}, timeout=120, space_id = "default", no_kbnver = False, *args, **kwargs):
+  def send_kibana_api_request(self, endpoint, method, data=None, headers={}, timeout = 600, space_id = "default", no_kbnver = False, *args, **kwargs):
     
     if space_id != "default":
       url = f'https://{self.host}:{self.port}/s/{space_id}/api/{endpoint}'
@@ -77,8 +77,16 @@ class Kibana(object):
     if self.version and no_kbnver == False:
       headers['kbn-version'] = self.version
     try:
-      response = open_url(url, data=payload, method=method, validate_certs=self.validate_certs, headers=headers,
-                          force_basic_auth=True, url_username=self.username, url_password=self.password, timeout=timeout)
+      response = open_url(
+        url, 
+        data=payload, 
+        method=method, 
+        validate_certs=self.validate_certs, 
+        headers=headers,
+        force_basic_auth=True, 
+        url_username=self.username, 
+        url_password=self.password, 
+        timeout=timeout)
     except HTTPError as e:
       raise e ## This allows errors raised during the request to be inspected while debugging
     if response.msg == 'No Content' and str(response.status).startswith('2'):
@@ -96,7 +104,7 @@ class Kibana(object):
       else:
         return response_list[0]
   
-  def send_epr_api_request(self, endpoint, method, data=None, headers={}, timeout=120):
+  def send_epr_api_request(self, endpoint, method, data=None, headers={}, timeout=600):
     url = f'https://epr.elastic.co/{endpoint}'
     payload = None
     if data:
@@ -111,15 +119,15 @@ class Kibana(object):
       raise e ## This allows errors raised during the request to be inspected while debugging
     return loads(response.read())
 
-  def send_file_api_request(self, endpoint, method, data = None,  headers = {}, file = None, timeout = 120, space_id = "default", no_kbnver = False,*args, **kwargs):
+  def send_file_api_request(self, endpoint, method, data = None,  headers = {}, file = None, timeout = 600, space_id = "default", no_kbnver = False,*args, **kwargs):
     
     if self.deployment_info:
       result = self.ece_api_proxy.send_file_api_request(endpoint, method, data, headers, file, timeout, space_id, no_kbnver)
     else:
-      result = self.send_kibana_file_api_request(endpoint, method, data, headers, file, space_id )
+      result = self.send_kibana_file_api_request(endpoint, method, data, headers, file, space_id, timeout )
     return result
 
-  def send_kibana_file_api_request(self, endpoint, method, data=None, headers={}, file=None, space_id = "default", *args, **kwargs):
+  def send_kibana_file_api_request(self, endpoint, method, data=None, headers={}, file=None, space_id = "default", timeout = 600, *args, **kwargs):
 
     if space_id != "default":
       url = f'https://{self.host}:{self.port}/s/{space_id}/api/{endpoint}'
@@ -143,7 +151,7 @@ class Kibana(object):
           auth=(self.username, self.password),
           files={'file': open(file,'rb')}, 
           headers=headers,
-          timeout=60
+          timeout=timeout
         )
       except HTTPError as e:
         raise e ## This allows errors raised during the request to be inspected while debugging
@@ -355,9 +363,26 @@ class Kibana(object):
    
   # Elastic Security Rules functions
 
+  def get_security_rule_byid(self, rule_id):
+    endpoint = "detection_engine/rules?id=" + str(rule_id)
+    rule_object = self.send_api_request(endpoint, 'GET')
+    return rule_object
+
   def update_security_rule(self, body):
     endpoint = "detection_engine/rules"
-    update_rule = self.send_api_request(endpoint, 'PATCH', data=body)
+    rule_object = self.get_security_rule_byid(body['id'])
+    rule_object.pop('updated_at')
+    rule_object.pop('updated_by')
+    rule_object.pop('created_at')
+    rule_object.pop('created_by')
+    rule_object.pop('execution_summary')
+    rule_object.pop('rule_id')
+    rule_object.pop('related_integrations')
+    rule_object.pop('immutable')
+    rule_object.pop('required_fields')
+    rule_object.pop('setup')
+    rule_object.update(body)
+    update_rule = self.send_api_request(endpoint, 'PUT', data=rule_object)
     return update_rule
 
   def get_security_rules(self, page_size, page_no):
@@ -417,11 +442,10 @@ class Kibana(object):
     update_rule = self.update_security_rule(body)
     return update_rule
 
-  def activate_security_rule(self, rule_name):
+  def activate_security_rule(self, rule_name, page_size = 500):
 
     #### Getting first page of rules
     page_number = 1
-    page_size = 100
     rules = self.get_security_rules_byfilter(rule_name)
     noOfRules = rules['total']
     allrules = rules['data']
@@ -441,7 +465,13 @@ class Kibana(object):
   # Elastic Integration functions
 
   def get_integrations(self):
-    if int(self.major_version) > 8 or (int(self.major_version) == 8 and int(self.minor_version) >= 6):
+    if 'self.major_version' in locals():
+      major_version = self.major_version
+      minor_version = self.minor_version
+    else:
+      [major_version,minor_version,patch_version] = self.deployment_info['version'].split('.')
+      
+    if int(major_version) > 8 or (int(major_version) == 8 and int(minor_version) >= 6):
       all_integration_flag = "prerelease"
     else:
       all_integration_flag = "experimental"
@@ -528,7 +558,7 @@ class Kibana(object):
         input_no = input_no + 1
       if not self.module.check_mode:
         endpoint = "fleet/package_policies/" + pkgpolicy_id
-        pkg_policy_update = self.send_api_request(endpoint, 'PUT', data=body, timeout=300)
+        pkg_policy_update = self.send_api_request(endpoint, 'PUT', data=body)
       else:
         pkg_policy_update = "Cannot proceed with check_mode set to " + self.module.check_mode
       return pkg_policy_update
@@ -544,10 +574,10 @@ class Kibana(object):
   
   def get_elatic_package_repository_package_info(self, package_name, package_version):
     endpoint = "package/" + package_name + "/" + package_version
-    epr_object = self.send_epr_api_request(endpoint, 'GET', timeout=300)
+    epr_object = self.send_epr_api_request(endpoint, 'GET')
     return epr_object
   
-  def create_pkg_policy(self,pkg_policy_name, pkg_policy_desc, agent_policy_id, integration_object, namespace="default", var_list=None):
+  def create_pkg_policy(self,pkg_policy_name, pkg_policy_desc, agent_policy_id, integration_object, space_id="default", var_list=None):
     pkg_policy_object = self.get_pkg_policy(pkg_policy_name)
     epr_object = self.get_elatic_package_repository_package_info(integration_object['name'], integration_object['version'])
 
@@ -633,7 +663,7 @@ class Kibana(object):
 
       body = {
         "name": pkg_policy_name,
-        "namespace": namespace.lower(),
+        "namespace": space_id.lower(),
         "description": pkg_policy_desc,
         "force": True,
         "enabled": True,
@@ -649,7 +679,7 @@ class Kibana(object):
       body_JSON = dumps(body)
       endpoint = 'fleet/package_policies'
       if not self.module.check_mode:
-        pkg_policy_object = self.send_api_request(endpoint, 'POST', data=body_JSON, timeout=300)
+        pkg_policy_object = self.send_api_request(endpoint, 'POST', data=body_JSON)
       else:
         pkg_policy_object = "Cannot proceed with check_mode set to " + self.module.check_mode
       
@@ -690,7 +720,7 @@ class Kibana(object):
     agent_policy_objects = self.send_api_request(endpoint, 'GET')
     return agent_policy_objects
 
-  def create_agent_policy(self, agent_policy_id, agent_policy_name, agent_policy_desc, namespace="default", monitoring=[]):
+  def create_agent_policy(self, agent_policy_id, agent_policy_name, agent_policy_desc, space_id="default", monitoring=[]):
     if agent_policy_id:
       agent_policy_object = self.get_agent_policy_byid(agent_policy_id)
     else:
@@ -699,7 +729,7 @@ class Kibana(object):
     if not agent_policy_object:
       body = {
           "name": agent_policy_name,
-          "namespace": namespace.lower(),
+          "namespace": space_id.lower(),
           "description": agent_policy_desc,
           "monitoring_enabled": monitoring
       }
@@ -810,7 +840,7 @@ class Kibana(object):
   def export_saved_object(self,
       object_type, 
       object_id, 
-      space_id, 
+      space_id = "default", 
       includeReferencesDeep = True, 
       excludeExportDetails = True, 
       *args, 

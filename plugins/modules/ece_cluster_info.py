@@ -12,7 +12,29 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+DOCUMENTATION='''
 
+module: ece_cluster_info
+
+author: Ian Scott
+
+short_description: Get Elastic Deployment from ECE
+
+description: 
+  - Get Elastic Deployment from ECE
+
+requirements:
+  - python3
+
+options:
+      host: ECE Host
+      port: ECE Port
+      deployment_name or deployment_id
+      username: ECE Username
+      password: ECE Password
+      no_cluster_object: True/False # Sometimes it is not neccesary to return all the data of a deployment
+
+'''
 from ansible.module_utils.basic import AnsibleModule
 
 try:
@@ -66,6 +88,7 @@ def main():
     deployment_apm_https_port = None
     deployment_apm_service_url = None
     deployment_fleet_service_url = None
+    smc_id = None
     
     if deployment_id:
       deployment_objects = [ElasticDeployments.get_deployment_byid(deployment_id)]
@@ -79,54 +102,86 @@ def main():
     
     if len(deployment_objects) == 1:
       kibana_info = deployment_objects[0]['resources']['kibana']
-      for i in kibana_info:
-        if i['ref_id'] == "kibana" or i['ref_id'] == "main-kibana":
-          deployment_kibana_endpoint = i['info']['metadata'].get('aliased_endpoint') or i['info']['metadata']['endpoint']
-          deployment_kibana_http_port = i['info']['metadata']['ports'].get('http')
-          deployment_kibana_https_port = i['info']['metadata']['ports'].get('https')
-          deployment_kibana_service_url = i['info']['metadata'].get('service_url')
-          deployment_kibana_url = i['info']['metadata'].get('aliased_endpoint')
-      elasticsearch_info = deployment_objects[0]['resources']['elasticsearch']
-      for i in elasticsearch_info:
-        if i['ref_id'] == "elasticsearch" or i['ref_id'] == "main-elasticsearch":
-          deployment_elasticsearch_endpoint = i['info']['metadata'].get('aliased_endpoint') or i['info']['metadata']['endpoint']
-          deployment_elasticsearch_http_port = i['info']['metadata']['ports'].get('http')
-          deployment_elasticsearch_https_port = i['info']['metadata']['ports'].get('https')
-          deployment_elasticsearch_service_url = i['info']['metadata'].get('service_url')
-          deployment_elasticsearch_url = i['info']['metadata'].get('aliased_endpoint')
-          deployment_elasticsearch_version = i['info']['plan_info']['current']['plan']['elasticsearch'].get('version')
-      apm_info = deployment_objects[0]['resources']['apm']
-      for i in apm_info:
-        if i['ref_id'] == "apm" or i['ref_id'] == "main-apm":
-          deployment_apm_http_port = i['info']['metadata']['ports'].get('http')
-          deployment_apm_https_port = i['info']['metadata']['ports'].get('https')
-          if 'services_urls' in i['info']['metadata']:
-            for j in i['info']['metadata']['services_urls']:
-              if j['service'] == "apm":
-                deployment_apm_service_url = j.get('url')
-              if j['service'] == "fleet":
-                deployment_fleet_service_url = j.get('url')
-      results['deployment_id'] = deployment_objects[0]['id']
-      results['deployment_elasticsearch_version'] = deployment_elasticsearch_version
-      results['deployment_kibana_endpoint'] = deployment_kibana_endpoint
-      results['deployment_kibana_http_port'] = deployment_kibana_http_port
-      results['deployment_kibana_https_port'] = deployment_kibana_https_port
-      results['deployment_kibana_service_url'] = deployment_kibana_service_url
-      results['deployment_kibana_url'] = deployment_kibana_url
-      results['deployment_elasticsearch_endpoint'] = deployment_elasticsearch_endpoint
-      results['deployment_elasticsearch_http_port'] = deployment_elasticsearch_http_port
-      results['deployment_elasticsearch_https_port'] = deployment_elasticsearch_https_port
-      results['deployment_elasticsearch_service_url'] = deployment_elasticsearch_service_url
-      results['deployment_elasticsearch_url'] = deployment_elasticsearch_url
-      results['deployment_apm_http_port'] = deployment_apm_http_port
-      results['deployment_apm_https_port'] = deployment_apm_https_port
-      results['deployment_apm_service_url'] = deployment_apm_service_url
-      results['deployment_fleet_service_url'] = deployment_fleet_service_url
-      if no_cluster_object == False:
-        results['deployment_object'] = deployment_objects[0]
+      if deployment_objects[0]['resources']['kibana'][0]['info']['status'] != "stopped":
+        if 'tags' in deployment_objects[0]['metadata']:
+          for tag in deployment_objects[0]['metadata']['tags']:
+            if tag['key'] == 'SMC_ID':
+              smc_id = tag['value']
+        for i in kibana_info:
+          if i['ref_id'] == "kibana" or i['ref_id'] == "main-kibana":
+            deployment_kibana_endpoint = i['info']['metadata'].get('aliased_endpoint') or i['info']['metadata']['endpoint']
+            deployment_kibana_http_port = i['info']['metadata']['ports'].get('http')
+            deployment_kibana_https_port = i['info']['metadata']['ports'].get('https')
+            deployment_kibana_service_url = i['info']['metadata'].get('service_url')
+            deployment_kibana_url = i['info']['metadata'].get('aliased_endpoint')
+        elasticsearch_info = deployment_objects[0]['resources']['elasticsearch']
+        for i in elasticsearch_info:
+          if i['ref_id'] == "elasticsearch" or i['ref_id'] == "main-elasticsearch":
+            deployment_elasticsearch_endpoint = i['info']['metadata'].get('aliased_endpoint') or i['info']['metadata']['endpoint']
+            deployment_elasticsearch_http_port = i['info']['metadata']['ports'].get('http')
+            deployment_elasticsearch_https_port = i['info']['metadata']['ports'].get('https')
+            deployment_elasticsearch_service_url = i['info']['metadata'].get('service_url')
+            deployment_elasticsearch_url = i['info']['metadata'].get('aliased_endpoint')
+            deployment_elasticsearch_version = i['info']['plan_info']['current']['plan']['elasticsearch'].get('version')
+        apm_info = deployment_objects[0]['resources']['apm']
+        for i in apm_info:
+          if i['ref_id'] == "apm" or i['ref_id'] == "main-apm":
+            deployment_apm_http_port = i['info']['metadata']['ports'].get('http')
+            deployment_apm_https_port = i['info']['metadata']['ports'].get('https')
+            if 'services_urls' in i['info']['metadata']:
+              for j in i['info']['metadata']['services_urls']:
+                if j['service'] == "apm":
+                  deployment_apm_service_url = j.get('url')
+                if j['service'] == "fleet":
+                  deployment_fleet_service_url = j.get('url')
+        results['deployment_info'] = {
+          "deployment_id": deployment_objects[0]['id'],
+          "deployment_name": deployment_objects[0]['name'],
+          "resource_type": "kibana",
+          "ref_id": deployment_objects[0]['resources']['kibana'][0]['ref_id'],
+          "version":  deployment_objects[0]['resources']['kibana'][0]['info']['plan_info']['current']['plan']['kibana']['version']
+        }
+        results['elastic_deployment_info'] = {
+          "deployment_id": deployment_objects[0]['id'],
+          "deployment_name": deployment_objects[0]['name'],
+          "resource_type": "elasticsearch",
+          "ref_id": deployment_objects[0]['resources']['elasticsearch'][0]['ref_id'],
+          "version":  deployment_objects[0]['resources']['elasticsearch'][0]['info']['plan_info']['current']['plan']['elasticsearch']['version']
+        }
+        results['SMC_ID'] = smc_id
+        results['deployment_id'] = deployment_objects[0]['id']
+        results['deployment_elasticsearch_version'] = deployment_elasticsearch_version
+        results['deployment_kibana_endpoint'] = deployment_kibana_endpoint
+        results['deployment_kibana_http_port'] = deployment_kibana_http_port
+        results['deployment_kibana_https_port'] = deployment_kibana_https_port
+        results['deployment_kibana_service_url'] = deployment_kibana_service_url
+        results['deployment_kibana_url'] = deployment_kibana_url
+        results['deployment_elasticsearch_endpoint'] = deployment_elasticsearch_endpoint
+        results['deployment_elasticsearch_http_port'] = deployment_elasticsearch_http_port
+        results['deployment_elasticsearch_https_port'] = deployment_elasticsearch_https_port
+        results['deployment_elasticsearch_service_url'] = deployment_elasticsearch_service_url
+        results['deployment_elasticsearch_url'] = deployment_elasticsearch_url
+        results['deployment_apm_http_port'] = deployment_apm_http_port
+        results['deployment_apm_https_port'] = deployment_apm_https_port
+        results['deployment_apm_service_url'] = deployment_apm_service_url
+        results['deployment_fleet_service_url'] = deployment_fleet_service_url
+        if no_cluster_object == False:
+          results['deployment_object'] = deployment_objects[0]
+        else:
+          results['deployment_object'] = "No Cluster Object is True by default to reduce output"
+        results['deployment_kibana_info'] = "Deployment was returned sucessfully"
       else:
-        results['deployment_object'] = "No Cluster Object is True by default to reduce output"
-      results['deployment_kibana_info'] = "Deployment was returned sucessfully"
+        results['deployment_kibana_info'] = "Unhealthy Deployment Returned"
+        results['deployment_kibana_endpoint'] = None
+        results['deployment_kibana_http_port'] = None
+        results['deployment_kibana_https_port'] = None
+        results['deployment_kibana_url'] = None
+        results['deployment_kibana_service_url'] = None
+        results['deployment_elasticsearch_url'] = None
+        results['deployment_elasticsearch_service_url'] = None
+        results['deployment_apm_service_url'] = None
+        results['deployment_fleet_service_url'] = None
+        results['deployment_objects'] = deployment_objects
     elif len(deployment_objects) == 0:
       results['deployment_kibana_info'] = "No deployment was returned, check your deployment name"
       results['deployment_kibana_endpoint'] = None

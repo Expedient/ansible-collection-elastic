@@ -12,7 +12,35 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+DOCUMENTATION='''
 
+module: elastic_integration_info
+
+author: Ian Scott
+
+short_description: Get information on an Elastic Integration
+
+description: 
+  - Get information on an Elastic Integration
+
+requirements:
+  - python3
+
+options:
+      host: ECE Host or Deployment Host
+      port: ECE Port or Deployment Port
+      username: ECE Username or Deployment Username
+      password: ECE Password or Deployment Password
+      deployment_info: (when using ECE host:port and credentials)
+        deployment_id: ECE Deployment ID
+        deployment_name: ECE Deployment Name
+        resource_type: kibana
+        ref_id: REF ID for kibana cluster, most likely main-kibana
+        version: Deployment Kibana Version
+      integration_title: Title or Label of intregration (seems to change between versions on occasion, but name does not)
+      integration_name: Name of intregration
+
+'''
 from ansible.module_utils.basic import _ANSIBLE_ARGS, AnsibleModule
 
 try:
@@ -35,7 +63,8 @@ def main():
         password=dict(type='str', no_log=True, required=True),   
         verify_ssl_cert=dict(type='bool', default=True),
         integration_title=dict(type='str'),
-        integration_name=dict(type='str')
+        integration_name=dict(type='str'),
+        deployment_info=dict(type='dict', default=None)
     )
     argument_dependencies = []
         #('state', 'present', ('enabled', 'alert_type', 'conditions', 'actions')),

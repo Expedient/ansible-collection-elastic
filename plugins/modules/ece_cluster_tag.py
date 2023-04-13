@@ -12,7 +12,30 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+DOCUMENTATION='''
 
+module: ece_cluster_tag
+
+author: Ian Scott
+
+short_description: Create or Update Elastic Deployment Tag
+
+description: 
+  - Create or Update Elastic Deployment Tag
+
+requirements:
+  - python3
+
+options:
+      host: ECE Host
+      port: ECE Port
+      deployment_name or deployment_id
+      username: ECE Username
+      password: ECE Password
+      tag_label: ECE Deployment Tag Label
+      tag_value: ECE Deployment Tag Value
+
+'''
 from ansible.module_utils.basic import AnsibleModule
 
 try:
@@ -38,7 +61,6 @@ def main():
         verify_ssl_cert=dict(type='bool', default=True),
         deployment_name=dict(type='str'),
         deployment_id=dict(type='str', default=None),
-        no_cluster_object=dict(type='bool', default=True),
         tag_label=dict(type='str'),
         tag_value=dict(type='str')
         
@@ -51,7 +73,6 @@ def main():
     
     deployment_name = module.params.get('deployment_name')
     deployment_id = module.params.get('deployment_id')
-    no_cluster_object = module.params.get('no_cluster_object')  
     tag_label = module.params.get('tag_label') 
     tag_value = module.params.get('tag_value')
     results = { 'changed': True }

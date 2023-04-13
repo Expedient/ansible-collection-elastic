@@ -12,7 +12,36 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+DOCUMENTATION='''
 
+module: elastic_savedobject_info
+
+author: Ian Scott
+
+short_description: Get Elastic Saved Object Information.
+
+description: 
+  - Get Elastic Saved Object Information.
+
+requirements:
+  - python3
+
+options:
+      host: ECE Host or Deployment Host
+      port: ECE Port or Deployment Port
+      username: ECE Username or Deployment Username
+      password: ECE Password or Deployment Password
+      deployment_info: (when using ECE host:port and credentials)
+        deployment_id: ECE Deployment ID
+        deployment_name: ECE Deployment Name
+        resource_type: kibana
+        ref_id: REF ID for kibana cluster, most likely main-kibana
+        version: Deployment Kibana Version
+      object_name: Saved Object name (Required)
+      object_type: Type of Object
+      space_id: Name of Space the Object is in
+      
+'''
 from ansible.module_utils.basic import _ANSIBLE_ARGS, AnsibleModule
 
 try:
@@ -36,9 +65,10 @@ def main():
         username=dict(type='str', required=True),
         password=dict(type='str', no_log=True, required=True),   
         verify_ssl_cert=dict(type='bool', default=True),
-        object_name=dict(type='str'),
-        space=dict(type='str', default='default'),
-        object_type=dict(type='str', default="default")
+        object_name=dict(type='str', required=True),
+        object_type=dict(type='str', required=True),
+        space_id=dict(type='str', default='default'),
+        deployment_info=dict(type='dict', default=None),
     )
     
     argument_dependencies = []
@@ -54,9 +84,10 @@ def main():
     results['changed'] = False
     object_name = module.params.get('object_name')
     object_type = module.params.get('object_type')
+    space_id = module.params.get('space_id')
 
     if module.params.get('object_name'):
-      saved_object = kibana.get_saved_object(object_type, object_name)
+      saved_object = kibana.get_saved_object(object_type, object_name, space_id = space_id)
       
     if saved_object:
       results['object_status'] = "Saved Object Found"
