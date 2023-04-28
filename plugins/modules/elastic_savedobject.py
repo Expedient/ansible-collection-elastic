@@ -104,7 +104,7 @@ def main():
 
     saved_object = None
     
-    if (object_name or object_id) and state == "present":
+    if (object_name or object_id) and state == "present" and not object_attributes:
       saved_object_info = kibana.get_saved_object(
         object_type = object_type, 
         object_id = object_id, 
@@ -120,8 +120,7 @@ def main():
         search_string == ""
       saved_object = kibana.get_saved_objects_list(search_string, object_type, space_id = space_id)     
 
-    if object_attributes and state == "absent":
-
+    if object_attributes and state == "present":
       saved_object = kibana.import_saved_object(
         object_attributes, 
         space_id = space_id, 
