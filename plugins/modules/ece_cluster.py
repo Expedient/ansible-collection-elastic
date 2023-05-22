@@ -328,7 +328,12 @@ def main():
         results['msg'] = 'cluster creation failed'
         module.fail_json(**results)
       results['cluster_data'] = cluster_data
-      deployment_healthy = ece_cluster.wait_for_cluster_healthy(cluster_data['id'])
+      
+      ece_cluster.wait_for_cluster_healthy(cluster_data['id'])
+      ece_cluster.wait_for_cluster_state(cluster_data['id'], "elasticsearch" ) # Wait for ElasticSearch
+      ece_cluster.wait_for_cluster_state(cluster_data['id'], "kibana" ) # Wait for Kibana
+      deployment_healthy = ece_cluster.wait_for_cluster_state(cluster_data['id'], "kibana","main-apm") # If APM is healthy then the deployment is healthy since apm is last to come up
+      
       if deployment_healthy == False:
         results['cluster_data']['msg'] = "Cluster information may be incomplete because the cluster is not healthy"
       else:
