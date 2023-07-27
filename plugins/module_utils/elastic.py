@@ -135,3 +135,12 @@ class Elastic(object):
     endpoint = '_ilm/policy/' + policy_name
     index_lifecycle_policy = self.send_api_request(endpoint, 'PUT', data=index_lifecycle_policy_data)
     return index_lifecycle_policy
+  
+    
+  ########### Update Settings
+  
+  def update_settings(self, body):
+    endpoint = '_cluster/settings'
+    #json_body = dumps(body)
+    settings_update = self.send_api_request(endpoint, 'PUT', data=body)
+    return settings_update
