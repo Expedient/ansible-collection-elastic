@@ -37,6 +37,10 @@ options:
         resource_type: kibana
         ref_id: REF ID for kibana cluster, most likely main-kibana
         version: Deployment Kibana Version
+      elastic_setting:
+        state: persistent or transient
+        var: elastic var name
+        value: elastic var value
 '''
 
 from ansible.module_utils.basic import _ANSIBLE_ARGS, AnsibleModule
@@ -55,13 +59,20 @@ results = {}
 
 def main():
 
+    elastic_settings_spec=dict(
+      state=dict(type='str', choices=['persistent', 'transient']),
+      var=dict(type='str',required=True),
+      value=dict(type='int',required=True)
+    )
+    
     module_args=dict(   
         host=dict(type='str',required=True),
         port=dict(type='int', default=9243),
         username=dict(type='str', required=True),
         password=dict(type='str', no_log=True, required=True),   
         verify_ssl_cert=dict(type='bool', default=True),
-        deployment_info=dict(type='dict', default=None)
+        deployment_info=dict(type='dict', default=None),
+        elastic_settings=dict(type='list', required=False, elements='dict', options=elastic_settings_spec)
     )
     argument_dependencies = []
         #('state', 'present', ('enabled', 'alert_type', 'conditions', 'actions')),
@@ -70,14 +81,15 @@ def main():
     module = AnsibleModule(argument_spec=module_args, supports_check_mode=True)
 
     results['changed'] = False
+    elastic_settings = module.params.get('elastic_settings')
     
     elastic = Elastic(module)
-    
     body = {
-      "persistent": {
-        "cluster.routing.allocation.node_concurrent_recoveries": 10
-      }
+      "persistent": {},
+      "transient": {}
     }
+    for elastic_setting in elastic_settings:
+      body[elastic_setting['state']][elastic_setting['var']] = elastic_setting['value']
     
     elastic_settings_object = elastic.update_settings(body)
   
