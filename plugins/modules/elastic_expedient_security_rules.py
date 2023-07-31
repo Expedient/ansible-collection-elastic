@@ -93,19 +93,19 @@ def main():
       endpoint_list_item = kibana.get_security_exception_list_item()
       results['exception_list_item_object'] = endpoint_list_item
     
-    expedient_defender_rule_name = "MpSigStub Defender Updates"
+    expedient_defender_rule_expection_name = "MpSigStub Defender Updates"
     if not endpoint_list_item:
       results['exception_list_item_status'] = "INFO: Endpoint Security has no entries, that's ok, we will create one"
     else:
       for endpoint_list_item_entry in endpoint_list_item:
-        if endpoint_list_item_entry['name'] == expedient_defender_rule_name:
+        if endpoint_list_item_entry['name'] == expedient_defender_rule_expection_name:
           endpoint_list_item_delete = kibana.delete_security_exception_list_items(item_id = endpoint_list_item_entry['item_id'])
           results['endpoint_list_item_delete'] = endpoint_list_item_delete
     if security_rule_items == None:
       body = [
           {
           "comments": [],
-          "description": expedient_defender_rule_name,
+          "description": expedient_defender_rule_expection_name,
           "entries": [
             {
               "field": "process.executable.caseless",
@@ -133,7 +133,7 @@ def main():
             }
           ],
           "list_id": "endpoint_list",
-          "name": expedient_defender_rule_name,
+          "name": expedient_defender_rule_expection_name,
           "namespace_type": "agnostic",
           "os_types": [
             "windows"
