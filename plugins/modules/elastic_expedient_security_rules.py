@@ -61,7 +61,7 @@ def main():
         password=dict(type='str', no_log=True, required=True),   
         verify_ssl_cert=dict(type='bool', default=True),
         deployment_info=dict(type='dict', default=None),
-        security_rule_items=dict(type='array', default=None),
+        security_rule_items=dict(type='list', default=None),
     )
     argument_dependencies = []
         #('state', 'present', ('enabled', 'alert_type', 'conditions', 'actions')),
