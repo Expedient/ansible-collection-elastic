@@ -70,7 +70,7 @@ def main():
     module = AnsibleModule(argument_spec=module_args, supports_check_mode=True)
 
     results['changed'] = False
-    security_rule_items = module.params.get('security_rule_items')
+    security_rule_exception_items = module.params.get('security_rule_items')
   
     kibana = Kibana(module)
       
@@ -90,63 +90,19 @@ def main():
     if target_object:
       results['exception_list_status'] = "endpoint_list found"
       results['exception_list_object'] = target_object
-      endpoint_list_item = kibana.get_security_exception_list_item()
-      results['exception_list_item_object'] = endpoint_list_item
+      endpoint_list_items = kibana.get_security_exception_list_item()
+      results['exception_list_item_object'] = endpoint_list_items
     
-    expedient_defender_rule_expection_name = "MpSigStub Defender Updates"
-    if not endpoint_list_item:
+    if not endpoint_list_items:
       results['exception_list_item_status'] = "INFO: Endpoint Security has no entries, that's ok, we will create one"
     else:
-      for endpoint_list_item_entry in endpoint_list_item:
-        if endpoint_list_item_entry['name'] == expedient_defender_rule_expection_name:
-          endpoint_list_item_delete = kibana.delete_security_exception_list_items(item_id = endpoint_list_item_entry['item_id'])
-          results['endpoint_list_item_delete'] = endpoint_list_item_delete
-    if security_rule_items == None:
-      body = [
-          {
-          "comments": [],
-          "description": expedient_defender_rule_expection_name,
-          "entries": [
-            {
-              "field": "process.executable.caseless",
-              "operator": "included",
-              "type": "match",
-              "value": "C:\\Windows\\System32\\MpSigStub.exe"
-            },
-            {
-              "field": "process.parent.executable",
-              "operator": "included",
-              "type": "match",
-              "value": "C:\\Windows\\System32\\wuauclt.exe"
-            },
-            {
-              "field": "process.code_signature.subject_name",
-              "operator": "included",
-              "type": "match",
-              "value": "Microsoft Corporation"
-            },
-            {
-              "field": "user.id",
-              "operator": "included",
-              "type": "match",
-              "value": "S-1-5-18"
-            }
-          ],
-          "list_id": "endpoint_list",
-          "name": expedient_defender_rule_expection_name,
-          "namespace_type": "agnostic",
-          "os_types": [
-            "windows"
-          ],
-          "tags": [],
-          "type": "simple",
-        }
-      ]
-    else:
-      body = security_rule_items
-    for endpoint_exception in body:
-      endpoint_list_item_update = kibana.create_security_exception_list_items(id = 'endpoint_list', body = endpoint_exception)
-      results['endpoint_list_item_update_object_' + endpoint_exception['name']] = endpoint_list_item_update
+      for endpoint_list_item in endpoint_list_items:
+        for security_rule_exception_item in security_rule_exception_items:
+          if endpoint_list_item['name'] == security_rule_exception_item['name']:
+            endpoint_list_item_delete = kibana.delete_security_exception_list_items(item_id = endpoint_list_item['item_id'])
+            results['endpoint_list_item_delete'] = endpoint_list_item_delete
+          endpoint_list_item_update = kibana.create_security_exception_list_items(id = 'endpoint_list', body = security_rule_exception_item)
+          results['endpoint_list_item_update_object_' + security_rule_exception_item['name']] = endpoint_list_item_update
     
     module.exit_json(**results)
 
