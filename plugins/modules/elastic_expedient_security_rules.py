@@ -96,13 +96,13 @@ def main():
     if not endpoint_list_items:
       results['exception_list_item_status'] = "INFO: Endpoint Security has no entries, that's ok, we will create one"
     else:
-      for endpoint_list_item in endpoint_list_items:
-        for security_rule_exception_item in security_rule_exception_items:
-          if endpoint_list_item['name'] == security_rule_exception_item['name']:
+      for security_rule_exception_item in security_rule_exception_items:      
+        for endpoint_list_item in endpoint_list_items:
+          if endpoint_list_item['name'].upper() == security_rule_exception_item['name'].upper():
             endpoint_list_item_delete = kibana.delete_security_exception_list_items(item_id = endpoint_list_item['item_id'])
             results['endpoint_list_item_delete'] = endpoint_list_item_delete
-          endpoint_list_item_update = kibana.create_security_exception_list_items(id = 'endpoint_list', body = security_rule_exception_item)
-          results['endpoint_list_item_update_object_' + security_rule_exception_item['name']] = endpoint_list_item_update
+        endpoint_list_item_update = kibana.create_security_exception_list_items(id = 'endpoint_list', body = security_rule_exception_item)
+        results['endpoint_list_item_update_object_' + security_rule_exception_item['name']] = endpoint_list_item_update
     
     module.exit_json(**results)
 
