@@ -66,7 +66,11 @@ options:
         version: 
           description:
             - Deployment Kibana Version
-          required: true    
+          required: true
+      security_rule_items: 
+        description:
+          - List of Endpoint Exceptions in JSON format
+        required: true  
 '''
 from ansible.module_utils.basic import _ANSIBLE_ARGS, AnsibleModule
 
