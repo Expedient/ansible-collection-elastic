@@ -118,7 +118,7 @@ def main():
     if not target_object:
       results['exception_list_status'] = 'endpoint_list was not found'
       results['changed'] = False
-      module.exit_json(**results)
+      module.fail_json(**results)
     
     if target_object:
       results['exception_list_status'] = "endpoint_list found"
