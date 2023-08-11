@@ -39,7 +39,6 @@ requirements:
 
 description:
     - This module adds a host endpoint to a kibana fleet.
-    - This is a test
 
 options:
     host:
