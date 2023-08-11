@@ -24,7 +24,7 @@ ANSIBLE_METADATA = {
   'supported_by': 'community'
 }
 
-DOCUMENTATION = r'''
+DOCUMENTATION = '''
 ---
 module: kibana_fleet_host
 
@@ -38,45 +38,53 @@ requirements:
   - python3
 
 description:
-  - "This module adds a host endpoint to a kibana fleet"
+    - This module adds a host endpoint to a kibana fleet.
+    - This is a test
 
 options:
     host:
         description:
             - The Kibana Host you're updating
+            - This is a test
         type: str
     username:
         description:
             - Elastic Username
+            - This is a test
         type: str
     password:
         description:
             - Elastic Password
+            - This is a test
         type: str
     verify_ssl_cert:
         description:
             - Whether or not to verify SSL cert on API requests
+            - This is a test            
         type: bool
     urls:
         description:
             - List of urls that you want to apply as a fleet server host or an elasticsearch host
+            - This is a test
         type: list
-        element type: str
+        elements: str
     url_type:
-        description:
+        description: 
             - The url type that you want to set for the fleet
-            - 'server' sets the fleet server host
-            - 'elasticsearch' sets the fleet elasticsearch host
-        options:
+            - "server: sets the fleet server host"
+            - "elasticsearch: sets the fleet elasticsearch host"
+        type: str
+        choices:
             - fleet_server
             - elasticsearch
     action:
-        description:
+        description: 
             - The action that you want the module to take against the fleet server
-            - Add: Add the provided urls to the fleet
-            - Remove: Remove the provided urls from the fleet
-            - Overwrite: Replace the urls in the fleet with the provided urls
-        options:
+            - "Add Add the provided urls to the fleet"
+            - "Remove Remove the provided urls from the fleet"
+            - "Overwrite Replace the urls in the fleet with the provided urls"
+        type: str
+        choices:
             - Add
             - Remove
             - Overwrite

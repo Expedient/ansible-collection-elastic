@@ -12,7 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-DOCUMENTATION='''
+DOCUMENTATION = '''
 
 module: ece_cluster_info
 
@@ -20,19 +20,36 @@ author: Ian Scott
 
 short_description: Get Elastic Deployment from ECE
 
-description: 
-  - Get Elastic Deployment from ECE
+description: Get Elastic Deployment from ECE
 
 requirements:
-  - python3
+- python3
 
 options:
-      host: ECE Host
-      port: ECE Port
-      deployment_name or deployment_id
-      username: ECE Username
-      password: ECE Password
-      no_cluster_object: True/False # Sometimes it is not neccesary to return all the data of a deployment
+
+  host:
+    description: ECE Host
+    type: str
+
+  port:
+    description: ECE Port
+    type: str
+
+  deployment_name:
+    description: Name of Deployment
+    type: str
+
+  username:
+    description: ECE Username
+    type: str
+
+  password:
+    description: ECE Password
+    type: str
+
+  no_cluster_object:
+    description: Sometimes it is not neccesary to return all the data of a deployment
+    type: bool
 
 '''
 from ansible.module_utils.basic import AnsibleModule
