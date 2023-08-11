@@ -24,7 +24,7 @@ ANSIBLE_METADATA = {
   'supported_by': 'community'
 }
 
-DOCUMENTATION = '''
+DOCUMENTATION = r'''
 ---
 module: kibana_fleet_host
 
@@ -45,27 +45,22 @@ options:
     host:
         description:
             - The Kibana Host you're updating
-            - This is a test
         type: str
     username:
         description:
             - Elastic Username
-            - This is a test
         type: str
     password:
         description:
             - Elastic Password
-            - This is a test
         type: str
     verify_ssl_cert:
         description:
-            - Whether or not to verify SSL cert on API requests
-            - This is a test            
+            - Whether or not to verify SSL cert on API requests        
         type: bool
     urls:
         description:
             - List of urls that you want to apply as a fleet server host or an elasticsearch host
-            - This is a test
         type: list
         elements: str
     url_type:
