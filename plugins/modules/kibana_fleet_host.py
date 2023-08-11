@@ -55,7 +55,7 @@ options:
         type: str
     verify_ssl_cert:
         description:
-            - Whether or not to verify SSL cert on API requests        
+            - Whether or not to verify SSL cert on API requests
         type: bool
     urls:
         description:
@@ -63,7 +63,7 @@ options:
         type: list
         elements: str
     url_type:
-        description: 
+        description:
             - The url type that you want to set for the fleet
             - "server: sets the fleet server host"
             - "elasticsearch: sets the fleet elasticsearch host"
@@ -72,7 +72,7 @@ options:
             - fleet_server
             - elasticsearch
     action:
-        description: 
+        description:
             - The action that you want the module to take against the fleet server
             - "Add Add the provided urls to the fleet"
             - "Remove Remove the provided urls from the fleet"
