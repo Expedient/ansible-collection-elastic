@@ -1,0 +1,4 @@
+requests==2.17.0
+ansible==8.1.0
+ansible-base==2.10.17
+ansible-core==2.15.1

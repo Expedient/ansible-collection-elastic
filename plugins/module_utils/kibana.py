@@ -1000,3 +1000,26 @@ class Kibana(object):
       body_json = dumps(body)
       result = self.send_api_request(endpoint, 'POST', data = body_json, space_id = space_id)
     return result
+  
+# Exception Lists
+
+  def get_security_exception_list(self, namespace_type = 'agnostic', space_id = 'default'):
+    endpoint = f'exception_lists/_find?namespace_type={namespace_type}'
+    result = self.send_api_request(endpoint, 'GET', space_id = space_id)
+    return result['data']
+
+  def get_security_exception_list_item(self, list_id = 'endpoint_list', namespace_type = 'agnostic', space_id = 'default'):
+    endpoint = f'exception_lists/items/_find?list_id={list_id}&namespace_type={namespace_type}'
+    result = self.send_api_request(endpoint, 'GET', space_id = space_id)
+    return result['data']
+  
+  def create_security_exception_list_items(self, id, body, space_id = 'default', namespace_type = 'agnostic'):
+    endpoint = f'exception_lists/items?id={id}&namespace_type={namespace_type}'
+    #json_body = dumps(body)
+    result = self.send_api_request(endpoint, 'POST', data = body, space_id = space_id)
+    return result
+  
+  def delete_security_exception_list_items(self, item_id, space_id = 'default', namespace_type = 'agnostic'):
+    endpoint = f'exception_lists/items?item_id={item_id}&namespace_type={namespace_type}'
+    result = self.send_api_request(endpoint, 'DELETE', space_id = space_id)
+    return result
