@@ -74,9 +74,9 @@ options:
     action:
         description:
             - The action that you want the module to take against the fleet server
-            - "Add Add the provided urls to the fleet"
-            - "Remove Remove the provided urls from the fleet"
-            - "Overwrite Replace the urls in the fleet with the provided urls"
+            - "Add: Add the provided urls to the fleet"
+            - "Remove: Remove the provided urls from the fleet"
+            - "Overwrite: Replace the urls in the fleet with the provided urls"
         type: str
         choices:
             - Add
