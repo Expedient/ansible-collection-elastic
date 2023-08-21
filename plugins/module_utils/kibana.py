@@ -381,6 +381,7 @@ class Kibana(object):
     rule_object.pop('immutable')
     rule_object.pop('required_fields')
     rule_object.pop('setup')
+    rule_object.pop('revision')
     rule_object.update(body)
     update_rule = self.send_api_request(endpoint, 'PUT', data=rule_object)
     return update_rule
@@ -397,6 +398,18 @@ class Kibana(object):
     endpoint = "detection_engine/rules/_find?page=" + str(page_no) + "&per_page=" + str(page_size) + "&filter=alert.attributes.name:" + filter_scrubbed
     rules = self.send_api_request(endpoint, 'GET')
     return rules
+
+  def get_security_rule_byname(self, rule_name, filter = "alert.attributes.name"):
+    page_no = 1
+    page_size = 100
+    filter_scrubbed = urllib.parse.quote(str(rule_name))
+    endpoint = f"detection_engine/rules/_find?page={str(page_no)}&per_page={str(page_size)}&filter={filter}:{filter_scrubbed}"
+    target_rule = None
+    rules = self.send_api_request(endpoint, 'GET')
+    for rule in rules['data']:
+      if rule['name'] == rule_name:
+        target_rule = rule
+    return target_rule
   
   def enable_security_rule(self,rule_id):
     body={

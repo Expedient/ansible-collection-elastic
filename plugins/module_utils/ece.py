@@ -132,7 +132,7 @@ class ECE(object):
     templates = self.send_api_request(endpoint, 'GET')
     return next(filter(lambda x: x['name'] == template_name, templates), None)
 
-  def wait_for_cluster_state(self, cluster_id, resource_kind, resource_ref_id = None, cluster_state = 'started', completion_timeout=600):
+  def wait_for_cluster_state(self, cluster_id, resource_kind, resource_ref_id = None, cluster_state = 'started', completion_timeout=1800):
     if resource_ref_id == None:
       resource_ref_id = f"main-{resource_kind}"
     timeout = time.time() + completion_timeout
@@ -141,14 +141,41 @@ class ECE(object):
     for resource in cluster_object['resources'][resource_kind]:
       if resource['ref_id'] == resource_ref_id:
         while cluster_object['resources'][resource_kind][x]['info']['status'] != cluster_state:
-          time.sleep(1)
+          time.sleep(15)
           if time.time() > timeout:
             return False
           cluster_object = self.get_cluster_by_id(cluster_id)
       x = x + 1
+
+    if resource_kind == "apm" or resource_kind == "fleet":
+      y = 0
+      for resource in cluster_object['resources'][resource_kind]:
+        if resource['ref_id'] == resource_ref_id:
+          while 'services_urls' not in cluster_object['resources'][resource_kind][y]['info']['metadata']:
+            time.sleep(15)
+            cluster_object = self.get_cluster_by_id(cluster_id)
+          z = 0
+          found_service = False
+          while found_service == False:
+            for service_url in cluster_object['resources'][resource_kind][y]['info']['metadata']['services_urls']:
+              if service_url['service'] == resource_kind:
+                found_service = True
+                while 'url' not in cluster_object['resources'][resource_kind][y]['info']['metadata']['services_urls'][z]:
+                  time.sleep(15)
+                  if time.time() > timeout:
+                    return False
+                  cluster_object = self.get_cluster_by_id(cluster_id)
+              else:
+                found_service = False
+                time.sleep(15)
+                if time.time() > timeout:
+                  return False
+                cluster_object = self.get_cluster_by_id(cluster_id)
+            z = z + 1
+        y = y + 1
     return True
   
-  def wait_for_cluster_healthy(self, cluster_id, cluster_health = True, completion_timeout=900):
+  def wait_for_cluster_healthy(self, cluster_id, cluster_health = True, completion_timeout=1800):
     timeout = time.time() + completion_timeout
     cluster_object = self.get_cluster_by_id(cluster_id)
     x = 0
