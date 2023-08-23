@@ -38,37 +38,53 @@ requirements:
   - python3
 
 description:
-    - This module adds a host endpoint to a kibana fleet.
+  - "This module adds a host endpoint to a kibana fleet"
 
 options:
     host:
-        description:
-            - The Kibana Host you're updating
+        description: ECE Host
+        type: str
+    port:
+        description: ECE Port
         type: str
     username:
-        description:
-            - Elastic Username
+        description: ECE Username
         type: str
     password:
-        description:
-            - Elastic Password
+        description: ECE Password
         type: str
-    verify_ssl_cert:
-        description:
-            - Whether or not to verify SSL cert on API requests
-        type: bool
+    deployment_info:
+        description: Deployment Information
+        type: dict
+        suboptions:
+        deployment_id:
+            required: False
+            description: ECE Deployment ID
+            type: str
+        deployment_name:
+            required: False
+            description: ECE Deployment Name
+            type: str
+        resource_type:
+            description: "Type or Resource, most likely kibana"
+            type: str
+        ref_id:
+            description: "REF ID for kibana cluster, most likely main-kibana"
+            type: str
+        version:
+            description: Deployment Kibana Version
+            type: str
     urls:
         description:
             - List of urls that you want to apply as a fleet server host or an elasticsearch host
         type: list
-        elements: str
+        element type: str
     url_type:
         description:
             - The url type that you want to set for the fleet
-            - "server: sets the fleet server host"
-            - "elasticsearch: sets the fleet elasticsearch host"
-        type: str
-        choices:
+            - "'server' sets the fleet server host"
+            - "'elasticsearch' sets the fleet elasticsearch host"
+        options:
             - fleet_server
             - elasticsearch
     action:
@@ -77,8 +93,7 @@ options:
             - "Add: Add the provided urls to the fleet"
             - "Remove: Remove the provided urls from the fleet"
             - "Overwrite: Replace the urls in the fleet with the provided urls"
-        type: str
-        choices:
+        options:
             - Add
             - Remove
             - Overwrite

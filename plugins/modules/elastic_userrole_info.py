@@ -27,17 +27,42 @@ requirements:
   - python3
 
 options:
-      host: ECE Host or Deployment Host
-      port: ECE Port or Deployment Port
-      username: ECE Username or Deployment Username
-      password: ECE Password or Deployment Password
-      deployment_info: (when using ECE host:port and credentials)
-        deployment_id: ECE Deployment ID
-        deployment_name: ECE Deployment Name
-        resource_type: kibana
-        ref_id: REF ID for kibana cluster, most likely main-kibana
-        version: Deployment Kibana Version
-      role_name: User Role name
+  host:
+    description: ECE Host
+    type: str
+  port:
+    description: ECE Port
+    type: str
+  username:
+    description: ECE Username
+    type: str
+  password:
+    description: ECE Password
+    type: str
+  deployment_info:
+    description: Deployment Information
+    type: dict
+    suboptions:
+      deployment_id:
+        required: False
+        description: ECE Deployment ID
+        type: str
+      deployment_name:
+        required: False
+        description: ECE Deployment Name
+        type: str
+      resource_type:
+        description: "Type or Resource, most likely kibana"
+        type: str
+      ref_id:
+        description: "REF ID for kibana cluster, most likely main-kibana"
+        type: str
+      version:
+        description: Deployment Kibana Version
+        type: str
+  role_name:
+    description: User Role name
+    type: str
 '''
 from ansible.module_utils.basic import _ANSIBLE_ARGS, AnsibleModule
 

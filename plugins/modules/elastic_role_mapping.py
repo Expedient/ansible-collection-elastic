@@ -21,6 +21,76 @@ ANSIBLE_METADATA = {
   'supported_by': 'community'
 }
 
+DOCUMENTATION='''
+
+module: elastic_role_mapping
+
+author: Ian Scott
+
+short_description: Show info on a Role Mapping
+
+description: 
+  - Show info on a Role Mapping
+
+requirements:
+  - python3
+
+options:
+  host:
+    description: ECE Host
+    type: str
+  port:
+    description: ECE Port
+    type: str
+  username:
+    description: ECE Username
+    type: str
+  password:
+    description: ECE Password
+    type: str
+  deployment_info:
+    description: Deployment Information
+    type: dict
+    suboptions:
+      deployment_id:
+        required: False
+        description: ECE Deployment ID
+        type: str
+      deployment_name:
+        required: False
+        description: ECE Deployment Name
+        type: str
+      resource_type:
+        description: "Type or Resource, most likely kibana"
+        type: str
+      ref_id:
+        description: "REF ID for kibana cluster, most likely main-kibana"
+        type: str
+      version:
+        description: Deployment Kibana Version
+        type: str
+  role_mapping_name: 
+    description: Role Mapping name (Required)
+    type: str
+  enabled: 
+    description: Enable Mapping, True/False
+    type: boolean
+  roles:
+    description: List of assinged Roles
+    type: list
+  rules:
+    description: Deployment Information
+    type: dict
+    suboptions:
+      realm.name:
+        description: Realm Name
+        type: str
+      groups:
+        description: User Group
+        type: str
+  
+'''
+
 try:
   from ansible_collections.expedient.elastic.plugins.module_utils.elastic import Elastic
 except:
