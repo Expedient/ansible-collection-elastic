@@ -65,6 +65,7 @@ options:
 from ansible.module_utils.basic import AnsibleModule
 import json
 import datetime
+import time
 
 try:
   from ansible_collections.expedient.elastic.plugins.module_utils.kibana import Kibana
@@ -104,6 +105,10 @@ def main():
     
     module = AnsibleModule(argument_spec=module_args, required_if=argument_dependencies, supports_check_mode=True)
 
+  
+    token_timeout = 1500
+    
+    timeout = time.time() + token_timeout
     ece = ECE(module)
     results['changed'] = False
     
@@ -124,10 +129,14 @@ def main():
         "ref_id": deployment_kibana_ref_id,
         "version": ""
       }
+      if time.time() > timeout:
+        timeout = time.time() + token_timeout
+        ece = ECE(module)
       module.params['ece_auth'] = ece
       module.params['deployment_info'] = current_deployment_info
       kibana = Kibana(module)
       connector_list = kibana.get_all_connectors()
+
       cluster_object = ece.get_deployment_byid(each_deployment['id'])
       #cluster_object = ece.get_clusters_by_name(each_deployment['name'])
       
@@ -154,11 +163,14 @@ def main():
           else:
             connector_list[i]['connector_status'] = "The connector has no config"
           i=i+1
-        
+      results[each_deployment['name'] + '_kibana_endpoint_url'] = kibana_url  
       results[each_deployment['name'] + '_connector_list'] = connector_list
       time_now = datetime.datetime.now()
       print(str(time_now) + ": Completed " + each_deployment['name'])
-  
+    module.params.pop('ece_auth')
+    fp = open('plugins/modules/reports/connector_report.json', 'w')
+    fp.write(json.dumps(results))
+    fp.close()
     module.exit_json(**results)
 
 if __name__ == "__main__":
