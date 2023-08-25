@@ -41,7 +41,7 @@ def main():
         action_group=dict(type='str'),
         replace_or_append=dict(type='str'),
         state=dict(type='str', default='present'),
-        existing_actions=dict(type='str'),
+        #existing_actions=dict(type='str'),
         deployment_info=dict(type='dict', default=None)
     ) 
     
@@ -72,12 +72,7 @@ def main():
         results['connector_status'] = "Connector exists by that name"
         results['connector_object'] = connector_exists
       
-      rule_exists = kibana.get_security_rules_byfilter(rule_name)
-      target_rule = ""
-      for rule in rule_exists['data']:
-        if str(rule['name']).upper() == str(rule_name).upper():
-          target_rule = rule
-          break
+      target_rule = kibana.get_security_rule_byname(rule_name)
 
       if not target_rule:
         results['msg'] = f'rule named {rule_name} does not exist'

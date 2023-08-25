@@ -120,7 +120,7 @@ def main():
       
       deployment_healthy = ElasticDeployments.wait_for_cluster_state(deployment_object[0]['id'], "elasticsearch" )
       deployment_healthy = ElasticDeployments.wait_for_cluster_state(deployment_object[0]['id'], "kibana" )
-      deployment_healthy = ElasticDeployments.wait_for_cluster_state(deployment_object[0]['id'], "kibana","main-apm")
+      deployment_healthy = ElasticDeployments.wait_for_cluster_state(deployment_object[0]['id'], "apm")
       
       if deployment_healthy == False:
         results['cluster_data']['msg'] = "Cluster information may be incomplete because the cluster is not healthy"
