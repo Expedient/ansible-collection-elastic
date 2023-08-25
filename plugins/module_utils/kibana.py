@@ -1023,3 +1023,15 @@ class Kibana(object):
     endpoint = f'exception_lists/items?item_id={item_id}&namespace_type={namespace_type}'
     result = self.send_api_request(endpoint, 'DELETE', space_id = space_id)
     return result
+  
+# Data View
+
+  def set_dataview_default(self, dataview_id = "logs-*"):
+    endpoint = f'data_views/default'
+    body = {
+      "data_view_id": dataview_id,
+      "force": True
+    }
+    body_json = dumps(body)
+    result = self.send_api_request(endpoint, 'POST', data = body_json)
+    return result
