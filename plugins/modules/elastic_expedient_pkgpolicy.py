@@ -423,6 +423,7 @@ def main():
       body = {
         "keepPoliciesUpToDate": True
       }
+      kibana.set_dataview_default() # logs.* is the default so not passing a var
       integration_object = kibana.update_integration(
           integration_name = integration_object['name'], 
           integration_version=integration_object['version'], 
