@@ -27,13 +27,33 @@ requirements:
   - python3
 
 options:
-      host: ECE Host
-      port: ECE Port
-      deployment_name or deployment_id
-      username: ECE Username
-      password: ECE Password
-      tag_label: ECE Deployment Tag Label
-      tag_value: ECE Deployment Tag Value
+  host:
+    description: ECE Host
+    type: str
+
+  port:
+    description: ECE Port
+    type: str
+
+  deployment_name:
+    description: Name of Deployment
+    type: str
+
+  username:
+    description: ECE Username
+    type: str
+
+  password:
+    description: ECE Password
+    type: str
+
+  tag_label:
+    description: ECE Deployment Tag Label
+    type: str
+
+  tag_value:
+    description: ECE Deployment Tag Value
+    type: str
 
 '''
 from ansible.module_utils.basic import AnsibleModule

@@ -14,38 +14,71 @@
 # limitations under the License.
 DOCUMENTATION='''
 
-module: elastic_pkgpolicy
+module: elastic_role_mapping_create
 
 author: Ian Scott
 
-short_description: Create an Elastic Package Policy.
+short_description: Create a Role Mapping.
 
 description: 
-  - Create an Elastic Package Policy. A Package Policy is an instance of an Integration in an Agent Policy
+  - Create a Role Mapping
 
 requirements:
   - python3
 
 options:
-      host: ECE Host or Deployment Host
-      port: ECE Port or Deployment Port
-      username: ECE Username or Deployment Username
-      password: ECE Password or Deployment Password
-      deployment_info: (when using ECE host:port and credentials)
-        deployment_id: ECE Deployment ID
-        deployment_name: ECE Deployment Name
-        resource_type: kibana
-        ref_id: REF ID for kibana cluster, most likely main-kibana
-        version: Deployment Kibana Version
-      role_mapping_name: Role Mapping name (Required)
-      enable_mapping: True/False
-      assigned_roles: List of assigned roles
-      role_mapping_rules: 
-        all:
-        - field:
-            realm.name: Realm Name
-        - field:
-            groups: User Group
+  host:
+    description: ECE Host
+    type: str
+  port:
+    description: ECE Port
+    type: str
+  username:
+    description: ECE Username
+    type: str
+  password:
+    description: ECE Password
+    type: str
+  deployment_info:
+    description: Deployment Information
+    type: dict
+    suboptions:
+      deployment_id:
+        required: False
+        description: ECE Deployment ID
+        type: str
+      deployment_name:
+        required: False
+        description: ECE Deployment Name
+        type: str
+      resource_type:
+        description: "Type or Resource, most likely kibana"
+        type: str
+      ref_id:
+        description: "REF ID for kibana cluster, most likely main-kibana"
+        type: str
+      version:
+        description: Deployment Kibana Version
+        type: str
+  role_mapping_name: 
+    description: Role Mapping name (Required)
+    type: str
+  enable_mapping: 
+    description: True/False
+    type: boolean
+  assigned_roles:
+    description: List of assinged Roles
+    type: list
+  role_mapping_rules:
+    description: Deployment Information
+    type: dict
+    suboptions:
+      realm.name:
+        description: Realm Name
+        type: str
+      groups:
+        description: User Group
+        type: str
       
 '''
 from ansible.module_utils.basic import _ANSIBLE_ARGS, AnsibleModule

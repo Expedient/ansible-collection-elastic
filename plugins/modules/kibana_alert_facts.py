@@ -41,6 +41,39 @@ description:
   - "This module gets facts about kibana alerts"
   
 options:
+  host:
+    description: ECE Host
+    type: str
+  port:
+    description: ECE Port
+    type: str
+  username:
+    description: ECE Username
+    type: str
+  password:
+    description: ECE Password
+    type: str
+  deployment_info:
+    description: Deployment Information
+    type: dict
+    suboptions:
+      deployment_id:
+        required: False
+        description: ECE Deployment ID
+        type: str
+      deployment_name:
+        required: False
+        description: ECE Deployment Name
+        type: str
+      resource_type:
+        description: "Type or Resource, most likely kibana"
+        type: str
+      ref_id:
+        description: "REF ID for kibana cluster, most likely main-kibana"
+        type: str
+      version:
+        description: Deployment Kibana Version
+        type: str
   alert_name:
     description:
       - name of the alert to create

@@ -28,18 +28,56 @@ requirements:
   - python3
 
 options:
-      host: ECE Host or Deployment Host
-      port: ECE Port or Deployment Port
-      username: ECE Username or Deployment Username
-      password: ECE Password or Deployment Password
-      deployment_info: (when using ECE host:port and credentials)
-        deployment_id: ECE Deployment ID
-        deployment_name: ECE Deployment Name
-        resource_type: kibana
-        ref_id: REF ID for kibana cluster, most likely main-kibana
-        version: Deployment Kibana Version
-      security_rule_name: Name of Security Rule
-
+  host:
+    description: ECE Host
+    type: str
+  port:
+    description: ECE Port
+    type: str
+  username:
+    description: ECE Username
+    type: str
+  password:
+    description: ECE Password
+    type: str
+  deployment_info:
+    description: Deployment Information
+    type: dict
+    suboptions:
+      deployment_id:
+        required: False
+        description: ECE Deployment ID
+        type: str
+      deployment_name:
+        required: False
+        description: ECE Deployment Name
+        type: str
+      resource_type:
+        description: "Type or Resource, most likely kibana"
+        type: str
+      ref_id:
+        description: "REF ID for kibana cluster, most likely main-kibana"
+        type: str
+      version:
+        description: Deployment Kibana Version
+        type: str
+  agent_policy_name: 
+    description: Name of Agent Policy
+    type: str
+  agent_policy_id: 
+    description: ID of Agent Policy
+    type: str
+  integration_title:
+    description: Title of Integration
+    type: str
+  integration_ver:
+    description: Title of Integration
+    type: str
+  integration_name=dict(type='str'),
+  pkg_policy_name=dict(type='str', required=True),
+  pkg_policy_desc=dict(type='str'),
+  pkg_policy_vars=dict(type='json'),
+  integration_settings=dict(type='dict'),
 '''
 
 from ansible.module_utils.basic import _ANSIBLE_ARGS, AnsibleModule
