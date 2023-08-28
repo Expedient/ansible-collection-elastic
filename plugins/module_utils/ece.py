@@ -147,26 +147,33 @@ class ECE(object):
           cluster_object = self.get_cluster_by_id(cluster_id)
       x = x + 1
 
-    if resource_kind == "apm" or resource_kind == "fleet":
+    if resource_kind == "apm":
       y = 0
-      for resource in cluster_object['resources'][resource_kind]:
+      for resource in cluster_object['resources']['apm']:
         if resource['ref_id'] == resource_ref_id:
-          while 'services_urls' not in cluster_object['resources'][resource_kind][y]['info']['metadata']:
+          while 'services_urls' not in cluster_object['resources']['apm'][y]['info']['metadata']:
             time.sleep(15)
             cluster_object = self.get_cluster_by_id(cluster_id)
           z = 0
-          found_service = False
-          while found_service == False:
-            for service_url in cluster_object['resources'][resource_kind][y]['info']['metadata']['services_urls']:
-              if service_url['service'] == resource_kind:
-                found_service = True
-                while 'url' not in cluster_object['resources'][resource_kind][y]['info']['metadata']['services_urls'][z]:
+          found_apm_url = False
+          found_fleet_url = False
+          while found_apm_url == False or found_fleet_url == False:
+            for service_url in cluster_object['resources']['apm'][y]['info']['metadata']['services_urls']:
+              if service_url['service'] == "apm":
+                found_apm_url = True
+                while 'url' not in cluster_object['resources']['apm'][y]['info']['metadata']['services_urls'][z]:
+                  time.sleep(15)
+                  if time.time() > timeout:
+                    return False
+                  cluster_object = self.get_cluster_by_id(cluster_id)
+              elif service_url['service'] == "fleet":
+                found_fleet_url = True
+                while 'url' not in cluster_object['resources']['apm'][y]['info']['metadata']['services_urls'][z]:
                   time.sleep(15)
                   if time.time() > timeout:
                     return False
                   cluster_object = self.get_cluster_by_id(cluster_id)
               else:
-                found_service = False
                 time.sleep(15)
                 if time.time() > timeout:
                   return False

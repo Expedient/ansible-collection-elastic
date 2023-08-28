@@ -27,12 +27,39 @@ requirements:
   - python3
 
 options:
-      host: ECE Host
-      port: ECE Port
-      deployment_name or deployment_id
-      username: ECE Username
-      password: ECE Password
-      alias_name: Deployment Alias String
+
+  host:
+    description: ECE Host
+    type: str
+
+  port:
+    description: ECE Port
+    type: str
+
+  deployment_name:
+    description: 
+    - Name of Deployment
+    - Required if deployment_id is blank
+    type: str
+
+  deployment_id:
+    description: 
+    - Deployment ID
+    - Required if deployment_name is blank
+    type: str
+
+  username:
+    description: ECE Username
+    type: str
+
+  password:
+    description: ECE Password
+    type: str
+
+  alias_name:
+    description: Deployment Alias String
+    type: str
+    
 
 '''
 from ansible.module_utils.basic import AnsibleModule
@@ -108,9 +135,10 @@ def main():
       
       ElasticDeployments.update_deployment_byid(deployment_object['id'], update_body)
       
+      ElasticDeployments.wait_for_cluster_healthy(deployment_object['id'])
       ElasticDeployments.wait_for_cluster_state(deployment_object['id'], "elasticsearch" ) # Wait for ElasticSearch
       ElasticDeployments.wait_for_cluster_state(deployment_object['id'], "kibana" ) # Wait for Kibana
-      deployment_healthy = ElasticDeployments.wait_for_cluster_state(deployment_object['id'], "kibana","main-apm") # If APM is healthy then the deployment is healthy since apm is last to come up
+      deployment_healthy = ElasticDeployments.wait_for_cluster_state(deployment_object['id'], "apm") # If APM is healthy then the deployment is healthy since apm is last to come up
       
       if deployment_healthy == False:
         results['cluster_alias_status'] = "Cluster information may be incomplete because the cluster is not healthy"
