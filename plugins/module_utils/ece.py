@@ -148,6 +148,8 @@ class ECE(object):
       x = x + 1
 
     if resource_kind == "apm":
+      found_apm_url = False
+      found_fleet_url = False
       while found_apm_url == False or found_fleet_url == False:
         found_apm_url = False
         found_fleet_url = False
