@@ -148,38 +148,21 @@ class ECE(object):
       x = x + 1
 
     if resource_kind == "apm":
-      y = 0
-      for resource in cluster_object['resources']['apm']:
-        if resource['ref_id'] == resource_ref_id:
-          while 'services_urls' not in cluster_object['resources']['apm'][y]['info']['metadata']:
-            time.sleep(15)
-            cluster_object = self.get_cluster_by_id(cluster_id)
-          z = 0
-          found_apm_url = False
-          found_fleet_url = False
-          while found_apm_url == False or found_fleet_url == False:
-            for service_url in cluster_object['resources']['apm'][y]['info']['metadata']['services_urls']:
-              if service_url['service'] == "apm":
-                found_apm_url = True
-                while 'url' not in cluster_object['resources']['apm'][y]['info']['metadata']['services_urls'][z]:
-                  time.sleep(15)
-                  if time.time() > timeout:
-                    return False
-                  cluster_object = self.get_cluster_by_id(cluster_id)
-              elif service_url['service'] == "fleet":
-                found_fleet_url = True
-                while 'url' not in cluster_object['resources']['apm'][y]['info']['metadata']['services_urls'][z]:
-                  time.sleep(15)
-                  if time.time() > timeout:
-                    return False
-                  cluster_object = self.get_cluster_by_id(cluster_id)
-              else:
-                time.sleep(15)
-                if time.time() > timeout:
-                  return False
-                cluster_object = self.get_cluster_by_id(cluster_id)
-            z = z + 1
-        y = y + 1
+      while found_apm_url == False or found_fleet_url == False:
+        found_apm_url = False
+        found_fleet_url = False
+        cluster_object = self.get_cluster_by_id(cluster_id)
+        for resource in cluster_object['resources']['apm']:
+          if resource['ref_id'] == resource_ref_id:
+            if 'services_urls' in resource['info']['metadata']:
+              for service_url in resource['info']['metadata']['services_urls']:
+                if service_url['service'] == "apm" and service_url['url']:
+                  found_apm_url = True
+                elif service_url['service'] == "fleet" and service_url['url']:
+                  found_fleet_url = True
+        time.sleep(15)
+        if time.time() > timeout:
+          return False
     return True
   
   def wait_for_cluster_healthy(self, cluster_id, cluster_health = True, completion_timeout=1800):
