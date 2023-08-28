@@ -38,9 +38,48 @@ description:
   - This module creates or deletes ingest pipeline
 
 options:
-  pipeline_object
-  pipeline_name
-
+  host:
+    description: ECE Host
+    type: str
+  port:
+    description: ECE Port
+    type: str
+  username:
+    description: ECE Username
+    type: str
+  password:
+    description: ECE Password
+    type: str
+  deployment_info:
+    description: Deployment Information
+    type: dict
+    suboptions:
+      deployment_id:
+        description: 
+        - Deployment ID
+        - Required if deployment_name is blank
+        type: str
+      deployment_name:
+        description: 
+        - Name of Deployment
+        - Required if deployment_id is blank
+        type: str
+      resource_type:
+        description: "Type or Resource, most likely kibana"
+        type: str
+      ref_id:
+        description: "REF ID for kibana cluster, most likely main-kibana"
+        type: str
+      version:
+        description: Deployment Kibana Version
+        type: str
+  pipeline_name:
+    description: Pipeline Name
+    type: str
+  pipeline_object:
+    description: Pipeline Object
+    type: dict
+    
 extends_documentation_fragment:
   - expedient.elastic.elastic_auth_options
 '''

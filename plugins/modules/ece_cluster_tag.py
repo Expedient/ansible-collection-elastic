@@ -35,8 +35,16 @@ options:
     description: ECE Port
     type: str
 
+  deployment_id:
+    description: 
+    - Deployment ID
+    - Required if deployment_name is blank
+    type: str
+    
   deployment_name:
-    description: Name of Deployment
+    description: 
+    - Name of Deployment
+    - Required if deployment_id is blank
     type: str
 
   username:

@@ -44,12 +44,14 @@ options:
     type: dict
     suboptions:
       deployment_id:
-        required: False
-        description: ECE Deployment ID
+        description: 
+        - Deployment ID
+        - Required if deployment_name is blank
         type: str
       deployment_name:
-        required: False
-        description: ECE Deployment Name
+        description: 
+        - Name of Deployment
+        - Required if deployment_id is blank
         type: str
       resource_type:
         description: "Type or Resource, most likely kibana"
@@ -60,12 +62,24 @@ options:
       version:
         description: Deployment Kibana Version
         type: str
-      space_name: Space name
-      space_description: Description of Space
-      space_id: Space ID. Used in urls.
-      disabledFeatures: List of Features to be disabled within this space
-      initials: Initials of Space
-      color: Color of Space Icon Background
+  space_name: 
+    description: Space name
+    type: str
+  space_description:
+    description: Description of Space
+    type: str
+  space_id: 
+    description: "Space ID. Used in urls."
+    type: str
+  disabledFeatures: 
+    description: List of Features to be disabled within this space
+    type: list
+  initials: 
+    description: Initials of Space
+    type: str
+  color: 
+    description: Color of Space Icon Background
+    type: str
 '''
 from ansible.module_utils.basic import _ANSIBLE_ARGS, AnsibleModule
 

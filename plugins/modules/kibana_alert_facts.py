@@ -58,12 +58,14 @@ options:
     type: dict
     suboptions:
       deployment_id:
-        required: False
-        description: ECE Deployment ID
+        description: 
+        - Deployment ID
+        - Required if deployment_name is blank
         type: str
       deployment_name:
-        required: False
-        description: ECE Deployment Name
+        description: 
+        - Name of Deployment
+        - Required if deployment_id is blank
         type: str
       resource_type:
         description: "Type or Resource, most likely kibana"

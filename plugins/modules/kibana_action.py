@@ -46,12 +46,14 @@ options:
     type: dict
     suboptions:
       deployment_id:
-        required: False
-        description: ECE Deployment ID
+        description: 
+        - Deployment ID
+        - Required if deployment_name is blank
         type: str
       deployment_name:
-        required: False
-        description: ECE Deployment Name
+        description: 
+        - Name of Deployment
+        - Required if deployment_id is blank
         type: str
       resource_type:
         description: "Type or Resource, most likely kibana"
@@ -62,10 +64,19 @@ options:
       version:
         description: Deployment Kibana Version
         type: str
-      action_name: Name of Action to be Created
-      action_type: Tyep of Action
-      config: Changes based on type of action
-      secrets: Secrets for the Action
+  action_name:
+    description: Name of Action to be Created
+    type: str
+  action_type: 
+    description: Type of Action
+    type: str
+    choices: ['EMail', 'Webhook']
+  config: 
+    description: Changes based on type of action
+    type: str
+  secrets: 
+    description: Secrets for the Action
+    type: str
 '''
 
 from ansible.module_utils.six import assertRaisesRegex

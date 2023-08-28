@@ -43,38 +43,40 @@ description:
 
 options:
   state:
-    description:
-      - setting whether alert should be created or deleted
-    choices: ['present', 'absent']
+    description: 
+      setting whether alert should be created or deleted
+    choices: 
+    - present
+    - absent
     default: present
     type: str
   alert_name:
-    description:
-      - name of the alert to create
+    description: 
+      name of the alert to create
     required: True
     type: str
   enabled:
-    description:
-      - whether to enable the alert when creating
+    description: 
+      whether to enable the alert when creating
     default: True
     type: bool
   alert_type:
-    description:
-      - type of alert to create
+    description: 
+      type of alert to create
     choices:
       - metrics_threshold
   tags:
-    description:
-      - metadata tags to attach to the alert
+    description: 
+      metadata tags to attach to the alert
     type: str
   check_every:
-    description:
-      - frequency to check the alert on
+    description: 
+      frequency to check the alert on
     default: 1m
     type: str
   notify_on:
-    description:
-      - when to send the alert
+    description: 
+      when to send the alert
     default: status_change
     choices:
       - status_change
@@ -82,7 +84,7 @@ options:
   conditions:
     description:
       - dictionary defining which conditions to alert on
-      - only used for metrics threshold alerts.
+      - "only used for metrics threshold alerts."
       - see examples for details
     type: dict
   availability:
@@ -92,71 +94,64 @@ options:
       - see examples for details
     type: dict
   numTimes:
-    description:
-      - The number of times a monitor can go down within a specified 
-        time range (timerangeCount, timerangeUnit) before an alert is 
-        triggered.
-      default: 5
-      type: int
+    description: 
+    - "The number of times a monitor can go down within a specified time range (timerangeCount, timerangeUnit) before an alert is triggered."
+    default: 5
+    type: int
   search:
-    description:
-      - The default term that appears in the filter search bar
-        when manually editing the rule.
+    description: 
+    - "The default term that appears in the filter search bar when manually editing the rule."
     type: str
-    default: ""
   shouldcheckAvailability:
-    description:
-      - whether or not the uptime monitor should check availability
+    description: 
+    - whether or not the uptime monitor should check availability
     type: bool
     default: True
   shouldCheckStatus:
-    description:
-      - whether or not the uptime monitor should check status
+    description: 
+    - whether or not the uptime monitor should check status
     type: bool
     default: True
   timerangeCount:
-    description:
-      - The number of timerangeUnits in which a monitor can go down
-        in which a monitor can go down up to numTimes.
+    description: 
+      "The number of timerangeUnits in which a monitor can go down in which a monitor can go down up to numTimes."
     default: 15
     type: int
   timerangeUnit:
-    description:
-      - The unit coinciding with timerangeCount (minute, day, week, etc.)
+    description: 
+      "The unit coinciding with timerangeCount (minute, day, week, etc.)"
     default: "minute"
     choices: ['second', 'seconds', 'minute', 'minutes', 'hour', 'hours', 'day', 'days']
   filter:
-    description:
-      - kql filter to apply to the conditions
+    description: kql filter to apply to the conditions
     type: str
   filter_query:
     description:
       - lucence query to apply to the conditions
-      - at this time both this and "filter" are required for proper functioning of the module
+      - "at this time both this and filter are required for proper functioning of the module"
       - easiest way to get this is to do a kibana_alert_facts on an existing alert with the correct config
       - alternatively can view the request in the discover tab of kibana
   alert_on_no_data:
-    description:
+    description: 
       whether to alert if there is no data available in the check period
     type: bool
   alert_on_group_disappear:
-    description:
-      whether to alert if data stops being received for a group identified by the 'group_by'
-      settings
+    description: 
+      "whether to alert if data stops being received for a group identified by the group_by settings"
     type: bool
   group_by:
     description:
-      - defines the "alert for every" field in the Kibana alert
-      - generally the sensible default is host.name
-    default: host.name
+      - "defines the alert for every field in the Kibana alert"
+      - "generally the sensible default is host.name"
+    default: "host.name"
     type: str
   actions:
-    description:
-      - actions to run when alert conditions are triggered
+    description: 
+      actions to run when alert conditions are triggered
     type: dict
   consumer:
-    description:
-      - name of the application that owns the alert
+    description: 
+      name of the application that owns the alert
     default: alerts
     type: str
 

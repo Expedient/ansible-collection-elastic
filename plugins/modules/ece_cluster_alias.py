@@ -27,12 +27,39 @@ requirements:
   - python3
 
 options:
-      host: ECE Host
-      port: ECE Port
-      deployment_name or deployment_id
-      username: ECE Username
-      password: ECE Password
-      alias_name: Deployment Alias String
+
+  host:
+    description: ECE Host
+    type: str
+
+  port:
+    description: ECE Port
+    type: str
+
+  deployment_name:
+    description: 
+    - Name of Deployment
+    - Required if deployment_id is blank
+    type: str
+
+  deployment_id:
+    description: 
+    - Deployment ID
+    - Required if deployment_name is blank
+    type: str
+
+  username:
+    description: ECE Username
+    type: str
+
+  password:
+    description: ECE Password
+    type: str
+
+  alias_name:
+    description: Deployment Alias String
+    type: str
+    
 
 '''
 from ansible.module_utils.basic import AnsibleModule

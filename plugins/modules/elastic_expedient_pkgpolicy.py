@@ -45,12 +45,14 @@ options:
     type: dict
     suboptions:
       deployment_id:
-        required: False
-        description: ECE Deployment ID
+        description: 
+        - Deployment ID
+        - Required if deployment_name is blank
         type: str
       deployment_name:
-        required: False
-        description: ECE Deployment Name
+        description: 
+        - Name of Deployment
+        - Required if deployment_id is blank
         type: str
       resource_type:
         description: "Type or Resource, most likely kibana"
@@ -71,13 +73,23 @@ options:
     description: Title of Integration
     type: str
   integration_ver:
-    description: Title of Integration
+    description: Version of Integration
     type: str
-  integration_name=dict(type='str'),
-  pkg_policy_name=dict(type='str', required=True),
-  pkg_policy_desc=dict(type='str'),
-  pkg_policy_vars=dict(type='json'),
-  integration_settings=dict(type='dict'),
+  integration_name:
+    description: Integration Name
+    type: str
+  pkg_policy_name:
+    description: Package Policy Name
+    type: str
+  pkg_policy_desc:
+    description: Package Policy Description
+    type: str
+  pkg_policy_vars:
+    description: Package policy vars
+    type: json
+  integration_settings:
+    description: Integration Settings
+    type: dict
 '''
 
 from ansible.module_utils.basic import _ANSIBLE_ARGS, AnsibleModule

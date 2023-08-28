@@ -12,7 +12,74 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+DOCUMENTATION='''
 
+module: elastic_savedobject
+
+author: Ian Scott
+
+short_description: Get Elastic Saved Object List or Create Saved Object.
+
+description: 
+  - Get Elastic Saved Object List or Create Saved Object.
+
+requirements:
+  - python3
+
+options:
+  host:
+    description: ECE Host
+    type: str
+  port:
+    description: ECE Port
+    type: str
+  username:
+    description: ECE Username
+    type: str
+  password:
+    description: ECE Password
+    type: str
+  deployment_info:
+    description: Deployment Information
+    type: dict
+    suboptions:
+      deployment_id:
+        description: 
+        - Deployment ID
+        - Required if deployment_name is blank
+        type: str
+      deployment_name:
+        description: 
+        - Name of Deployment
+        - Required if deployment_id is blank
+        type: str
+      resource_type:
+        description: "Type or Resource, most likely kibana"
+        type: str
+      ref_id:
+        description: "REF ID for kibana cluster, most likely main-kibana"
+        type: str
+      version:
+        description: Deployment Kibana Version
+        type: str
+  connector_name:
+    description: The name of the connector
+    type: str
+  rule_name:
+    description: The name of the Rule
+    type: str
+  action_body:
+    description: Action Body
+    type: str
+  action_group:
+    description: Action Group
+    type: str
+  replace_or_append:
+    description: Replace or Append Action
+    type: str
+
+
+'''
 from ansible.module_utils.basic import _ANSIBLE_ARGS, AnsibleModule
 import json
 

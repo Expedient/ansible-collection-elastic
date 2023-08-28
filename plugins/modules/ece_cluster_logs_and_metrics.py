@@ -27,16 +27,51 @@ requirements:
   - python3
 
 options:
-      host: ECE Host
-      port: ECE Port
-      deployment_name or deployment_id
-      username: ECE Username
-      password: ECE Password
-      logging_dest: Destination Deployment name for Logging
-      metrics_dest: Destination Deployment name for Metrics
-      logging_ref_id: Reference ID for Logging
-      metrics_ref_id: Reference ID for Metrics
 
+  host:
+    description: ECE Host
+    type: str
+
+  port:
+    description: ECE Port
+    type: str
+
+  deployment_name:
+    description: 
+    - Name of Deployment
+    - Required if deployment_id is blank
+    type: str
+
+  deployment_id:
+    description: 
+    - Deployment ID
+    - Required if deployment_name is blank
+    type: str
+
+  username:
+    description: ECE Username
+    type: str
+
+  password:
+    description: ECE Password
+    type: str
+
+  no_cluster_object:
+    description: Sometimes it is not neccesary to return all the data of a deployment
+    type: bool
+
+  logging_dest: 
+    description: Destination Deployment name for Logging
+    type: str
+  metrics_dest:
+    description:  Destination Deployment name for Metrics
+    type: str
+  logging_ref_id: 
+    description: Reference ID for Logging
+    type: str
+  metrics_ref_id: 
+    description: Reference ID for Metrics
+    type: str
 '''
 from ansible.module_utils.basic import AnsibleModule
 
