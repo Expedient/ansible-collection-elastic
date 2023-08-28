@@ -13,7 +13,7 @@
 # limitations under the License.
 
 ---
-version: 2.3.32
+version: 2.3.33
 namespace: expedient
 name: elastic
 readme: README.md
