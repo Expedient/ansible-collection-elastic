@@ -166,7 +166,7 @@ def main():
         pkg_policy_name=dict(type='str', required=True),
         pkg_policy_desc=dict(type='str'),
         pkg_policy_vars=dict(type='json'),
-        integration_setting_updates=dict(type='json', default=True),
+        integration_setting_updates=dict(type='list', default=True),
         namespace=dict(type='str', default='default'),
         state=dict(type='str', default='present'),
         integration_settings=dict(type='dict'),
@@ -454,11 +454,6 @@ def main():
                       j=j+1
             i = i+1
       elif (integration_setting_updates != None):
-        
-        if integration_setting_updates:
-          integration_setting_updates_JSON = loads(integration_setting_updates)
-        else:
-          integration_setting_updates_JSON = None
           
         i = 0
         for policy_input in pkg_policy_object['inputs']:
@@ -469,8 +464,8 @@ def main():
               for stream in policy_input['streams']:
                 pkg_policy_object['inputs'][i]['streams'][j]['enabled'] = False
                 j = j +1
-              for setting_update_JSON in integration_setting_updates_JSON:
-                for setting_key_type, setting_params in setting_update_JSON.items():
+              for integration_setting_update in integration_setting_updates:
+                for setting_key_type, setting_params in integration_setting_update.items():
                   if policy_input['type'] == setting_key_type:
                     for setting_param, setting_value in setting_params.items():
                       if ':' in setting_param:
