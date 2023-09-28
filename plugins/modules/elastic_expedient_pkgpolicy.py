@@ -91,6 +91,7 @@ except:
   util_path = new_path = f'{os.getcwd()}/plugins/module_utils'
   sys.path.append(util_path)
   from kibana import Kibana
+  from json import loads, dumps
 
 results = {}
 
@@ -165,6 +166,7 @@ def main():
         pkg_policy_name=dict(type='str', required=True),
         pkg_policy_desc=dict(type='str'),
         pkg_policy_vars=dict(type='json'),
+        integration_setting_updates=dict(type='json', default=True),
         namespace=dict(type='str', default='default'),
         state=dict(type='str', default='present'),
         integration_settings=dict(type='dict'),
@@ -181,6 +183,7 @@ def main():
                           )
     
     state = module.params.get('state')
+    integration_setting_updates = module.params.get('integration_setting_updates')
     agent_policy_name = module.params.get('agent_policy_name')
     agent_policy_id = module.params.get('agent_policy_id')
     integration_title = module.params.get('integration_title')
@@ -266,7 +269,7 @@ def main():
           results['pkg_policy_object'] = ""
           results['changed'] = False
           
-      if not integration_settings or integration_settings is None:
+      if (not integration_settings or integration_settings is None) and integration_setting_updates is None:
         if pkg_policy_object['package']['name'] == 'synthetics':
           i = 0
           for policy_input in pkg_policy_object['inputs']:
@@ -448,9 +451,39 @@ def main():
                         pkg_policy_object['inputs'][i]['streams'][j]['vars']['internal_zones']['value'].append("Customer-Private")
                       if 'syslog_host' in stream['vars']:
                         pkg_policy_object['inputs'][i]['streams'][j]['vars']['syslog_host']['value'] = "0.0.0.0" 
-                        
                       j=j+1
             i = i+1
+      elif (integration_setting_updates != None):
+        
+        if integration_setting_updates:
+          integration_setting_updates_JSON = loads(integration_setting_updates)
+        else:
+          integration_setting_updates_JSON = None
+          
+        i = 0
+        for policy_input in pkg_policy_object['inputs']:
+          if 'type' in policy_input:
+              applied_defaults = True
+              pkg_policy_object['inputs'][i]['enabled'] = False
+              j = 0
+              for stream in policy_input['streams']:
+                pkg_policy_object['inputs'][i]['streams'][j]['enabled'] = False
+                j = j +1
+              for setting_update_JSON in integration_setting_updates_JSON:
+                for setting_key_type, setting_params in setting_update_JSON.items():
+                  if policy_input['type'] == setting_key_type:
+                    for setting_param, setting_value in setting_params.items():
+                      if ':' in setting_param:
+                        data_stream_type, stream_param = setting_param.split(':')
+                      else:
+                        data_stream_type = None
+                        pkg_policy_object['inputs'][i][setting_param] = setting_value
+                      k = 0
+                      for stream in policy_input['streams']:
+                        if stream['data_stream']['type'] == data_stream_type:
+                          pkg_policy_object['inputs'][i]['streams'][k][stream_param] = setting_value
+                        k = k +1
+          i = i+1        
 
       if pkg_policy_object == pkg_policy_object_orig and applied_defaults is False:
         results['pkg_policy_object_updated'] = "False"
