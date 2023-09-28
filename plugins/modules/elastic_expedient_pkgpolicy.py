@@ -166,7 +166,7 @@ def main():
         pkg_policy_name=dict(type='str', required=True),
         pkg_policy_desc=dict(type='str'),
         pkg_policy_vars=dict(type='json'),
-        integration_setting_updates=dict(type='list', default=True),
+        integration_setting_updates=dict(type='list'),
         namespace=dict(type='str', default='default'),
         state=dict(type='str', default='present'),
         integration_settings=dict(type='dict'),
@@ -269,7 +269,7 @@ def main():
           results['pkg_policy_object'] = ""
           results['changed'] = False
           
-      if (not integration_settings or integration_settings is None) and integration_setting_updates is None:
+      if (not integration_settings or integration_settings is None) and (not integration_setting_updates or integration_setting_updates is None):
         if pkg_policy_object['package']['name'] == 'synthetics':
           i = 0
           for policy_input in pkg_policy_object['inputs']:
@@ -453,7 +453,7 @@ def main():
                         pkg_policy_object['inputs'][i]['streams'][j]['vars']['syslog_host']['value'] = "0.0.0.0" 
                       j=j+1
             i = i+1
-      elif (integration_setting_updates != None):
+      elif (integration_setting_updates and integration_setting_updates != None):
           
         i = 0
         for policy_input in pkg_policy_object['inputs']:
