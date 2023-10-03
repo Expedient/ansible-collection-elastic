@@ -94,6 +94,7 @@ def main():
         disabledFeatures=dict(type='list'),
         initials=dict(type='str', default=None),
         color=dict(type='str', default=None),
+        imageUrl=dict(type='str', default=None),
         deployment_info=dict(type='dict', default=None),
         state=dict(type='str', default='present')
     )
@@ -113,6 +114,7 @@ def main():
     disabledFeatures = module.params.get('disabledFeatures')
     initials = module.params.get('initials')
     color = module.params.get('color')
+    imageUrl = module.params.get('imageUrl')
     state = module.params.get('state')
     
     space_object = None
@@ -123,9 +125,12 @@ def main():
       results['space_status'] = "Space Object Found"
       
       if space_object == None:
-        space_object = kibana.create_space(space_id, space_name, space_description, disabledFeatures, initials, color)
+        space_object = kibana.create_space(space_id, space_name, space_description, disabledFeatures, initials, color, imageUrl)
         results['space_status'] = "Space Object Created"
-      
+      else:
+        space_object = kibana.update_space(space_id, space_name, space_description, disabledFeatures, initials, color, imageUrl)
+        results['space_status'] = "Space Object Updated"
+        
     module.exit_json(**results)
 
 if __name__ == "__main__":

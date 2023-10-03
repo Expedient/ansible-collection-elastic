@@ -946,7 +946,8 @@ class Kibana(object):
     description = None, 
     disabledFeatures = None, 
     initials = None, 
-    color = None, 
+    color = None,
+    imageUrl = None,
     *args, 
     **kwargs
     ):
@@ -965,8 +966,43 @@ class Kibana(object):
       body['initials'] = initials
     if color != None:
       body['color'] = color
+    if imageUrl != None:
+      body['imageUrl'] = imageUrl
     body_json = dumps(body)
     result = self.send_api_request(endpoint, 'POST', data = body_json)
+    return result
+
+  def update_space(
+    self, 
+    id, 
+    name, 
+    description = None, 
+    disabledFeatures = None, 
+    initials = None, 
+    color = None,
+    imageUrl = None,
+    *args, 
+    **kwargs
+    ):
+    endpoint  = f'spaces/space/' + id
+    body = {
+      "id": id,
+      "name": name
+    }
+    if description != None:
+      body['description'] = description
+    if disabledFeatures != None:
+      body['disabledFeatures'] = disabledFeatures
+    else:
+      body['disabledFeatures'] = []
+    if initials != None:
+      body['initials'] = initials
+    if color != None:
+      body['color'] = color
+    if imageUrl != None:
+      body['imageUrl'] = imageUrl
+    body_json = dumps(body)
+    result = self.send_api_request(endpoint, 'PUT', data = body_json)
     return result
  
 # Elastic User Role
