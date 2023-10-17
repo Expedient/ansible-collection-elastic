@@ -211,8 +211,10 @@ except:
   from ece import ECE
 
 import time
+import yaml
 
 from ansible.module_utils.basic import AnsibleModule
+from urllib.error import HTTPError
 
 def main():
   elastic_settings_spec=dict(
@@ -253,6 +255,7 @@ def main():
     cluster_name=dict(type='str', required=True),
     elastic_settings=dict(type='list', required=False, elements='dict', options=elastic_settings_spec),
     elastic_user_settings=dict(type='dict', default={}),  # does not have sub-options defined as there are far too many elastic options to capture here
+    kibana_user_settings=dict(type='dict', default={}),  # does not have sub-options defined as there are far too many elastic options to capture here
     snapshot_settings=dict(type='dict', required=False, options=snapshot_settings_spec),
     traffic_rulesets=dict(type='list', required=False),
     kibana_settings=dict(type='dict', required=False, options=kibana_settings_spec),
@@ -276,6 +279,7 @@ def main():
   snapshot_settings = module.params.get('snapshot_settings')
   traffic_rulesets = module.params.get('traffic_rulesets')
   kibana_settings = module.params.get('kibana_settings')
+  kibana_user_settings = module.params.get('kibana_user_settings')
   apm_settings = module.params.get('apm_settings')
   ml_settings = module.params.get('ml_settings')
   deployment_template = module.params.get('deployment_template')
@@ -284,6 +288,7 @@ def main():
   
   ece_cluster = ECE(module)
   
+  update = False # whether or not an update is needed
 
   matching_clusters = ece_cluster.get_matching_clusters(cluster_name)
   #if len(matching_clusters) > 1:
@@ -305,25 +310,85 @@ def main():
       }
       if len( matching_clusters['resources']['apm']) > 0:
         results['cluster_data']['apm_id'] = matching_clusters['resources']['apm'][0]['id']
-      module.exit_json(**results)
+      
+      # Check for diff in user settings
+      current_elastic_user_settings_str = matching_clusters.get('resources', {}).get('elasticsearch', [{}])[0].get('info', {}).get('plan_info', {}).get('current', {}).get('plan', {}).get('cluster_topology', [{}])[0].get('elasticsearch', {}).get('user_settings_yaml')
+      if current_elastic_user_settings_str:
+        current_elastic_user_settings = yaml.safe_load(current_elastic_user_settings_str)
+        if elastic_user_settings and elastic_user_settings != current_elastic_user_settings:
+            update = True
+      else:
+        if elastic_user_settings:
+          update = True
+
+
+      current_kibana_user_settings_str = matching_clusters.get('resources', {}).get('kibana', [{}])[0].get('info', {}).get('plan_info', {}).get('current', {}).get('plan', {}).get('kibana', {}).get('user_settings_yaml')
+      if current_kibana_user_settings_str:
+        current_kibana_user_settings = yaml.safe_load(current_kibana_user_settings_str)
+        if kibana_user_settings and kibana_user_settings != current_kibana_user_settings:
+          update = True
+      else:
+        if kibana_user_settings:
+          update = True
+
+      if not update:
+        module.exit_json(**results)
 
     results['changed'] = True
-    results['msg'] = f'cluster {module.params.get("cluster_name")} will be created'
+    # Adjust message depending on if we are creating or updating the cluster
+    if not update:
+      results['msg'] = f'cluster {module.params.get("cluster_name")} will be created'
+    else:
+      results['msg'] = f'cluster {module.params.get("cluster_name")} will be updated'
+
     if not module.check_mode:
-      cluster_data = ece_cluster.create_cluster(
-          cluster_name,
-          version,
-          deployment_template, 
-          elastic_settings, 
-          kibana_settings, 
-          elastic_user_settings, 
-          apm_settings, 
-          ml_settings, 
-          snapshot_settings,
-          traffic_rulesets,
-          wait_for_completion,
-          completion_timeout
-          )
+      cluster_data = None
+      if not update: # Create a new cluster
+        cluster_data = ece_cluster.create_cluster(
+            cluster_name,
+            version,
+            deployment_template, 
+            elastic_settings, 
+            kibana_settings, 
+            elastic_user_settings,
+            apm_settings, 
+            ml_settings, 
+            snapshot_settings,
+            traffic_rulesets,
+            wait_for_completion,
+            completion_timeout
+            )
+      elif update: # Update the cluster
+        try:
+          deployment_id = matching_clusters['id']
+          cluster_data = ece_cluster.update_cluster(
+              deployment_id,
+              cluster_name,
+              version,
+              deployment_template, 
+              elastic_settings, 
+              kibana_settings, 
+              elastic_user_settings,
+              kibana_user_settings,
+              apm_settings, 
+              ml_settings, 
+              snapshot_settings,
+              traffic_rulesets,
+              wait_for_completion,
+              completion_timeout
+              )
+        except Exception as e:
+          results[
+              "msg"
+          ] = "Failed to update Elasticsearch settings. An exception occurred."
+          results["error"] = str(e)  # Log the exception
+
+          if isinstance(e, HTTPError):
+            response_content = e.fp.read().decode()
+            results["api_response"] = response_content
+
+          module.fail_json(**results)
+
       if not cluster_data:
         results['msg'] = 'cluster creation failed'
         module.fail_json(**results)
@@ -339,22 +404,26 @@ def main():
       else:
         time.sleep(30)
       deployment_object = ece_cluster.get_deployment_byid(cluster_data['id'])
-      for resource in cluster_data['resources']:
-        if resource['kind'] == "elasticsearch":
-          results['cluster_data']['credentials'] = resource['credentials']
+
+      # can only get credentials from a new deploy. Not an updated one.
+      if not update:
+        for resource in cluster_data['resources']:
+          if resource['kind'] == "elasticsearch":
+            results['cluster_data']['credentials'] = resource['credentials']
           continue
-      for kind_object_name in deployment_object['resources']:
-        for kind_object in deployment_object['resources'][kind_object_name]:
-          if 'cluster_id' in kind_object['info']:
-            results['cluster_data'][kind_object_name + '_cluster_id'] = kind_object['info']['cluster_id']
-          elif 'deployment_id' in kind_object['info']:
-            results['cluster_data'][kind_object_name + '_cluster_id'] = kind_object['info']['deployment_id']
-          if 'services_urls' in kind_object['info']['metadata']:
-            for service_url in kind_object['info']['metadata']['services_urls']:
-              results['cluster_data'][service_url['service'] + '_cluster_url'] = service_url['url']
-          elif 'service_url' in kind_object['info']['metadata']:
-            results['cluster_data'][kind_object_name + '_cluster_url'] = kind_object['info']['metadata']['service_url']
-      results['msg'] = f'cluster {module.params.get("cluster_name")} created'
+
+        for kind_object_name in deployment_object['resources']:
+          for kind_object in deployment_object['resources'][kind_object_name]:
+            if 'cluster_id' in kind_object['info']:
+              results['cluster_data'][kind_object_name + '_cluster_id'] = kind_object['info']['cluster_id']
+            elif 'deployment_id' in kind_object['info']:
+              results['cluster_data'][kind_object_name + '_cluster_id'] = kind_object['info']['deployment_id']
+            if 'services_urls' in kind_object['info']['metadata']:
+              for service_url in kind_object['info']['metadata']['services_urls']:
+                results['cluster_data'][service_url['service'] + '_cluster_url'] = service_url['url']
+            elif 'service_url' in kind_object['info']['metadata']:
+              results['cluster_data'][kind_object_name + '_cluster_url'] = kind_object['info']['metadata']['service_url']
+        results['msg'] = f'cluster {module.params.get("cluster_name")} created'
     module.exit_json(**results)
 
   if state == 'absent':
