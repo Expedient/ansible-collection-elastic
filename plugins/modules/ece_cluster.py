@@ -1,12 +1,12 @@
 #!/usr/bin/python
 # Copyright 2021 Expedient
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,12 +17,12 @@
 
 
 ANSIBLE_METADATA = {
-  'metadata_version': '1.1',
-  'status': ['preview'],
-  'supported_by': 'community'
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
 }
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: ece_cluster
 
@@ -198,17 +198,18 @@ options:
 
 extends_documentation_fragment:
   - expedient.elastic.ece_auth_options
-'''
+"""
 
 ## need to support both loading as part of a collection and running in test/debug mode
 try:
-  from ansible_collections.expedient.elastic.plugins.module_utils.ece import ECE
+    from ansible_collections.expedient.elastic.plugins.module_utils.ece import ECE
 except:
-  import sys
-  import os
-  util_path = f'{os.getcwd()}/plugins/module_utils'
-  sys.path.append(util_path)
-  from ece import ECE
+    import sys
+    import os
+
+    util_path = f"{os.getcwd()}/plugins/module_utils"
+    sys.path.append(util_path)
+    from ece import ECE
 
 import time
 import yaml
@@ -216,227 +217,297 @@ import yaml
 from ansible.module_utils.basic import AnsibleModule
 from urllib.error import HTTPError
 
+
 def main():
-  elastic_settings_spec=dict(
-    memory_mb=dict(type='int', required=True),
-    instance_config=dict(type='str', default='data.logging'),
-    zone_count=dict(type='int', default=2),
-    roles=dict(type='list', elements='str', options=['master', 'data', 'ingest']),
-  )
-  snapshot_settings_spec=dict(
-    repository_name=dict(type='str', required=True),
-    snapshots_to_retain=dict(type='int', default=100),
-    snapshot_interval=dict(type='str', default='60m'),
-    enabled=dict(type='bool', default=True),
-  )
-  kibana_settings_spec=dict(
-    memory_mb=dict(type='int', required=True),
-    instance_config=dict(type='str', default='kibana'),
-    zone_count=dict(type='int', default=1),
-  )
-  apm_settings_spec=dict(
-    memory_mb=dict(type='int', required=True),
-    instance_config=dict(type='str', default='apm'),
-    zone_count=dict(type='int', default=1),
-  )
-  ml_settings_spec=dict(
-    memory_mb=dict(type='int', required=True),
-    instance_config=dict(type='str', default='ml'),
-    zone_count=dict(type='int', default=1),
-  )
+    elastic_settings_spec = dict(
+        memory_mb=dict(type="int", required=True),
+        instance_config=dict(type="str", default="data.logging"),
+        zone_count=dict(type="int", default=2),
+        roles=dict(type="list", elements="str", options=["master", "data", "ingest"]),
+    )
+    snapshot_settings_spec = dict(
+        repository_name=dict(type="str", required=True),
+        snapshots_to_retain=dict(type="int", default=100),
+        snapshot_interval=dict(type="str", default="60m"),
+        enabled=dict(type="bool", default=True),
+    )
+    kibana_settings_spec = dict(
+        memory_mb=dict(type="int", required=True),
+        instance_config=dict(type="str", default="kibana"),
+        zone_count=dict(type="int", default=1),
+    )
+    apm_settings_spec = dict(
+        memory_mb=dict(type="int", required=True),
+        instance_config=dict(type="str", default="apm"),
+        zone_count=dict(type="int", default=1),
+    )
+    ml_settings_spec = dict(
+        memory_mb=dict(type="int", required=True),
+        instance_config=dict(type="str", default="ml"),
+        zone_count=dict(type="int", default=1),
+    )
 
-  module_args = dict(
-    host=dict(type='str', required=True),
-    port=dict(type='int', default=12443),
-    username=dict(type='str', required=True),
-    password=dict(type='str', required=True, no_log=True),
-    verify_ssl_cert=dict(type='bool', default=True),
-    state=dict(type='str', default='present'),
-    cluster_name=dict(type='str', required=True),
-    elastic_settings=dict(type='list', required=False, elements='dict', options=elastic_settings_spec),
-    elastic_user_settings=dict(type='dict', default={}),  # does not have sub-options defined as there are far too many elastic options to capture here
-    kibana_user_settings=dict(type='dict', default={}),  # does not have sub-options defined as there are far too many elastic options to capture here
-    snapshot_settings=dict(type='dict', required=False, options=snapshot_settings_spec),
-    traffic_rulesets=dict(type='list', required=False),
-    kibana_settings=dict(type='dict', required=False, options=kibana_settings_spec),
-    apm_settings=dict(type='dict', required=False, options=apm_settings_spec),
-    ml_settings=dict(type='dict', required=False, options=ml_settings_spec),
-    version=dict(type='str', default='8.3.3'),
-    deployment_template=dict(type='str', required=True),
-    wait_for_completion=dict(type='bool', default=False),
-    completion_timeout=dict(type='int', default=600),
-  )
+    module_args = dict(
+        host=dict(type="str", required=True),
+        port=dict(type="int", default=12443),
+        username=dict(type="str", required=True),
+        password=dict(type="str", required=True, no_log=True),
+        verify_ssl_cert=dict(type="bool", default=True),
+        state=dict(type="str", default="present"),
+        cluster_name=dict(type="str", required=True),
+        elastic_settings=dict(
+            type="list", required=False, elements="dict", options=elastic_settings_spec
+        ),
+        elastic_user_settings=dict(
+            type="dict", default={}
+        ),  # does not have sub-options defined as there are far too many elastic options to capture here
+        kibana_user_settings=dict(
+            type="dict", default={}
+        ),  # does not have sub-options defined as there are far too many elastic options to capture here
+        snapshot_settings=dict(
+            type="dict", required=False, options=snapshot_settings_spec
+        ),
+        traffic_rulesets=dict(type="list", required=False),
+        kibana_settings=dict(type="dict", required=False, options=kibana_settings_spec),
+        apm_settings=dict(type="dict", required=False, options=apm_settings_spec),
+        ml_settings=dict(type="dict", required=False, options=ml_settings_spec),
+        version=dict(type="str", default="8.3.3"),
+        deployment_template=dict(type="str", required=True),
+        wait_for_completion=dict(type="bool", default=False),
+        completion_timeout=dict(type="int", default=600),
+    )
 
-  results = {'changed': False}
+    results = {"changed": False}
 
-  module = AnsibleModule(argument_spec=module_args, supports_check_mode=True)
-  
-  state = module.params.get('state')
-  cluster_name = module.params.get('cluster_name')
-  version = module.params.get('version')
-  elastic_settings = module.params.get('elastic_settings')
-  elastic_user_settings = module.params.get('elastic_user_settings')
-  snapshot_settings = module.params.get('snapshot_settings')
-  traffic_rulesets = module.params.get('traffic_rulesets')
-  kibana_settings = module.params.get('kibana_settings')
-  kibana_user_settings = module.params.get('kibana_user_settings')
-  apm_settings = module.params.get('apm_settings')
-  ml_settings = module.params.get('ml_settings')
-  deployment_template = module.params.get('deployment_template')
-  wait_for_completion = module.params.get('wait_for_completion')
-  completion_timeout = module.params.get('completion_timeout')
-  
-  ece_cluster = ECE(module)
-  
-  update = False # whether or not an update is needed
+    module = AnsibleModule(argument_spec=module_args, supports_check_mode=True)
 
-  matching_clusters = ece_cluster.get_matching_clusters(cluster_name)
-  #if len(matching_clusters) > 1:
-  if matching_clusters:
-    #results['msg'] = f'found multiple clusters matching name {module.params.get("cluster_name")}'
-    results['msg'] = f'found cluster matching name {module.params.get("cluster_name")}'
-    #module.fail_json(**results)
+    state = module.params.get("state")
+    cluster_name = module.params.get("cluster_name")
+    version = module.params.get("version")
+    elastic_settings = module.params.get("elastic_settings")
+    elastic_user_settings = module.params.get("elastic_user_settings")
+    snapshot_settings = module.params.get("snapshot_settings")
+    traffic_rulesets = module.params.get("traffic_rulesets")
+    kibana_settings = module.params.get("kibana_settings")
+    kibana_user_settings = module.params.get("kibana_user_settings")
+    apm_settings = module.params.get("apm_settings")
+    ml_settings = module.params.get("ml_settings")
+    deployment_template = module.params.get("deployment_template")
+    wait_for_completion = module.params.get("wait_for_completion")
+    completion_timeout = module.params.get("completion_timeout")
 
-  if state == 'present':
-    #if len(matching_clusters) > 0:
+    ece_cluster = ECE(module)
+
+    update = False  # whether or not an update is needed
+
+    matching_clusters = ece_cluster.get_matching_clusters(cluster_name)
+    # if len(matching_clusters) > 1:
     if matching_clusters:
-      results['msg'] = 'cluster exists'
-      ## This code handles edge cases poorly, in the interest of being able to match the data format of the cluster creation result
-      elastic_creds = ece_cluster.set_elastic_user_password(matching_clusters['id'])
-      results['cluster_data'] = {
-        'elasticsearch_cluster_id': matching_clusters['resources']['elasticsearch'][0]['id'],
-        'kibana_cluster_id': matching_clusters['resources']['kibana'][0]['id'],
-        'credentials': elastic_creds
-      }
-      if len( matching_clusters['resources']['apm']) > 0:
-        results['cluster_data']['apm_id'] = matching_clusters['resources']['apm'][0]['id']
-      
-      # Check for diff in user settings
-      current_elastic_user_settings_str = matching_clusters.get('resources', {}).get('elasticsearch', [{}])[0].get('info', {}).get('plan_info', {}).get('current', {}).get('plan', {}).get('cluster_topology', [{}])[0].get('elasticsearch', {}).get('user_settings_yaml')
-      if current_elastic_user_settings_str:
-        current_elastic_user_settings = yaml.safe_load(current_elastic_user_settings_str)
-        if elastic_user_settings and elastic_user_settings != current_elastic_user_settings:
-            update = True
-      else:
-        if elastic_user_settings:
-          update = True
+        # results['msg'] = f'found multiple clusters matching name {module.params.get("cluster_name")}'
+        results[
+            "msg"
+        ] = f'found cluster matching name {module.params.get("cluster_name")}'
+        # module.fail_json(**results)
 
+    if state == "present":
+        # if len(matching_clusters) > 0:
+        if matching_clusters:
+            results["msg"] = "cluster exists"
+            ## This code handles edge cases poorly, in the interest of being able to match the data format of the cluster creation result
+            elastic_creds = ece_cluster.set_elastic_user_password(
+                matching_clusters["id"]
+            )
+            results["cluster_data"] = {
+                "elasticsearch_cluster_id": matching_clusters["resources"][
+                    "elasticsearch"
+                ][0]["id"],
+                "kibana_cluster_id": matching_clusters["resources"]["kibana"][0]["id"],
+                "credentials": elastic_creds,
+            }
+            if len(matching_clusters["resources"]["apm"]) > 0:
+                results["cluster_data"]["apm_id"] = matching_clusters["resources"][
+                    "apm"
+                ][0]["id"]
 
-      current_kibana_user_settings_str = matching_clusters.get('resources', {}).get('kibana', [{}])[0].get('info', {}).get('plan_info', {}).get('current', {}).get('plan', {}).get('kibana', {}).get('user_settings_yaml')
-      if current_kibana_user_settings_str:
-        current_kibana_user_settings = yaml.safe_load(current_kibana_user_settings_str)
-        if kibana_user_settings and kibana_user_settings != current_kibana_user_settings:
-          update = True
-      else:
-        if kibana_user_settings:
-          update = True
+            # Check for diff in user settings
+            current_elastic_user_settings_str = (
+                matching_clusters.get("resources", {})
+                .get("elasticsearch", [{}])[0]
+                .get("info", {})
+                .get("plan_info", {})
+                .get("current", {})
+                .get("plan", {})
+                .get("cluster_topology", [{}])[0]
+                .get("elasticsearch", {})
+                .get("user_settings_yaml")
+            )
+            if current_elastic_user_settings_str:
+                current_elastic_user_settings = yaml.safe_load(
+                    current_elastic_user_settings_str
+                )
+                if (
+                    elastic_user_settings
+                    and elastic_user_settings != current_elastic_user_settings
+                ):
+                    update = True
+            else:
+                if elastic_user_settings:
+                    update = True
 
-      if not update:
+            current_kibana_user_settings_str = (
+                matching_clusters.get("resources", {})
+                .get("kibana", [{}])[0]
+                .get("info", {})
+                .get("plan_info", {})
+                .get("current", {})
+                .get("plan", {})
+                .get("kibana", {})
+                .get("user_settings_yaml")
+            )
+            if current_kibana_user_settings_str:
+                current_kibana_user_settings = yaml.safe_load(
+                    current_kibana_user_settings_str
+                )
+                if (
+                    kibana_user_settings
+                    and kibana_user_settings != current_kibana_user_settings
+                ):
+                    update = True
+            else:
+                if kibana_user_settings:
+                    update = True
+
+            if not update:
+                module.exit_json(**results)
+
+        results["changed"] = True
+        # Adjust message depending on if we are creating or updating the cluster
+        if not update:
+            results[
+                "msg"
+            ] = f'cluster {module.params.get("cluster_name")} will be created'
+        else:
+            results[
+                "msg"
+            ] = f'cluster {module.params.get("cluster_name")} will be updated'
+
+        if not module.check_mode:
+            cluster_data = None
+            if not update:  # Create a new cluster
+                cluster_data = ece_cluster.create_cluster(
+                    cluster_name,
+                    version,
+                    deployment_template,
+                    elastic_settings,
+                    kibana_settings,
+                    elastic_user_settings,
+                    apm_settings,
+                    ml_settings,
+                    snapshot_settings,
+                    traffic_rulesets,
+                    wait_for_completion,
+                    completion_timeout,
+                )
+            elif update:  # Update the cluster
+                try:
+                    deployment_id = matching_clusters["id"]
+                    cluster_data = ece_cluster.update_cluster(
+                        deployment_id,
+                        cluster_name,
+                        version,
+                        deployment_template,
+                        elastic_settings,
+                        kibana_settings,
+                        elastic_user_settings,
+                        kibana_user_settings,
+                        apm_settings,
+                        ml_settings,
+                        snapshot_settings,
+                        traffic_rulesets,
+                        wait_for_completion,
+                        completion_timeout,
+                    )
+                except Exception as e:
+                    results[
+                        "msg"
+                    ] = "Failed to update Elasticsearch settings. An exception occurred."
+                    results["error"] = str(e)  # Log the exception
+
+                    if isinstance(e, HTTPError):
+                        response_content = e.fp.read().decode()
+                        results["api_response"] = response_content
+
+                    module.fail_json(**results)
+
+            if not cluster_data:
+                results["msg"] = "cluster creation failed"
+                module.fail_json(**results)
+            results["cluster_data"] = cluster_data
+
+            ece_cluster.wait_for_cluster_healthy(cluster_data["id"])
+            ece_cluster.wait_for_cluster_state(
+                cluster_data["id"], "elasticsearch"
+            )  # Wait for ElasticSearch
+            ece_cluster.wait_for_cluster_state(
+                cluster_data["id"], "kibana"
+            )  # Wait for Kibana
+            deployment_healthy = ece_cluster.wait_for_cluster_state(
+                cluster_data["id"], "apm"
+            )  # If APM is healthy then the deployment is healthy since apm is last to come up
+
+            if deployment_healthy == False:
+                results["cluster_data"][
+                    "msg"
+                ] = "Cluster information may be incomplete because the cluster is not healthy"
+            else:
+                time.sleep(30)
+            deployment_object = ece_cluster.get_deployment_byid(cluster_data["id"])
+
+            # can only get credentials from a new deploy. Not an updated one.
+            if not update:
+                for resource in cluster_data["resources"]:
+                    if resource["kind"] == "elasticsearch":
+                        results["cluster_data"]["credentials"] = resource["credentials"]
+                    continue
+
+                for kind_object_name in deployment_object["resources"]:
+                    for kind_object in deployment_object["resources"][kind_object_name]:
+                        if "cluster_id" in kind_object["info"]:
+                            results["cluster_data"][
+                                kind_object_name + "_cluster_id"
+                            ] = kind_object["info"]["cluster_id"]
+                        elif "deployment_id" in kind_object["info"]:
+                            results["cluster_data"][
+                                kind_object_name + "_cluster_id"
+                            ] = kind_object["info"]["deployment_id"]
+                        if "services_urls" in kind_object["info"]["metadata"]:
+                            for service_url in kind_object["info"]["metadata"][
+                                "services_urls"
+                            ]:
+                                results["cluster_data"][
+                                    service_url["service"] + "_cluster_url"
+                                ] = service_url["url"]
+                        elif "service_url" in kind_object["info"]["metadata"]:
+                            results["cluster_data"][
+                                kind_object_name + "_cluster_url"
+                            ] = kind_object["info"]["metadata"]["service_url"]
+                results["msg"] = f'cluster {module.params.get("cluster_name")} created'
         module.exit_json(**results)
 
-    results['changed'] = True
-    # Adjust message depending on if we are creating or updating the cluster
-    if not update:
-      results['msg'] = f'cluster {module.params.get("cluster_name")} will be created'
-    else:
-      results['msg'] = f'cluster {module.params.get("cluster_name")} will be updated'
+    if state == "absent":
+        if len(matching_clusters) == 0:
+            results[
+                "msg"
+            ] = f'cluster {module.params.get("cluster_name")} does not exist'
+            module.exit_json(**results)
 
-    if not module.check_mode:
-      cluster_data = None
-      if not update: # Create a new cluster
-        cluster_data = ece_cluster.create_cluster(
-            cluster_name,
-            version,
-            deployment_template, 
-            elastic_settings, 
-            kibana_settings, 
-            elastic_user_settings,
-            apm_settings, 
-            ml_settings, 
-            snapshot_settings,
-            traffic_rulesets,
-            wait_for_completion,
-            completion_timeout
-            )
-      elif update: # Update the cluster
-        try:
-          deployment_id = matching_clusters['id']
-          cluster_data = ece_cluster.update_cluster(
-              deployment_id,
-              cluster_name,
-              version,
-              deployment_template, 
-              elastic_settings, 
-              kibana_settings, 
-              elastic_user_settings,
-              kibana_user_settings,
-              apm_settings, 
-              ml_settings, 
-              snapshot_settings,
-              traffic_rulesets,
-              wait_for_completion,
-              completion_timeout
-              )
-        except Exception as e:
-          results[
-              "msg"
-          ] = "Failed to update Elasticsearch settings. An exception occurred."
-          results["error"] = str(e)  # Log the exception
+        results["msg"] = f'cluster {module.params.get("cluster_name")} will be deleted'
+        if not module.check_mode:
+            results["changed"] = True
+            ece_cluster.delete_cluster(matching_clusters["id"])
+            results["msg"] = f'cluster {module.params.get("cluster_name")} deleted'
+            module.exit_json(**results)
 
-          if isinstance(e, HTTPError):
-            response_content = e.fp.read().decode()
-            results["api_response"] = response_content
 
-          module.fail_json(**results)
-
-      if not cluster_data:
-        results['msg'] = 'cluster creation failed'
-        module.fail_json(**results)
-      results['cluster_data'] = cluster_data
-      
-      ece_cluster.wait_for_cluster_healthy(cluster_data['id'])
-      ece_cluster.wait_for_cluster_state(cluster_data['id'], "elasticsearch" ) # Wait for ElasticSearch
-      ece_cluster.wait_for_cluster_state(cluster_data['id'], "kibana" ) # Wait for Kibana
-      deployment_healthy = ece_cluster.wait_for_cluster_state(cluster_data['id'], "apm") # If APM is healthy then the deployment is healthy since apm is last to come up
-      
-      if deployment_healthy == False:
-        results['cluster_data']['msg'] = "Cluster information may be incomplete because the cluster is not healthy"
-      else:
-        time.sleep(30)
-      deployment_object = ece_cluster.get_deployment_byid(cluster_data['id'])
-
-      # can only get credentials from a new deploy. Not an updated one.
-      if not update:
-        for resource in cluster_data['resources']:
-          if resource['kind'] == "elasticsearch":
-            results['cluster_data']['credentials'] = resource['credentials']
-          continue
-
-        for kind_object_name in deployment_object['resources']:
-          for kind_object in deployment_object['resources'][kind_object_name]:
-            if 'cluster_id' in kind_object['info']:
-              results['cluster_data'][kind_object_name + '_cluster_id'] = kind_object['info']['cluster_id']
-            elif 'deployment_id' in kind_object['info']:
-              results['cluster_data'][kind_object_name + '_cluster_id'] = kind_object['info']['deployment_id']
-            if 'services_urls' in kind_object['info']['metadata']:
-              for service_url in kind_object['info']['metadata']['services_urls']:
-                results['cluster_data'][service_url['service'] + '_cluster_url'] = service_url['url']
-            elif 'service_url' in kind_object['info']['metadata']:
-              results['cluster_data'][kind_object_name + '_cluster_url'] = kind_object['info']['metadata']['service_url']
-        results['msg'] = f'cluster {module.params.get("cluster_name")} created'
-    module.exit_json(**results)
-
-  if state == 'absent':
-    if len(matching_clusters) == 0:
-      results['msg'] = f'cluster {module.params.get("cluster_name")} does not exist'
-      module.exit_json(**results)
-
-    results['msg'] = f'cluster {module.params.get("cluster_name")} will be deleted'
-    if not module.check_mode:
-      results['changed'] = True
-      ece_cluster.delete_cluster(matching_clusters['id'])
-      results['msg'] = f'cluster {module.params.get("cluster_name")} deleted'
-      module.exit_json(**results)
-
-if __name__ == '__main__':
-  main()
+if __name__ == "__main__":
+    main()
