@@ -226,7 +226,8 @@ class ECE(object):
                      deployment_template, 
                      elastic_settings, 
                      kibana_settings, 
-                     elastic_user_settings, 
+                     elastic_user_settings,
+                     kibana_user_settings,
                      apm_settings, 
                      ml_settings = None, 
                      snapshot_settings = None, 
@@ -293,14 +294,13 @@ class ECE(object):
               'zone_count': kibana_settings['zone_count']
             }],
             'kibana': {
-              'user_settings_yaml': '# Note that the syntax for user settings can change between major versions.\n# You might need to update these user settings before performing a major version upgrade.\n#\n# Use OpenStreetMap for tiles:\n# tilemap:\n#   options.maxZoom: 18\n#   url: http://a.tile.openstreetmap.org/{z}/{x}/{y}.png\n#\n# To learn more, see the documentation.',
+              'user_settings_yaml': dump(kibana_user_settings, Dumper=Dumper),
               'version': version
             }
           }
         }
         data['resources']['kibana'] = []
         data['resources']['kibana'].append(kibana_data)
-
 
       if apm_settings:
         apm_data = {
@@ -368,7 +368,16 @@ class ECE(object):
         }
 
       endpoint = 'deployments'
-      cluster_creation_result = self.send_api_request(endpoint, 'POST', data=data)
+
+      existing_deployment = self.get_matching_clusters(cluster_name)
+      if existing_deployment:
+        method = 'PUT'
+        endpoint += f'/{existing_deployment["id"]}'
+        data['prune_orphans'] = False
+      else:
+        method = 'POST'
+
+      cluster_creation_result = self.send_api_request(endpoint, method, data=data)
       if wait_for_completion:
         
         elastic_deployment_result = self. wait_for_cluster_state(cluster_creation_result['id'],'elasticsearch','main-elasticsearch','started', completion_timeout)
@@ -378,171 +387,7 @@ class ECE(object):
         if not elastic_deployment_result and not kibana_deployment_result and not apm_deployment_result:
           return False
       return cluster_creation_result
-  
-  
-  def update_cluster(self,
-                     deployment_id,
-                     cluster_name,
-                     version, 
-                     deployment_template, 
-                     elastic_settings, 
-                     kibana_settings, 
-                     elastic_user_settings,
-                     kibana_user_settings,
-                     apm_settings, 
-                     ml_settings = None, 
-                     snapshot_settings = None, 
-                     traffic_rulesets = None,
-                     wait_for_completion = False,
-                     completion_timeout = 600
-                     ):
-      x = 0
-      for role in elastic_settings[0]['roles']:
-        if role == 'data':
-          elastic_settings[0]['roles'][x] = 'data_hot'
-        x = x + 1
-      elastic_settings[0]['roles'].append('data_content')
-      deployment_template_object = self.get_deployment_template(deployment_template)
-      data = {
-        'name': cluster_name,
-        'settings': {},
-        'prune_orphans': False,
-        'resources': {
-          'elasticsearch': [
-            {
-              'ref_id': 'main-elasticsearch',
-              'region': 'ece-region',
-              'plan': {
-                'deployment_template': {
-                  'id': deployment_template_object['id']
-                },
-                'elasticsearch': {
-                    'version': version
-                },
-                'cluster_topology': [
-                  {
-                    'id': 'hot_content',
-                    'node_roles': elastic_settings[0]['roles'],
-                    'zone_count': elastic_settings[0]['zone_count'],
-                    'elasticsearch': {
-                      'enabled_built_in_plugins': [],
-                      'node_attributes': {},
-                      'user_settings_yaml': dump(elastic_user_settings, Dumper=Dumper),
-                    },
-                    'size': {
-                      'value': elastic_settings[0]['memory_mb'],
-                      'resource': 'memory'
-                    },
-                    'instance_configuration_id': self.get_instance_config(elastic_settings[0]['instance_config'])['id']
-                  },
-                ]
-              }
-            }
-          ]
-        }
-      }
-      if kibana_settings:
-        kibana_data = {
-          'ref_id': 'main-kibana',
-          'elasticsearch_cluster_ref_id': 'main-elasticsearch',
-          'region': 'ece-region',
-          'plan': {
-            'cluster_topology': [{
-              'instance_configuration_id': self.get_instance_config(kibana_settings['instance_config'])['id'],
-              'size': {
-                'value': kibana_settings['memory_mb'],
-                'resource': 'memory'
-              },
-              'zone_count': kibana_settings['zone_count']
-            }],
-            # Note that the syntax for user settings can change between major versions.\n# You might need to update these user settings before performing a major version upgrade.\n#\n# Use OpenStreetMap for tiles:\n# tilemap:\n#   options.maxZoom: 18\n#   url: http://a.tile.openstreetmap.org/{z}/{x}/{y}.png\n#\n# To learn more, see the documentation.',
-            'kibana': {
-              'user_settings_yaml': dump(kibana_user_settings, Dumper=Dumper),
-              'version': version
-            }
-          }
-        }
-        data['resources']['kibana'] = []
-        data['resources']['kibana'].append(kibana_data)
 
-
-      if apm_settings:
-        apm_data = {
-          'ref_id': 'main-apm',
-          'region': 'ece-region',
-          'elasticsearch_cluster_ref_id': 'main-elasticsearch',
-          'plan': {
-            'cluster_topology': [{
-                'instance_configuration_id': self.get_instance_config(apm_settings['instance_config'])['id'],
-                'size': {
-                  'value': apm_settings['memory_mb'],
-                  'resource': 'memory'
-                },
-                'zone_count': apm_settings['zone_count']
-              }],
-              'apm': {'version': version}
-          }
-        }
-        data['resources']['apm'] = []
-        data['resources']['apm'].append(apm_data)
-
-      ## This is technically just another ES deployment rather than it's own config, but decided to follow the UI rather than API conventions
-      if ml_settings:
-        ml_data = {
-          'id': "ml",
-          'instance_configuration_id': "ml",
-          'size': {
-            'value': ml_settings['memory_mb'],
-            'resource': 'memory'
-          },
-          'node_roles': ['ml', 'remote_cluster_client'],
-          'zone_count': ml_settings['zone_count']
-        }
-        x = 0
-        for resource in data['resources']['elasticsearch']:
-          if resource['ref_id'] == "main-elasticsearch":
-            data['resources']['elasticsearch'][x]['plan']['cluster_topology'].append(ml_data)
-          x = x + 1
-
-      if snapshot_settings:
-        #data['settings']['snapshot'] = {
-        snapshot_settings = {
-          'repository': {
-            'reference': {
-              'repository_name': snapshot_settings['repository_name']
-            }
-          },
-          'enabled': snapshot_settings['enabled'],
-          'retention': {
-            'snapshots': snapshot_settings['snapshots_to_retain'],
-          },
-          'interval': snapshot_settings['snapshot_interval']
-        }
-        x = 0
-        for resource in data['resources']['elasticsearch']:
-          if resource['ref_id'] == "main-elasticsearch":
-            if not 'settings' in data['resources']['elasticsearch'][x]:
-              data['resources']['elasticsearch'][x]['settings'] = {}
-            data['resources']['elasticsearch'][x]['settings']['snapshot'] = snapshot_settings
-          x = x + 1
-
-      if traffic_rulesets:
-        ip_filtering_data = {
-          'rulesets': [self.get_traffic_ruleset_by_name(x)['id'] for x in self.traffic_rulesets]
-        }
-
-      endpoint = f'deployments/{deployment_id}'
-      cluster_creation_result = self.send_api_request(endpoint, 'PUT', data=data)
-      if wait_for_completion:
-        
-        elastic_deployment_result = self. wait_for_cluster_state(cluster_creation_result['id'],'elasticsearch','main-elasticsearch','started', completion_timeout)
-        kibana_deployment_result = self.wait_for_cluster_state(cluster_creation_result['id'],'kibana','main-kibana','started', completion_timeout)
-        apm_deployment_result = self.wait_for_cluster_state(cluster_creation_result['id'],'kibana','main-apm','started', completion_timeout)
-        
-        if not elastic_deployment_result and not kibana_deployment_result and not apm_deployment_result:
-          return False
-      return cluster_creation_result
-  
   def get_matching_clusters(self, cluster_name):
     clusters = self.get_clusters_by_name(cluster_name)
     return clusters
