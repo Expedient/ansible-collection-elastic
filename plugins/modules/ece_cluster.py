@@ -288,7 +288,6 @@ def main():
   
   ece_cluster = ECE(module)
   
-  update = False # whether or not an update is needed
 
   matching_clusters = ece_cluster.get_matching_clusters(cluster_name)
   #if len(matching_clusters) > 1:
@@ -310,84 +309,31 @@ def main():
       }
       if len( matching_clusters['resources']['apm']) > 0:
         results['cluster_data']['apm_id'] = matching_clusters['resources']['apm'][0]['id']
-      
-      # Check for diff in user settings
-      current_elastic_user_settings_str = matching_clusters.get('resources', {}).get('elasticsearch', [{}])[0].get('info', {}).get('plan_info', {}).get('current', {}).get('plan', {}).get('cluster_topology', [{}])[0].get('elasticsearch', {}).get('user_settings_yaml')
-      if current_elastic_user_settings_str:
-        current_elastic_user_settings = yaml.safe_load(current_elastic_user_settings_str)
-        if elastic_user_settings and elastic_user_settings != current_elastic_user_settings:
-            update = True
-      else:
-        if elastic_user_settings:
-          update = True
-
-
-      current_kibana_user_settings_str = matching_clusters.get('resources', {}).get('kibana', [{}])[0].get('info', {}).get('plan_info', {}).get('current', {}).get('plan', {}).get('kibana', {}).get('user_settings_yaml')
-      if current_kibana_user_settings_str:
-        current_kibana_user_settings = yaml.safe_load(current_kibana_user_settings_str)
-        if kibana_user_settings and kibana_user_settings != current_kibana_user_settings:
-          update = True
-      else:
-        if kibana_user_settings:
-          update = True
-
-      if not update:
-        module.exit_json(**results)
 
     results['changed'] = True
     # Adjust message depending on if we are creating or updating the cluster
-    if not update:
+    if not matching_clusters:
       results['msg'] = f'cluster {module.params.get("cluster_name")} will be created'
     else:
       results['msg'] = f'cluster {module.params.get("cluster_name")} will be updated'
 
     if not module.check_mode:
       cluster_data = None
-      if not update: # Create a new cluster
-        cluster_data = ece_cluster.create_cluster(
-            cluster_name,
-            version,
-            deployment_template, 
-            elastic_settings, 
-            kibana_settings, 
-            elastic_user_settings,
-            apm_settings, 
-            ml_settings, 
-            snapshot_settings,
-            traffic_rulesets,
-            wait_for_completion,
-            completion_timeout
-            )
-      elif update: # Update the cluster
-        try:
-          deployment_id = matching_clusters['id']
-          cluster_data = ece_cluster.update_cluster(
-              deployment_id,
-              cluster_name,
-              version,
-              deployment_template, 
-              elastic_settings, 
-              kibana_settings, 
-              elastic_user_settings,
-              kibana_user_settings,
-              apm_settings, 
-              ml_settings, 
-              snapshot_settings,
-              traffic_rulesets,
-              wait_for_completion,
-              completion_timeout
-              )
-        except Exception as e:
-          results[
-              "msg"
-          ] = "Failed to update Elasticsearch settings. An exception occurred."
-          results["error"] = str(e)  # Log the exception
-
-          if isinstance(e, HTTPError):
-            response_content = e.fp.read().decode()
-            results["api_response"] = response_content
-
-          module.fail_json(**results)
+      cluster_data = ece_cluster.create_cluster(
+          cluster_name,
+          version,
+          deployment_template, 
+          elastic_settings, 
+          kibana_settings, 
+          elastic_user_settings,
+          kibana_user_settings,
+          apm_settings, 
+          ml_settings, 
+          snapshot_settings,
+          traffic_rulesets,
+          wait_for_completion,
+          completion_timeout
+          )
 
       if not cluster_data:
         results['msg'] = 'cluster creation failed'
@@ -405,8 +351,8 @@ def main():
         time.sleep(30)
       deployment_object = ece_cluster.get_deployment_byid(cluster_data['id'])
 
-      # can only get credentials from a new deploy. Not an updated one.
-      if not update:
+      # Checking to see if we matched matching clusters earlier. If we did, we are updating the cluster but we have already retrieved the relevant information
+      if not matching_clusters:
         for resource in cluster_data['resources']:
           if resource['kind'] == "elasticsearch":
             results['cluster_data']['credentials'] = resource['credentials']
@@ -424,6 +370,10 @@ def main():
             elif 'service_url' in kind_object['info']['metadata']:
               results['cluster_data'][kind_object_name + '_cluster_url'] = kind_object['info']['metadata']['service_url']
         results['msg'] = f'cluster {module.params.get("cluster_name")} created'
+      
+      else:
+        results['msg'] = f'cluster {module.params.get("cluster_name")} updated'
+  
     module.exit_json(**results)
 
   if state == 'absent':
