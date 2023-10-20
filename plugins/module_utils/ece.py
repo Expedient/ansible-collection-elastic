@@ -226,7 +226,8 @@ class ECE(object):
                      deployment_template, 
                      elastic_settings, 
                      kibana_settings, 
-                     elastic_user_settings, 
+                     elastic_user_settings,
+                     kibana_user_settings,
                      apm_settings, 
                      ml_settings = None, 
                      snapshot_settings = None, 
@@ -293,14 +294,13 @@ class ECE(object):
               'zone_count': kibana_settings['zone_count']
             }],
             'kibana': {
-              'user_settings_yaml': '# Note that the syntax for user settings can change between major versions.\n# You might need to update these user settings before performing a major version upgrade.\n#\n# Use OpenStreetMap for tiles:\n# tilemap:\n#   options.maxZoom: 18\n#   url: http://a.tile.openstreetmap.org/{z}/{x}/{y}.png\n#\n# To learn more, see the documentation.',
+              'user_settings_yaml': dump(kibana_user_settings, Dumper=Dumper),
               'version': version
             }
           }
         }
         data['resources']['kibana'] = []
         data['resources']['kibana'].append(kibana_data)
-
 
       if apm_settings:
         apm_data = {
@@ -368,7 +368,16 @@ class ECE(object):
         }
 
       endpoint = 'deployments'
-      cluster_creation_result = self.send_api_request(endpoint, 'POST', data=data)
+
+      existing_deployment = self.get_matching_clusters(cluster_name)
+      if existing_deployment:
+        method = 'PUT'
+        endpoint += f'/{existing_deployment["id"]}'
+        data['prune_orphans'] = False
+      else:
+        method = 'POST'
+
+      cluster_creation_result = self.send_api_request(endpoint, method, data=data)
       if wait_for_completion:
         
         elastic_deployment_result = self. wait_for_cluster_state(cluster_creation_result['id'],'elasticsearch','main-elasticsearch','started', completion_timeout)
