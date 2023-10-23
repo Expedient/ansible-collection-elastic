@@ -20,6 +20,42 @@ ANSIBLE_METADATA = {
   'supported_by': 'community'
 }
 
+DOCUMENTATION='''
+---
+module: ece_facts
+
+short_description: Get ECE facts
+
+version_added: '2.9'
+
+author: Ian Scott
+
+requirements:
+  - python3
+  
+description: 
+  - Get ECE facts
+
+options:
+  host:
+    description: ECE Host
+    type: str
+
+  port:
+    description: ECE Port
+    type: int
+
+  username:
+    description: ECE Username
+    type: str
+
+  password:
+    description: ECE Password
+    type: str
+
+
+'''
+
 ## need to support both loading as part of a collection and running in test/debug mode
 try:
   from ansible_collections.expedient.elastic.plugins.module_utils.ece import ECE

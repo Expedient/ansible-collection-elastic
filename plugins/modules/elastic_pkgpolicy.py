@@ -44,12 +44,14 @@ options:
     type: dict
     suboptions:
       deployment_id:
-        required: False
-        description: ECE Deployment ID
+        description: 
+        - Deployment ID
+        - Required if deployment_name is blank
         type: str
       deployment_name:
-        required: False
-        description: ECE Deployment Name
+        description: 
+        - Name of Deployment
+        - Required if deployment_id is blank
         type: str
       resource_type:
         description: "Type or Resource, most likely kibana"
@@ -60,16 +62,33 @@ options:
       version:
         description: Deployment Kibana Version
         type: str
-      pkg_policy_name: Package Policy name (Required)
-      pkg_policy_desc: Package Policy description
-      agent_policy_id: Agent Policy ID. (Required if agent_policy_name is not present)
-      agent_policy_name: Agent Policy Name. (Required if agent_policy_id is not present)
-      integration_title: Integration Title/Label (Required)
-      integration_name: Integration Name 
-      integration_ver: Integration Version. The version will determine what integration settings are valid
-      namespace: Elastic namespace, always default for now (Optional)
-      integration_settings: Integration settings (Optional)
-      
+  pkg_policy_name:
+    description: Package Policy name 
+    type: str
+  pkg_policy_desc: 
+    description: Package Policy description
+    type: str
+  agent_policy_id: 
+    description: Agent Policy ID
+    type: str
+  agent_policy_name: 
+    description: Agent Policy Name
+    type: str
+  integration_title: 
+    description: "Integration Title/Label"
+    type: str
+  integration_name: 
+    description: Integration Name 
+    type: str
+  integration_ver: 
+    description: "Integration Version. The version will determine what integration settings are valid"
+    type: str
+  namespace: 
+    description: Elastic namespace, always default for now
+    type: str
+  integration_settings:
+    description: Integration settings
+    type: dict      
 '''
 from ansible.module_utils.basic import _ANSIBLE_ARGS, AnsibleModule
 #from ansible.module_utils.basic import *

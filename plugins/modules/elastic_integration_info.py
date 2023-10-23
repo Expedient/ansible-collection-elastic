@@ -44,12 +44,14 @@ options:
     type: dict
     suboptions:
       deployment_id:
-        required: False
-        description: ECE Deployment ID
+        description: 
+        - Deployment ID
+        - Required if deployment_name is blank
         type: str
       deployment_name:
-        required: False
-        description: ECE Deployment Name
+        description: 
+        - Name of Deployment
+        - Required if deployment_id is blank
         type: str
       resource_type:
         description: "Type or Resource, most likely kibana"
@@ -60,8 +62,13 @@ options:
       version:
         description: Deployment Kibana Version
         type: str
-      integration_title: Title or Label of intregration (seems to change between versions on occasion, but name does not)
-      integration_name: Name of intregration
+  integration_title: 
+    description: Title of intregration. seems to change between versions on occasion, but name does not
+    type: str
+  integration_name:
+    description: Name of intregration
+    type: str
+  
 
 '''
 from ansible.module_utils.basic import _ANSIBLE_ARGS, AnsibleModule

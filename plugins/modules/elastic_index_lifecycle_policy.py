@@ -45,12 +45,14 @@ options:
     type: dict
     suboptions:
       deployment_id:
-        required: False
-        description: ECE Deployment ID
+        description: 
+        - Deployment ID
+        - Required if deployment_name is blank
         type: str
       deployment_name:
-        required: False
-        description: ECE Deployment Name
+        description: 
+        - Name of Deployment
+        - Required if deployment_id is blank
         type: str
       resource_type:
         description: "Type or Resource, most likely kibana"
@@ -61,23 +63,13 @@ options:
       version:
         description: Deployment Kibana Version
         type: str
-      index_lifecycle_policy_name: Name of lifecycle policy
-      settings: (Example)
-        policy:
-          phases:
-            hot:
-              min_age: 0ms
-              actions:
-                rollover:
-                  max_size: 100gb
-                  max_primary_shard_size: 50gb
-                  max_age: 7d
-            delete:
-              min_age: 30d
-              actions:
-                delete:
-                  delete_searchable_snapshot: true
-
+  index_lifecycle_policy_name:
+    description:  Name of lifecycle policy
+    type: str
+  settings: 
+    description: lifecycle policy settings
+    type: dict
+ 
 '''
 
 from ansible.module_utils.basic import _ANSIBLE_ARGS, AnsibleModule

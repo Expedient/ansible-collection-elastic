@@ -44,12 +44,14 @@ options:
     type: dict
     suboptions:
       deployment_id:
-        required: False
-        description: ECE Deployment ID
+        description: 
+        - Deployment ID
+        - Required if deployment_name is blank
         type: str
       deployment_name:
-        required: False
-        description: ECE Deployment Name
+        description: 
+        - Name of Deployment
+        - Required if deployment_id is blank
         type: str
       resource_type:
         description: "Type or Resource, most likely kibana"
@@ -60,14 +62,33 @@ options:
       version:
         description: Deployment Kibana Version
         type: str
-      object_name: Saved Object name
-      object_id: Saved Object ID
-      object_type: Type of Object
-      search_string: Saved Object Search String
-      object_attributes: Object Attributes. These vary widely based on the object to create.
-      space_id: Space to search for the Saved Object List or create the Saved Object in
-      overwrite: True/False When Importing, if a Saved Object is found with the same ID whether or not to overwrite that object
-      createNewCopies: True/False When Importing, Whether or not to create a new copy
+  object_name:
+    description: Saved Object name
+    type: str
+  object_id:
+    description: Saved Object ID
+    type: str
+  object_type: 
+    description: Type of Object
+    type: str
+  search_string: 
+    description: Saved Object Search String
+    type: str
+  object_attributes: 
+    description: Object Attributes. These vary widely based on the object to create.
+    type: str
+  space_id:
+    description: Space to search for the Saved Object List or create the Saved Object in
+    type: str
+    default: default
+  overwrite: 
+    description: If a Saved Object is found with the same ID whether or not to overwrite that object
+    type: bool
+    default: True
+  createNewCopies: 
+    description: Whether or not to create a new copy
+    type: bool
+    default: False
 '''
 from ansible.module_utils.basic import _ANSIBLE_ARGS, AnsibleModule
 
