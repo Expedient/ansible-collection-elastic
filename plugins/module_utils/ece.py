@@ -147,32 +147,24 @@ class ECE(object):
           cluster_object = self.get_cluster_by_id(cluster_id)
       x = x + 1
 
-    if resource_kind == "apm" or resource_kind == "fleet":
-      y = 0
-      for resource in cluster_object['resources'][resource_kind]:
-        if resource['ref_id'] == resource_ref_id:
-          while 'services_urls' not in cluster_object['resources'][resource_kind][y]['info']['metadata']:
-            time.sleep(15)
-            cluster_object = self.get_cluster_by_id(cluster_id)
-          z = 0
-          found_service = False
-          while found_service == False:
-            for service_url in cluster_object['resources'][resource_kind][y]['info']['metadata']['services_urls']:
-              if service_url['service'] == resource_kind:
-                found_service = True
-                while 'url' not in cluster_object['resources'][resource_kind][y]['info']['metadata']['services_urls'][z]:
-                  time.sleep(15)
-                  if time.time() > timeout:
-                    return False
-                  cluster_object = self.get_cluster_by_id(cluster_id)
-              else:
-                found_service = False
-                time.sleep(15)
-                if time.time() > timeout:
-                  return False
-                cluster_object = self.get_cluster_by_id(cluster_id)
-            z = z + 1
-        y = y + 1
+    if resource_kind == "apm":
+      found_apm_url = False
+      found_fleet_url = False
+      while found_apm_url == False or found_fleet_url == False:
+        found_apm_url = False
+        found_fleet_url = False
+        cluster_object = self.get_cluster_by_id(cluster_id)
+        for resource in cluster_object['resources']['apm']:
+          if resource['ref_id'] == resource_ref_id:
+            if 'services_urls' in resource['info']['metadata']:
+              for service_url in resource['info']['metadata']['services_urls']:
+                if service_url['service'] == "apm" and service_url['url']:
+                  found_apm_url = True
+                elif service_url['service'] == "fleet" and service_url['url']:
+                  found_fleet_url = True
+        time.sleep(15)
+        if time.time() > timeout:
+          return False
     return True
   
   def wait_for_cluster_healthy(self, cluster_id, cluster_health = True, completion_timeout=1800):
@@ -234,7 +226,8 @@ class ECE(object):
                      deployment_template, 
                      elastic_settings, 
                      kibana_settings, 
-                     elastic_user_settings, 
+                     elastic_user_settings,
+                     kibana_user_settings,
                      apm_settings, 
                      ml_settings = None, 
                      snapshot_settings = None, 
@@ -301,14 +294,13 @@ class ECE(object):
               'zone_count': kibana_settings['zone_count']
             }],
             'kibana': {
-              'user_settings_yaml': '# Note that the syntax for user settings can change between major versions.\n# You might need to update these user settings before performing a major version upgrade.\n#\n# Use OpenStreetMap for tiles:\n# tilemap:\n#   options.maxZoom: 18\n#   url: http://a.tile.openstreetmap.org/{z}/{x}/{y}.png\n#\n# To learn more, see the documentation.',
+              'user_settings_yaml': dump(kibana_user_settings, Dumper=Dumper),
               'version': version
             }
           }
         }
         data['resources']['kibana'] = []
         data['resources']['kibana'].append(kibana_data)
-
 
       if apm_settings:
         apm_data = {
@@ -376,7 +368,16 @@ class ECE(object):
         }
 
       endpoint = 'deployments'
-      cluster_creation_result = self.send_api_request(endpoint, 'POST', data=data)
+
+      existing_deployment = self.get_matching_clusters(cluster_name)
+      if existing_deployment:
+        method = 'PUT'
+        endpoint += f'/{existing_deployment["id"]}'
+        data['prune_orphans'] = False
+      else:
+        method = 'POST'
+
+      cluster_creation_result = self.send_api_request(endpoint, method, data=data)
       if wait_for_completion:
         
         elastic_deployment_result = self. wait_for_cluster_state(cluster_creation_result['id'],'elasticsearch','main-elasticsearch','started', completion_timeout)

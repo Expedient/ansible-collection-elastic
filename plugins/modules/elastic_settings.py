@@ -62,19 +62,19 @@ options:
       version:
         description: Deployment Kibana Version
         type: str
-  elastic_settings:
-    description: Elastic Settings info
-    type: dict
-    suboptions:
-      state:
-        description: State persistent or transient
-        type: str
-      var:
-        description: elastic var name
-        type: str
-      value:
-        description: elastic var value
-        type: str
+  elastic_setting:
+    state: 
+      description:
+        - persistent or transient
+      required: true
+    var:
+      description:
+        - elastic var name
+      required: true
+    value:
+      description:
+        - elastic var value
+      required: true
 '''
 
 from ansible.module_utils.basic import _ANSIBLE_ARGS, AnsibleModule
