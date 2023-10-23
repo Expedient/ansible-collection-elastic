@@ -93,7 +93,9 @@ def main():
         logging_dest=dict(type='str', required=True),
         metrics_dest=dict(type='str', required=True),
         logging_ref_id=dict(type='str', default="elasticsearch"),
-        metrics_ref_id=dict(type='str', default="elasticsearch")
+        metrics_ref_id=dict(type='str', default="elasticsearch"),
+        run_logging_and_metric=dict(type='bool', default=True),
+        create_alias=dict(type='bool', default=True)
     )
     argument_dependencies = []
         #('state', 'present', ('enabled', 'alert_type', 'conditions', 'actions')),
@@ -108,6 +110,8 @@ def main():
     metrics_dest = module.params.get('metrics_dest')
     logging_ref_id = module.params.get('logging_ref_id')
     metrics_ref_id = module.params.get('metrics_ref_id')
+    run_logging_and_metric = module.params.get('run_logging_and_metric')
+    create_alias = module.params.get('create_alias')
     results = { 'changed': True }
         
     ElasticDeployments = ECE(module)
@@ -117,68 +121,84 @@ def main():
     elif deployment_name:
       deployment_object = [ElasticDeployments.get_deployment_info(deployment_name)]
 
-    logging_object = [ElasticDeployments.get_deployment_info(logging_dest)]
-    metrics_object = [ElasticDeployments.get_deployment_info(metrics_dest)]
-
     if len(deployment_object) == 1:
       deployment_object = deployment_object[0]
-      update_body = {
-        'alias': alias_name,
-        'prune_orphans': False,
-        'resources': {
-          'elasticsearch': [
-            {
-              'region':  deployment_object['resources']['elasticsearch'][0]['region'],
-              'ref_id':  deployment_object['resources']['elasticsearch'][0]['ref_id'],
-              'plan': deployment_object['resources']['elasticsearch'][0]['info']['plan_info']['current']['plan']
-            }
-          ],
-          'kibana': [
-            {
-              'region':  deployment_object['resources']['kibana'][0]['region'],
-              'ref_id':  deployment_object['resources']['kibana'][0]['ref_id'],
-              'elasticsearch_cluster_ref_id':  deployment_object['resources']['elasticsearch'][0]['ref_id'],
-              'plan': deployment_object['resources']['kibana'][0]['info']['plan_info']['current']['plan']
-            }
-          ]
-        },
-        'settings': {
-          'observability': {
-            'logging': {
-              'destination': {
-                'deployment_id': logging_object[0]['resources'][logging_ref_id][0]['id'],
-                'ref_id': logging_ref_id
+      update_body = {}
+      if create_alias:
+
+        alias_body = {
+          'alias': alias_name,
+          'prune_orphans': False,
+          'resources': {
+            'elasticsearch': [
+              {
+                'region':  deployment_object['resources']['elasticsearch'][0]['region'],
+                'ref_id':  deployment_object['resources']['elasticsearch'][0]['ref_id'],
+                'plan': deployment_object['resources']['elasticsearch'][0]['info']['plan_info']['current']['plan']
               }
-            },
-            'metrics': {
-              'destination': {
-                'deployment_id': metrics_object[0]['resources'][metrics_ref_id][0]['id'],
-                'ref_id': metrics_ref_id
+            ],
+            'kibana': [
+              {
+                'region':  deployment_object['resources']['kibana'][0]['region'],
+                'ref_id':  deployment_object['resources']['kibana'][0]['ref_id'],
+                'elasticsearch_cluster_ref_id':  deployment_object['resources']['elasticsearch'][0]['ref_id'],
+                'plan': deployment_object['resources']['kibana'][0]['info']['plan_info']['current']['plan']
+              }
+            ]
+          }
+        }
+      else:
+        alias_body = {}
+        
+      if run_logging_and_metric:
+        logging_object = [ElasticDeployments.get_deployment_info(logging_dest)]
+        metrics_object = [ElasticDeployments.get_deployment_info(metrics_dest)]
+        observability_body = {
+          'settings': {
+            'observability': {
+              'logging': {
+                'destination': {
+                  'deployment_id': logging_object[0]['resources'][logging_ref_id][0]['id'],
+                  'ref_id': logging_ref_id
+                }
+              },
+              'metrics': {
+                'destination': {
+                  'deployment_id': metrics_object[0]['resources'][metrics_ref_id][0]['id'],
+                  'ref_id': metrics_ref_id
+                }
               }
             }
           }
         }
-      }
-      
-      ElasticDeployments.update_deployment_byid(deployment_object['id'], update_body)
-      
-      ElasticDeployments.wait_for_cluster_healthy(deployment_object['id'])
-      ElasticDeployments.wait_for_cluster_state(deployment_object['id'], "elasticsearch" ) # Wait for ElasticSearch
-      ElasticDeployments.wait_for_cluster_state(deployment_object['id'], "kibana" ) # Wait for Kibana
-      deployment_healthy = ElasticDeployments.wait_for_cluster_state(deployment_object['id'], "apm") # If APM is healthy then the deployment is healthy since apm is last to come up
-      
-      if deployment_healthy == False:
-        results['post_config_status'] = "Cluster information may be incomplete because the cluster is not healthy"
       else:
-        time.sleep(30)
+        observability_body = {}
+      
+      update_body = {**alias_body, **observability_body}
+      
+      if update_body != {}:
+        ElasticDeployments.update_deployment_byid(deployment_object['id'], update_body)
         
-      results['changed'] = True
+        ElasticDeployments.wait_for_cluster_healthy(deployment_object['id'])
+        ElasticDeployments.wait_for_cluster_state(deployment_object['id'], "elasticsearch" ) # Wait for ElasticSearch
+        ElasticDeployments.wait_for_cluster_state(deployment_object['id'], "kibana" ) # Wait for Kibana
+        deployment_healthy = ElasticDeployments.wait_for_cluster_state(deployment_object['id'], "apm") # If APM is healthy then the deployment is healthy since apm is last to come up
+      
+        if deployment_healthy == False:
+          results['post_config_status'] = "WARNING: Cluster information may be incomplete because the cluster is not healthy"
+        else:
+          results['post_config_status'] = "SUCCESS: Cluster is updated and healthy"
+          time.sleep(30)
+
+        results['changed'] = True
+      else:
+        results['changed'] = False
+        results['post_config_status'] = "ERROR: No Cluster settings updates selected to be updated"
     else:
       results['changed'] = False
-      results['post_config_status'] = "0 or more than 1 deployment was matched with the name " + deployment_name + " or id " + deployment_id
+      results['post_config_status'] = "ERROR: 0 or more than 1 deployment was matched with the name " + deployment_name + " or id " + deployment_id
+      
     module.exit_json(**results)
 
 if __name__ == "__main__":
     main()
-    
-     
