@@ -184,20 +184,15 @@ def main():
         ElasticDeployments.wait_for_cluster_state(deployment_object['id'], "kibana" ) # Wait for Kibana
         deployment_healthy = ElasticDeployments.wait_for_cluster_state(deployment_object['id'], "apm") # If APM is healthy then the deployment is healthy since apm is last to come up
       
-        if deployment_healthy == False:
-          results['post_config_status'] = "WARNING: Cluster information may be incomplete because the cluster is not healthy"
-        else:
-          results['post_config_status'] = "SUCCESS: Cluster is updated and healthy"
-          time.sleep(30)
-
-        results['changed'] = True
+      if deployment_healthy == False:
+        results['post_config_status'] = "Cluster information may be incomplete because the cluster is not healthy"
       else:
-        results['changed'] = False
-        results['post_config_status'] = "ERROR: No Cluster settings updates selected to be updated"
+        time.sleep(30)
+        
+      results['changed'] = True
     else:
       results['changed'] = False
-      results['post_config_status'] = "ERROR: 0 or more than 1 deployment was matched with the name " + deployment_name + " or id " + deployment_id
-      
+      results['post_config_status'] = "0 or more than 1 deployment was matched with the name " + deployment_name + " or id " + deployment_id
     module.exit_json(**results)
 
 if __name__ == "__main__":
