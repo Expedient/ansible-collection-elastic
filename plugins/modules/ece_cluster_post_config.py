@@ -152,7 +152,10 @@ def main():
         
       if run_logging_and_metric:
         logging_object = [ElasticDeployments.get_deployment_info(logging_dest)]
-        metrics_object = [ElasticDeployments.get_deployment_info(metrics_dest)]
+        if logging_dest != metrics_dest:
+          metrics_object = [ElasticDeployments.get_deployment_info(metrics_dest)]
+        else:
+          metrics_object = logging_object
         observability_body = {
           'settings': {
             'observability': {
@@ -177,6 +180,7 @@ def main():
       update_body = {**alias_body, **observability_body}
       
       if update_body != {}:
+        
         ElasticDeployments.update_deployment_byid(deployment_object['id'], update_body)
         
         ElasticDeployments.wait_for_cluster_healthy(deployment_object['id'])

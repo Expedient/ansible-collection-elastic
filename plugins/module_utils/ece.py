@@ -138,13 +138,22 @@ class ECE(object):
     timeout = time.time() + completion_timeout
     cluster_object = self.get_cluster_by_id(cluster_id)
     x = 0
+
     for resource in cluster_object['resources'][resource_kind]:
       if resource['ref_id'] == resource_ref_id:
-        while cluster_object['resources'][resource_kind][x]['info']['status'] != cluster_state:
-          time.sleep(15)
-          if time.time() > timeout:
-            return False
-          cluster_object = self.get_cluster_by_id(cluster_id)
+        returned_state = 'stopped'
+        consecutive_match = 0
+        while returned_state != cluster_state and consecutive_match < 3:
+          if cluster_object['resources'][resource_kind] != []:
+            returned_state = cluster_object['resources'][resource_kind][x]['info']['status']
+          if returned_state != cluster_state:
+            time.sleep(30)
+            if time.time() > timeout:
+              return False
+            cluster_object = self.get_cluster_by_id(cluster_id)
+            consecutive_match = 0
+          else:
+            consecutive_match = consecutive_match + 1
       x = x + 1
 
     if resource_kind == "apm":
