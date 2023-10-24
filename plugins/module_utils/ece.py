@@ -38,7 +38,7 @@ class ECE(object):
       }
       payload = dumps(data)
       headers = {'Content-Type': 'application/json'}
-      response = open_url(url, data=payload, headers=headers, method='POST', validate_certs=self.validate_certs, timeout=120)
+      response = open_url(url, data=payload, headers=headers, method='POST', validate_certs=self.validate_certs, timeout=600)
       content = loads(response.read())
       self.token = content['token']
 
@@ -49,7 +49,7 @@ class ECE(object):
     if data:
       payload = dumps(data)
       headers['Content-Type'] = 'application/json'
-    response = open_url(url, data=payload, headers=headers, method=method, validate_certs=self.validate_certs, timeout=120)
+    response = open_url(url, data=payload, headers=headers, method=method, validate_certs=self.validate_certs, timeout=600)
     content = loads(response.read())
     return content
 
@@ -150,7 +150,10 @@ class ECE(object):
             time.sleep(30)
             if time.time() > timeout:
               return False
-            cluster_object = self.get_cluster_by_id(cluster_id)
+            try:
+              cluster_object = self.get_cluster_by_id(cluster_id)
+            except:
+              cluster_object = ['resources'][resource_kind] = []
             consecutive_match = 0
           else:
             consecutive_match = consecutive_match + 1
