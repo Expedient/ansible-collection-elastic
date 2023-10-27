@@ -133,40 +133,32 @@ class ECE(object):
     return next(filter(lambda x: x['name'] == template_name, templates), None)
 
   def wait_for_cluster_state(self, cluster_id, resource_kind, resource_ref_id = None, cluster_state = 'started', completion_timeout=1800):
-    if resource_ref_id == None:
+    if resource_ref_id is None:
       resource_ref_id = f"main-{resource_kind}"
     timeout = time.time() + completion_timeout
-    cluster_object = self.get_cluster_by_id(cluster_id)
-    x = 0
-    for resource in cluster_object['resources'][resource_kind]:
-      if resource['ref_id'] == resource_ref_id:
-        while cluster_object['resources'][resource_kind][x]['info']['status'] != cluster_state:
-          time.sleep(15)
-          if time.time() > timeout:
-            return False
-          cluster_object = self.get_cluster_by_id(cluster_id)
-      x = x + 1
 
-    if resource_kind == "apm":
-      found_apm_url = False
-      found_fleet_url = False
-      while found_apm_url == False or found_fleet_url == False:
-        found_apm_url = False
-        found_fleet_url = False
-        cluster_object = self.get_cluster_by_id(cluster_id)
-        for resource in cluster_object['resources']['apm']:
-          if resource['ref_id'] == resource_ref_id:
-            if 'services_urls' in resource['info']['metadata']:
-              for service_url in resource['info']['metadata']['services_urls']:
-                if service_url['service'] == "apm" and service_url['url']:
-                  found_apm_url = True
-                elif service_url['service'] == "fleet" and service_url['url']:
-                  found_fleet_url = True
+    while time.time() < timeout:
+      cluster_object = self.get_cluster_by_id(cluster_id)
+
+      if resource_kind not in cluster_object['resources']:
         time.sleep(15)
-        if time.time() > timeout:
-          return False
-    return True
+        continue
+
+      for resource in cluster_object['resources'][resource_kind]:
+        if resource['ref_id'] == resource_ref_id:
+          if resource['info']['status'] == cluster_state:
+            if resource_kind == "apm":
+              found_apm_url = any(service_url['service'] == "apm" and service_url['url'] for service_url in resource['info']['metadata'].get('services_urls', []))
+              found_fleet_url = any(service_url['service'] == "fleet" and service_url['url'] for service_url in resource['info']['metadata'].get('services_urls', []))
+              if found_apm_url and found_fleet_url:
+                return True
+            else:
+              return True
   
+      time.sleep(15)
+
+    return False
+
   def wait_for_cluster_healthy(self, cluster_id, cluster_health = True, completion_timeout=1800):
     timeout = time.time() + completion_timeout
     cluster_object = self.get_cluster_by_id(cluster_id)
