@@ -159,17 +159,16 @@ class ECE(object):
 
     return False
 
-  def wait_for_cluster_healthy(self, cluster_id, cluster_health = True, completion_timeout=1800):
-    timeout = time.time() + completion_timeout
-    cluster_object = self.get_cluster_by_id(cluster_id)
-    x = 0
-    while cluster_object['healthy'] != cluster_health:
-      time.sleep(15)
-      if time.time() > timeout:
-        return False
-      cluster_object = self.get_cluster_by_id(cluster_id)
+  def wait_for_cluster_healthy(self, cluster_id, cluster_health=True, completion_timeout=1800):
+      timeout = time.time() + completion_timeout
+      while time.time() < timeout:
+          cluster_object = self.get_cluster_by_id(cluster_id)
+          if 'healthy' in cluster_object and cluster_object['healthy'] == cluster_health:
+              return True
+          time.sleep(15)
 
-    return True
+      return False
+
 
   def get_traffic_rulesets(self, include_assocations=False):
     endpoint = 'deployments/traffic-filter/rulesets'
