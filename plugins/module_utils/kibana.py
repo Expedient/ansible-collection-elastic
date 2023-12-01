@@ -371,17 +371,24 @@ class Kibana(object):
   def update_security_rule(self, body):
     endpoint = "detection_engine/rules"
     rule_object = self.get_security_rule_byid(body['id'])
-    rule_object.pop('updated_at')
-    rule_object.pop('updated_by')
-    rule_object.pop('created_at')
-    rule_object.pop('created_by')
-    rule_object.pop('execution_summary')
-    rule_object.pop('rule_id')
-    rule_object.pop('related_integrations')
-    rule_object.pop('immutable')
-    rule_object.pop('required_fields')
-    rule_object.pop('setup')
-    rule_object.pop('revision')
+    keys_to_remove = [
+      'updated_at',
+      'updated_by',
+      'created_at',
+      'created_by',
+      'execution_summary',
+      'rule_id',
+      'related_integrations',
+      'immutable',
+      'required_fields',
+      'setup',
+      'revision'
+    ]
+
+    for key in keys_to_remove:
+      if key in rule_object:
+        rule_object.pop(key)
+
     rule_object.update(body)
     update_rule = self.send_api_request(endpoint, 'PUT', data=rule_object)
     return update_rule
