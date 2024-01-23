@@ -133,51 +133,42 @@ class ECE(object):
     return next(filter(lambda x: x['name'] == template_name, templates), None)
 
   def wait_for_cluster_state(self, cluster_id, resource_kind, resource_ref_id = None, cluster_state = 'started', completion_timeout=1800):
-    if resource_ref_id == None:
+    if resource_ref_id is None:
       resource_ref_id = f"main-{resource_kind}"
     timeout = time.time() + completion_timeout
-    cluster_object = self.get_cluster_by_id(cluster_id)
-    x = 0
-    for resource in cluster_object['resources'][resource_kind]:
-      if resource['ref_id'] == resource_ref_id:
-        while cluster_object['resources'][resource_kind][x]['info']['status'] != cluster_state:
-          time.sleep(15)
-          if time.time() > timeout:
-            return False
-          cluster_object = self.get_cluster_by_id(cluster_id)
-      x = x + 1
 
-    if resource_kind == "apm":
-      found_apm_url = False
-      found_fleet_url = False
-      while found_apm_url == False or found_fleet_url == False:
-        found_apm_url = False
-        found_fleet_url = False
-        cluster_object = self.get_cluster_by_id(cluster_id)
-        for resource in cluster_object['resources']['apm']:
-          if resource['ref_id'] == resource_ref_id:
-            if 'services_urls' in resource['info']['metadata']:
-              for service_url in resource['info']['metadata']['services_urls']:
-                if service_url['service'] == "apm" and service_url['url']:
-                  found_apm_url = True
-                elif service_url['service'] == "fleet" and service_url['url']:
-                  found_fleet_url = True
-        time.sleep(15)
-        if time.time() > timeout:
-          return False
-    return True
-  
-  def wait_for_cluster_healthy(self, cluster_id, cluster_health = True, completion_timeout=1800):
-    timeout = time.time() + completion_timeout
-    cluster_object = self.get_cluster_by_id(cluster_id)
-    x = 0
-    while cluster_object['healthy'] != cluster_health:
-      time.sleep(15)
-      if time.time() > timeout:
-        return False
+    while time.time() < timeout:
       cluster_object = self.get_cluster_by_id(cluster_id)
 
-    return True
+      if resource_kind not in cluster_object['resources']:
+        time.sleep(15)
+        continue
+
+      for resource in cluster_object['resources'][resource_kind]:
+        if resource['ref_id'] == resource_ref_id:
+          if resource['info']['status'] == cluster_state:
+            if resource_kind == "apm":
+              found_apm_url = any(service_url['service'] == "apm" and service_url['url'] for service_url in resource['info']['metadata'].get('services_urls', []))
+              found_fleet_url = any(service_url['service'] == "fleet" and service_url['url'] for service_url in resource['info']['metadata'].get('services_urls', []))
+              if found_apm_url and found_fleet_url:
+                return True
+            else:
+              return True
+  
+      time.sleep(15)
+
+    return False
+
+  def wait_for_cluster_healthy(self, cluster_id, cluster_health=True, completion_timeout=1800):
+      timeout = time.time() + completion_timeout
+      while time.time() < timeout:
+          cluster_object = self.get_cluster_by_id(cluster_id)
+          if 'healthy' in cluster_object and cluster_object['healthy'] == cluster_health:
+              return True
+          time.sleep(15)
+
+      return False
+
 
   def get_traffic_rulesets(self, include_assocations=False):
     endpoint = 'deployments/traffic-filter/rulesets'
@@ -226,7 +217,8 @@ class ECE(object):
                      deployment_template, 
                      elastic_settings, 
                      kibana_settings, 
-                     elastic_user_settings, 
+                     elastic_user_settings,
+                     kibana_user_settings,
                      apm_settings, 
                      ml_settings = None, 
                      snapshot_settings = None, 
@@ -293,14 +285,13 @@ class ECE(object):
               'zone_count': kibana_settings['zone_count']
             }],
             'kibana': {
-              'user_settings_yaml': '# Note that the syntax for user settings can change between major versions.\n# You might need to update these user settings before performing a major version upgrade.\n#\n# Use OpenStreetMap for tiles:\n# tilemap:\n#   options.maxZoom: 18\n#   url: http://a.tile.openstreetmap.org/{z}/{x}/{y}.png\n#\n# To learn more, see the documentation.',
+              'user_settings_yaml': dump(kibana_user_settings, Dumper=Dumper),
               'version': version
             }
           }
         }
         data['resources']['kibana'] = []
         data['resources']['kibana'].append(kibana_data)
-
 
       if apm_settings:
         apm_data = {
@@ -368,7 +359,16 @@ class ECE(object):
         }
 
       endpoint = 'deployments'
-      cluster_creation_result = self.send_api_request(endpoint, 'POST', data=data)
+
+      existing_deployment = self.get_matching_clusters(cluster_name)
+      if existing_deployment:
+        method = 'PUT'
+        endpoint += f'/{existing_deployment["id"]}'
+        data['prune_orphans'] = False
+      else:
+        method = 'POST'
+
+      cluster_creation_result = self.send_api_request(endpoint, method, data=data)
       if wait_for_completion:
         
         elastic_deployment_result = self. wait_for_cluster_state(cluster_creation_result['id'],'elasticsearch','main-elasticsearch','started', completion_timeout)
