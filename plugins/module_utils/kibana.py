@@ -175,6 +175,11 @@ class Kibana(object):
     alerts = self.send_api_request(endpoint, 'GET')
     return next(filter(lambda x: x['name'] == alert_name, alerts['data']), None)
 
+  def get_all_connectors(self):
+    endpoint = 'actions/connectors'
+    actions = self.send_api_request(endpoint, 'GET')
+    return actions
+  
   def get_alert_connector_by_name(self, connector_name):
     endpoint = 'actions/connectors'
     actions = self.send_api_request(endpoint, 'GET')
