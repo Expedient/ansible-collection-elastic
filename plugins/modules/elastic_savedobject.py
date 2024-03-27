@@ -156,7 +156,7 @@ def main():
         object_id = object_id, 
         object_name = object_name, 
         space_id = space_id)
-      saved_object_id = saved_object_info['id']
+      saved_object_id = saved_object_info['attributes']['id']
       saved_object = kibana.update_saved_object(
         object_type = object_type, 
         object_id = saved_object_id, 
@@ -172,7 +172,7 @@ def main():
             object_type = object_type, 
             object_name = each_dashboard, 
             space_id = space_id)
-          if saved_object_info != '':
+          if saved_object_info != {}:
             saved_object_id = saved_object_info['id']
             saved_object = kibana.delete_saved_object(
               object_type = object_type, 
@@ -182,15 +182,10 @@ def main():
       if object_id != None and object_id != '':      
         object_id_list = object_id.split(",")
         for each_dashboard in object_id_list:
-          saved_object_info = kibana.get_saved_object(
-            object_type = object_type, 
-            object_id = object_id, 
-            space_id = space_id)
-          if saved_object_info != '':
-            saved_object_id = saved_object_info['id']
+          if each_dashboard != '':
             saved_object = kibana.delete_saved_object(
               object_type = object_type, 
-              object_id = saved_object_id, 
+              object_id = each_dashboard, 
               space_id = space_id)
 
 
