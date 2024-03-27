@@ -824,7 +824,7 @@ class Kibana(object):
     ):
     page_size = 500
     page_number = 1
-    target_object = ""
+    target_object = {}
     if object_id == None:
       object_name_quote = urllib.parse.quote(object_name)
       endpoint  = f'saved_objects/_find?type={object_type}&search_fields=name&search_fields=title&search={object_name_quote}&page={str(page_number)}&per_page={str(page_size)}'
@@ -840,7 +840,10 @@ class Kibana(object):
             break
     else:
       endpoint  = f'saved_objects/{object_type}/{object_id}'
-      target_object = self.send_api_request(endpoint, 'GET', space_id = space_id)
+      try:
+        target_object = self.send_api_request(endpoint, 'GET', space_id = space_id)
+      except:
+        target_object = {}
     return target_object
 
   def get_saved_objects_list(self, object_string, object_type, space_id = 'default'):
@@ -856,6 +859,18 @@ class Kibana(object):
     body_JSON = dumps(saved_object)
     updated_object = self.send_api_request(endpoint, 'PUT', data = body_JSON)
     return updated_object
+  
+  def delete_saved_object(self, object_type, object_id = None, object_name = None, space_id = 'default', *args, **kwargs):
+    saved_object_info = self.get_saved_object(object_type=object_type, object_name=object_name, object_id= object_id, space_id=space_id)
+    if object_name:
+      object_attributes = saved_object_info.get('attributes')
+      object_id = object_attributes.get('id')
+    if saved_object_info:
+      endpoint  = f'saved_objects/{object_type}/{object_id}'
+      deleted_object = self.send_api_request(endpoint, 'DELETE', space_id = space_id)
+    else:
+      deleted_object = ''
+    return deleted_object
   
   def export_saved_object(self,
       object_type, 
