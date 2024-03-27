@@ -857,6 +857,11 @@ class Kibana(object):
     updated_object = self.send_api_request(endpoint, 'PUT', data = body_JSON)
     return updated_object
   
+  def delete_saved_object(self, object_type, object_id, space_id = 'default', *args, **kwargs):
+    endpoint  = f'saved_objects/{object_type}/{object_id}'
+    deleted_object = self.send_api_request(endpoint, 'DELETE', space_id = space_id)
+    return deleted_object
+  
   def export_saved_object(self,
       object_type, 
       object_id, 

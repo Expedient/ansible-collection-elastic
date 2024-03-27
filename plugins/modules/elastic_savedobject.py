@@ -164,6 +164,36 @@ def main():
         space_id = space_id, 
         object_attributes = object_attributes)
 
+    if (object_name or object_id) and state == "delete":
+      if object_name != None and object_name != '': 
+        object_name_list = object_name.split(",")
+        for each_dashboard in object_name_list:
+          saved_object_info = kibana.get_saved_object(
+            object_type = object_type, 
+            object_name = each_dashboard, 
+            space_id = space_id)
+          if saved_object_info != '':
+            saved_object_id = saved_object_info['id']
+            saved_object = kibana.delete_saved_object(
+              object_type = object_type, 
+              object_id = saved_object_id, 
+              space_id = space_id)
+
+      if object_id != None and object_id != '':      
+        object_id_list = object_id.split(",")
+        for each_dashboard in object_id_list:
+          saved_object_info = kibana.get_saved_object(
+            object_type = object_type, 
+            object_id = object_id, 
+            space_id = space_id)
+          if saved_object_info != '':
+            saved_object_id = saved_object_info['id']
+            saved_object = kibana.delete_saved_object(
+              object_type = object_type, 
+              object_id = saved_object_id, 
+              space_id = space_id)
+
+
     if saved_object != "":
       results['object_status'] = "Saved Object Found"
       results['saved_object'] = saved_object
