@@ -46,9 +46,9 @@ class ECE_API_Proxy(object):
     self.validate_certs = module.params.get('verify_ssl_cert')
     self.ece_auth = ECE(module)
 
-  def send_api_request(self, endpoint, method, data=None, headers={}, timeout=600, space_id='default', no_kbnver=False, version=None):
+  def send_api_request(self, endpoint, method, data=None, headers={}, timeout=600, space_id='default', no_kbnver=False, version=None, no_api = False):
 
-    if endpoint.startswith('_'):
+    if endpoint.startswith('_') or no_api == True:
       url = f'https://{self.host}:{self.port}/api/v1/deployments/{self.deployment_id}/{self.resource_type}/{self.ref_id}/proxy/{endpoint}'
     else:
       url = f'https://{self.host}:{self.port}/api/v1/deployments/{self.deployment_id}/{self.resource_type}/{self.ref_id}/proxy/s/{space_id}/api/{endpoint}'

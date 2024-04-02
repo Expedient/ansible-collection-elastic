@@ -42,10 +42,10 @@ class Elastic(object):
     if self.deployment_info:
       self.ece_api_proxy = ECE_API_Proxy(module)
       
-  def send_api_request(self, endpoint, method, data = None, headers = {}, timeout = 120, *args, **kwargs):
+  def send_api_request(self, endpoint, method, data = None, headers = {}, timeout = 600, no_api = False , *args, **kwargs):
     
     if self.deployment_info:
-      result = self.ece_api_proxy.send_api_request(endpoint, method, data, headers, timeout)
+      result = self.ece_api_proxy.send_api_request(endpoint, method, data, headers, timeout, no_api=no_api)
     else:
       result = self.send_elastic_api_request(endpoint, method, data, headers, timeout)
     return result
@@ -144,3 +144,20 @@ class Elastic(object):
     #json_body = dumps(body)
     settings_update = self.send_api_request(endpoint, 'PUT', data=body)
     return settings_update
+  
+  ########### Search Data
+  
+  def get_data(self, index, operation, body):
+    endpoint = f'{index}/{operation}'
+    json_body = loads(body)
+    document_list = self.send_api_request(endpoint, 'POST', data=json_body, no_api= True)
+    return document_list
+  
+  def scroll(self, operation, id, length = "1m", *args, **kwargs):
+    endpoint = f'{operation}/scroll'
+    body = {
+      "scroll": length,
+      "scroll_id": id
+    }
+    document_list = self.send_api_request(endpoint, 'POST', data=body, no_api= True)
+    return document_list
