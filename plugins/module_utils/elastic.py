@@ -144,3 +144,44 @@ class Elastic(object):
     #json_body = dumps(body)
     settings_update = self.send_api_request(endpoint, 'PUT', data=body)
     return settings_update
+  
+    ########### Component Template
+    
+  def get_component_template(self, template_name = None):
+    endpoint = '_component_template'
+    target_component_template = None
+    component_templates = self.send_api_request(endpoint, 'GET')
+    for component_template in component_templates['component_templates']:
+      if component_template['name'] == template_name:
+        target_component_template = component_template
+        break
+    return target_component_template
+  
+  def update_component_template(self, template_name, body):
+    endpoint = f'_component_template/{template_name}'
+    target_template = self.get_component_template(template_name=template_name)
+    component_template = None
+    if target_template == None:
+    #json_body = dumps(body)
+      component_template = self.send_api_request(endpoint, 'PUT', data=body)
+    return component_template
+  
+      ########### Index Template
+    
+  def get_index_template(self, template_name = None):
+    endpoint = '_index_template'
+    target_index_template = None
+    index_templates = self.send_api_request(endpoint, 'GET')
+    for index_template in index_templates['index_templates']:
+      if index_template['name'] == template_name:
+        target_index_template = index_template
+        break
+    return target_index_template
+  
+  def update_index_template(self, template_name, body):
+    endpoint = f'_index_template/{template_name}'
+    target_template = self.get_index_template(template_name=template_name)
+    if target_template != None:
+    #json_body = dumps(body)
+      index_template = self.send_api_request(endpoint, 'PUT', data=body)
+    return index_template

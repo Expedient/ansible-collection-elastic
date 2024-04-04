@@ -61,22 +61,22 @@ options:
       version:
         description: Deployment Kibana Version
         type: str
-      index_lifecycle_policy_name: Name of lifecycle policy
-      settings: (Example)
-        policy:
-          phases:
-            hot:
-              min_age: 0ms
-              actions:
-                rollover:
-                  max_size: 100gb
-                  max_primary_shard_size: 50gb
-                  max_age: 7d
+  index_lifecycle_policy_name: Name of lifecycle policy
+  settings: (Example)
+    policy:
+      phases:
+        hot:
+          min_age: 0ms
+          actions:
+            rollover:
+              max_size: 100gb
+              max_primary_shard_size: 50gb
+              max_age: 7d
+        delete:
+          min_age: 30d
+          actions:
             delete:
-              min_age: 30d
-              actions:
-                delete:
-                  delete_searchable_snapshot: true
+              delete_searchable_snapshot: true
 
 '''
 

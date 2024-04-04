@@ -60,8 +60,8 @@ options:
       version:
         description: Deployment Kibana Version
         type: str
-  index_lifecycle_policy_name: Name of lifecycle policy
-    description: ILM Policy Name
+  index_template: Name of index template
+    description: Index Template Name
     type: str
 '''
 
@@ -87,9 +87,8 @@ def main():
         username=dict(type='str', required=True),
         password=dict(type='str', no_log=True, required=True),   
         verify_ssl_cert=dict(type='bool', default=True),
-        index_lifecycle_policy_name=dict(type='str'),
-        #settings=dict(type='dict'),
-        deployment_info=dict(type='dict', default=None)
+        deployment_info=dict(type='dict', default=None),
+        index_template=dict(type='str'),
     )
     argument_dependencies = []
         #('state', 'present', ('enabled', 'alert_type', 'conditions', 'actions')),
@@ -100,15 +99,11 @@ def main():
     results['changed'] = False
     
     elastic = Elastic(module)
-    index_lifecycle_policy_name = module.params.get('index_lifecycle_policy_name')
+    index_template_name = module.params.get('index_template')
     
-    if index_lifecycle_policy_name:
-      results['elastic_index_lifecycle_status'] = "Elastic Index Lifecycle Policy found"
-      elastic_index_lifecycle_policy_object = elastic.get_index_lifecycle_policy(index_lifecycle_policy_name)
-      results['index_lifecycle_policy_object'] = elastic_index_lifecycle_policy_object
-    else:
-      results['elastic_index_lifecycle_status'] = "Elastic Index Lifecycle Policy NOT found"
-      results['index_lifecycle_policy_object'] = ""
+    if index_template_name:
+      index_template_object = elastic.get_index_template(index_template_name)
+      results['component_template_object'] = index_template_object
     
     module.exit_json(**results)
 
