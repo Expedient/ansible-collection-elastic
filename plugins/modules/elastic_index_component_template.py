@@ -60,8 +60,11 @@ options:
       version:
         description: Deployment Kibana Version
         type: str
-  index_lifecycle_policy_name: Name of lifecycle policy
-    description: ILM Policy Name
+  component_template:
+    description: Component Template Name
+    type: str
+  component_template_body: 
+    description: Component Template Body
     type: str
 '''
 
@@ -87,9 +90,10 @@ def main():
         username=dict(type='str', required=True),
         password=dict(type='str', no_log=True, required=True),   
         verify_ssl_cert=dict(type='bool', default=True),
-        index_lifecycle_policy_name=dict(type='str'),
-        #settings=dict(type='dict'),
-        deployment_info=dict(type='dict', default=None)
+        deployment_info=dict(type='dict', default=None),
+        component_template=dict(type='str'),
+        component_template_body=dict(type='dict'),
+        state=dict(type='str', default='present'),
     )
     argument_dependencies = []
         #('state', 'present', ('enabled', 'alert_type', 'conditions', 'actions')),
@@ -100,19 +104,21 @@ def main():
     results['changed'] = False
     
     elastic = Elastic(module)
-    index_lifecycle_policy_name = module.params.get('index_lifecycle_policy_name')
-    
-    if index_lifecycle_policy_name:
-      results['elastic_index_lifecycle_status'] = "Elastic Index Lifecycle Policy found"
-      elastic_index_lifecycle_policy_object = elastic.get_index_lifecycle_policy(index_lifecycle_policy_name)
-      results['index_lifecycle_policy_object'] = elastic_index_lifecycle_policy_object
-    else:
-      results['elastic_index_lifecycle_status'] = "Elastic Index Lifecycle Policy NOT found"
-      results['index_lifecycle_policy_object'] = ""
-    
+    component_template_name = module.params.get('component_template')
+    component_template_body = module.params.get('component_template_body')
+    state = module.params.get('state')
+
+    if component_template_name:
+      component_template_object = elastic.get_component_template(component_template_name)
+      results['component_template_object'] = component_template_object
+      if state == 'present':
+        results['changed'] = True
+        elastic.update_component_template(component_template_name, component_template_body)
+        updated_component_template_object = elastic.get_component_template(component_template_name)
+        results['updated_component_template_object'] = updated_component_template_object
+        results['component_template_status'] = "Component Template Updated"
+        
     module.exit_json(**results)
 
 if __name__ == "__main__":
     main()
-    
-     
