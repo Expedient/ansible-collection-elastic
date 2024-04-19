@@ -469,13 +469,21 @@ def main():
                   if policy_input['type'] == setting_key_type:
                     for setting_param, setting_value in setting_params.items():
                       if ':' in setting_param:
-                        data_stream_type, stream_param = setting_param.split(':')
+                        data_stream_type_or_dataset, stream_param = setting_param.split(':')
                       else:
-                        data_stream_type = None
-                        pkg_policy_object['inputs'][i][setting_param] = setting_value
+                        data_stream_type_or_dataset = None
+                        if setting_param == "vars":
+                          for var_name, var_value in setting_value.items():
+                            for pkg_policy_var_name, pkg_policy_var_attr in pkg_policy_object['inputs'][i][setting_param].items():
+                              if pkg_policy_var_name == var_name:
+                                pkg_policy_object['inputs'][i][setting_param][var_name]['value'] = var_value
+                        else:
+                          pkg_policy_object['inputs'][i][setting_param] = setting_value
                       k = 0
                       for stream in policy_input['streams']:
-                        if stream['data_stream']['type'] == data_stream_type:
+                        if stream['data_stream']['type'] == data_stream_type_or_dataset:
+                          pkg_policy_object['inputs'][i]['streams'][k][stream_param] = setting_value
+                        if stream['data_stream']['dataset'] == data_stream_type_or_dataset:
                           pkg_policy_object['inputs'][i]['streams'][k][stream_param] = setting_value
                         k = k +1
           i = i+1        
