@@ -565,6 +565,8 @@ class Kibana(object):
         body.pop('updated_at')
       if 'updated_by' in body:
         body.pop('updated_by')
+      if 'secret_references' in body:
+        body.pop('secret_references')
       input_no = 0
       for input in body['inputs']:
         if 'streams' in input:
