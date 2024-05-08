@@ -82,7 +82,19 @@ except:
   from kibana import Kibana
 
 results = {}
-                
+
+def compare_agent_policy(agent_policy_object, agent_policy_name, agent_policy_desc, protected, namespace, monitoring):
+  if agent_policy_object['name'] != agent_policy_name:
+    return False
+  if agent_policy_object['description'] != agent_policy_desc:
+    return False
+  if agent_policy_object['is_protected'] != protected:
+    return False
+  if agent_policy_object['namespace'] != namespace:
+    return False
+  if agent_policy_object['monitoring_enabled'] != monitoring:
+    return False
+  return True
 def main():
 
     module_args=dict(    
@@ -125,8 +137,14 @@ def main():
     if state == "present":
       agent_policy_object = kibana.get_agent_policy_byname(agent_policy_name)
       if agent_policy_object:
-        results['agent_policy_status'] = "Agent Policy already exists"
-        results['changed'] = False
+        # Check the provided data against the existing agent policy
+        if not compare_agent_policy(agent_policy_object, agent_policy_name, agent_policy_desc, protected, namespace, monitoring):
+          agent_policy_object = kibana.update_agent_policy(agent_policy_object['id'], agent_policy_name, agent_policy_desc, protected, namespace, monitoring)
+          results['agent_policy_status'] = "Agent Policy updated"
+          results['changed'] = True
+        else:
+          results['agent_policy_status'] = "Agent Policy already exists and is up to date"
+          results['changed'] = False
       else:
         agent_policy_object = kibana.create_agent_policy(agent_policy_id, agent_policy_name, agent_policy_desc, protected, namespace, monitoring)
         results['agent_policy_status'] = "Agent Policy created"
