@@ -742,7 +742,7 @@ class Kibana(object):
     agent_policy_objects = self.send_api_request(endpoint, 'GET')
     return agent_policy_objects
 
-  def create_agent_policy(self, agent_policy_id, agent_policy_name, agent_policy_desc, space_id="default", monitoring=[]):
+  def create_agent_policy(self, agent_policy_id, agent_policy_name, agent_policy_desc, protected=False, space_id="default", monitoring=[]):
     if agent_policy_id:
       agent_policy_object = self.get_agent_policy_byid(agent_policy_id)
     else:
@@ -753,7 +753,8 @@ class Kibana(object):
           "name": agent_policy_name,
           "namespace": space_id.lower(),
           "description": agent_policy_desc,
-          "monitoring_enabled": monitoring
+          "monitoring_enabled": monitoring,
+          "is_protected": protected
       }
       body_JSON = dumps(body)
       
