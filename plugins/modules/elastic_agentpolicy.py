@@ -69,6 +69,10 @@ options:
   monitoring: 
     description: Monitoring Attributes
     type: list
+  protected:
+    description: whether or not to enable agent tamper protection
+    type: bool
+    default: False
 '''
 from ansible.module_utils.basic import _ANSIBLE_ARGS, AnsibleModule
 
