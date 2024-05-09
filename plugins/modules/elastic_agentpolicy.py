@@ -69,6 +69,10 @@ options:
   monitoring: 
     description: Monitoring Attributes
     type: list
+  protected:
+    description: whether or not to enable agent tamper protection
+    type: bool
+    default: False
 '''
 from ansible.module_utils.basic import _ANSIBLE_ARGS, AnsibleModule
 
@@ -82,7 +86,19 @@ except:
   from kibana import Kibana
 
 results = {}
-                
+
+def compare_agent_policy(agent_policy_object, agent_policy_name, agent_policy_desc, protected, namespace, monitoring):
+  if agent_policy_object['name'] != agent_policy_name:
+    return False
+  if agent_policy_object['description'] != agent_policy_desc:
+    return False
+  if agent_policy_object['is_protected'] != protected:
+    return False
+  if agent_policy_object['namespace'] != namespace:
+    return False
+  if agent_policy_object['monitoring_enabled'] != monitoring:
+    return False
+  return True
 def main():
 
     module_args=dict(    
@@ -96,7 +112,8 @@ def main():
         state=dict(type='str', default='present'),
         monitoring=dict(type='list', default=[]),
         deployment_info=dict(type='dict', default=None),
-        namespace=dict(type='str', default='default')
+        namespace=dict(type='str', default='default'),
+        protected=dict(type='bool', default=False),
     )
     
     argument_dependencies = []
@@ -114,6 +131,7 @@ def main():
     agent_policy_id = module.params.get('agent_policy_id')
     monitoring = module.params.get('monitoring')
     namespace = module.params.get('namespace')
+    protected = module.params.get('protected')
     
     if module.check_mode:
         results['changed'] = False
@@ -123,10 +141,16 @@ def main():
     if state == "present":
       agent_policy_object = kibana.get_agent_policy_byname(agent_policy_name)
       if agent_policy_object:
-        results['agent_policy_status'] = "Agent Policy already exists"
-        results['changed'] = False
+        # Check the provided data against the existing agent policy
+        if not compare_agent_policy(agent_policy_object, agent_policy_name, agent_policy_desc, protected, namespace, monitoring):
+          agent_policy_object = kibana.update_agent_policy(agent_policy_object['id'], agent_policy_name, agent_policy_desc, protected, namespace, monitoring)
+          results['agent_policy_status'] = "Agent Policy updated"
+          results['changed'] = True
+        else:
+          results['agent_policy_status'] = "Agent Policy already exists and is up to date"
+          results['changed'] = False
       else:
-        agent_policy_object = kibana.create_agent_policy(agent_policy_id, agent_policy_name, agent_policy_desc, namespace, monitoring)
+        agent_policy_object = kibana.create_agent_policy(agent_policy_id, agent_policy_name, agent_policy_desc, protected, namespace, monitoring)
         results['agent_policy_status'] = "Agent Policy created"
       results['agent_policy_object'] = agent_policy_object
     elif state == "absent":
