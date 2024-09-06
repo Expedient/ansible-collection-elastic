@@ -103,6 +103,7 @@ extends_documentation_fragment:
 '''
 
 from ansible.module_utils.basic import AnsibleModule
+from urllib.error import HTTPError
 
 try:
   from ansible_collections.expedient.elastic.plugins.module_utils.kibana import Kibana
@@ -112,6 +113,7 @@ except:
   util_path = new_path = f'{os.getcwd()}/plugins/module_utils'
   sys.path.append(util_path)
   from kibana import Kibana
+
 
 def main():
     module_args=dict(
@@ -164,12 +166,14 @@ def main():
     if set(current_urls) == set(final_urls):
         results['msg'] += "\n No action needed"
     else:
-        if url_type == 'fleet_server':
-            send_url_result = kibana.set_fleet_server_hosts(provided_urls)
+        try:
+            if url_type == 'fleet_server':
+                send_url_result = kibana.set_fleet_server_hosts(provided_urls)
 
-        if url_type == 'elasticsearch':
-            send_url_result = kibana.set_fleet_elasticsearch_hosts(provided_urls)
-            
+            if url_type == 'elasticsearch':
+                send_url_result = kibana.set_fleet_elasticsearch_hosts(provided_urls)
+        except HTTPError as e:
+            module.fail_json(f"Error setting {url_type} fleet host: {e.read()}")
         if 'message' in send_url_result:
             module.fail_json(f"Unable to {action} urls. Error: {send_url_result['message']}")
         else:
