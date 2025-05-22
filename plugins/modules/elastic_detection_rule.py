@@ -77,8 +77,6 @@ except:
   sys.path.append(util_path)
   from kibana import Kibana
 
-results = {}
-
 def main():
 
     module_args=dict(   
@@ -97,22 +95,22 @@ def main():
         #('alert-type', 'metrics_threshold', ('conditions'))
     
     module = AnsibleModule(argument_spec=module_args, supports_check_mode=True)
+    results = {
+       "changed": False,
+    }
     
     state = module.params.get('state')
     security_rule_name = module.params.get('security_rule_name')
     active = module.params.get('active')
     
-    if module.check_mode:
-        results['changed'] = False
-    else:
-        results['changed'] = True
 
     kibana = Kibana(module)
     if state == "present":
       if active == True:
         sec_rule_info = kibana.activate_security_rule(security_rule_name)
-        if sec_rule_info == security_rule_name + ': Rule is already enabled':
-          results['changed'] = False
+        if sec_rule_info == security_rule_name + ': Rule enabled':
+          results['changed'] = True
+        
         results['sec_rule_info'] = sec_rule_info
     module.exit_json(**results)
 
