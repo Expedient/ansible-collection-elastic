@@ -472,7 +472,6 @@ class Kibana(object):
           break # No more rules to process
 
         for rule in allrules:
-          print(rule["name"])
           if rule["name"].upper() == rule_name.upper():
             if not rule["enabled"]:
               self.enable_security_rule(rule["id"])
