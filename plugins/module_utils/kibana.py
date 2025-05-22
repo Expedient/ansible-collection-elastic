@@ -398,9 +398,7 @@ class Kibana(object):
     rules = self.send_api_request(endpoint, 'GET')
     return rules
 
-  def get_security_rules_byfilter(self, rule_name):
-    page_no = 1
-    page_size = 100
+  def get_security_rules_byfilter(self, rule_name, page_no = 1, page_size = 100):
     filter_scrubbed = urllib.parse.quote(str(rule_name))
     endpoint = "detection_engine/rules/_find?page=" + str(page_no) + "&per_page=" + str(page_size) + "&filter=alert.attributes.name:" + filter_scrubbed
     rules = self.send_api_request(endpoint, 'GET')
@@ -463,23 +461,25 @@ class Kibana(object):
     return update_rule
 
   def activate_security_rule(self, rule_name, page_size = 500):
-
-    #### Getting first page of rules
     page_number = 1
-    rules = self.get_security_rules_byfilter(rule_name)
-    noOfRules = rules['total']
-    allrules = rules['data']
-    #### Going through each rule page by page and enabling each rule that isn't enabled.
-    while noOfRules > page_size * (page_number - 1):
+
+    while True:
+        rules = self.get_security_rules_byfilter(rule_name, page_number, page_size)
+        allrules = rules['data']
+
+
+        if not allrules:
+          break # No more rules to process
+
         for rule in allrules:
-          if rule['enabled'] == False and rule_name == rule['name']:
-            enable_rule = self.enable_security_rule(rule['id'])
-            return(rule['name'] + ": Rule is updated")
-          elif rule['enabled'] == True and rule_name == rule['name']:
-            return(rule['name'] + ": Rule is already enabled")
-        #page_number = page_number + 1
-        #rules = self.get_security_rules(page_size,page_number)
-        #allrules = rules['data']
+          print(rule["name"])
+          if rule["name"].upper() == rule_name.upper():
+            if not rule["enabled"]:
+              self.enable_security_rule(rule["id"])
+              return rule_name + ": Rule enabled"
+            else:
+              return rule_name + ": Rule is already enabled"
+        page_number += 1
     return rule_name + ": Rule not found"
 
   # Elastic Integration functions
