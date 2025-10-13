@@ -138,7 +138,15 @@ class ECE(object):
     timeout = time.time() + completion_timeout
 
     while time.time() < timeout:
-      cluster_object = self.get_cluster_by_id(cluster_id)
+      try:
+        cluster_object = self.get_cluster_by_id(cluster_id)
+      except urllib_error.HTTPError as e:
+        # We're hitting occasional errors where the API returns a 401 but will later be available. Assuming it's part of the process of it becoming available.
+        if e.code == 401:
+          time.sleep(15)
+          continue
+        else:
+          self.module.fail_json(msg=f'Error retrieving cluster {cluster_id} info: {e.read()}')
 
       if resource_kind not in cluster_object['resources']:
         time.sleep(15)
