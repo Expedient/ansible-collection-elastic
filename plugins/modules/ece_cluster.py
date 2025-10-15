@@ -319,21 +319,24 @@ def main():
 
     if not module.check_mode:
       cluster_data = None
-      cluster_data = ece_cluster.create_cluster(
-          cluster_name,
-          version,
-          deployment_template, 
-          elastic_settings, 
-          kibana_settings, 
-          elastic_user_settings,
-          kibana_user_settings,
-          apm_settings, 
-          ml_settings, 
-          snapshot_settings,
-          traffic_rulesets,
-          wait_for_completion,
-          completion_timeout
-          )
+      try:
+        cluster_data = ece_cluster.create_cluster(
+            cluster_name,
+            version,
+            deployment_template, 
+            elastic_settings, 
+            kibana_settings, 
+            elastic_user_settings,
+            kibana_user_settings,
+            apm_settings, 
+            ml_settings, 
+            snapshot_settings,
+            traffic_rulesets,
+            wait_for_completion,
+            completion_timeout
+            )
+      except HTTPError as e:
+        module.fail_json(msg=f'Error creating cluster: {e.read()}')
 
       if not cluster_data:
         results['msg'] = 'cluster creation failed'
