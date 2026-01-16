@@ -29,9 +29,6 @@ def main():
     policy_id = module.params.get("policy_id")
 
     enrollment_tokens = kibana.get_agentpolicy_enrollment_tokens()
-    import pprint
-
-    pprint.pprint(enrollment_tokens)
     for token in enrollment_tokens["items"]:
         if token["policy_id"] == policy_id:
             enrollment_token = token["api_key"]
