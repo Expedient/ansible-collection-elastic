@@ -13,7 +13,8 @@
 # limitations under the License.
 
 #from operator import contains
-from ansible.module_utils.urls import open_url, urllib_error
+from ansible.module_utils.urls import open_url
+from ansible.module_utils.six.moves.urllib import error as urllib_error
 from json import loads, dumps
 from urllib.error import HTTPError
 #import urllib.parse
