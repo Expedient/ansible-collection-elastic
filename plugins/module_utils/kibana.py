@@ -46,6 +46,7 @@ class Kibana(object):
     self.port = module.params.get('port')
     self.username = module.params.get('username')
     self.password = module.params.get('password')
+    self.api_key = module.params.get('api_key')
     self.validate_certs = module.params.get('verify_ssl_cert')
     self.version = None # this is a hack to make it so that we can run the first request to get the clutser version without erroring out
     self.deployment_info = module.params.get('deployment_info')
@@ -76,17 +77,24 @@ class Kibana(object):
       payload = dumps(data)
     if self.version and no_kbnver == False:
       headers['kbn-version'] = self.version
+    auth_kwargs = {}
+    if self.api_key:
+      headers['Authorization'] = f'ApiKey {self.api_key}'
+    else:
+      auth_kwargs = {
+        'force_basic_auth': True,
+        'url_username': self.username,
+        'url_password': self.password
+      }
     try:
       response = open_url(
-        url, 
-        data=payload, 
-        method=method, 
-        validate_certs=self.validate_certs, 
+        url,
+        data=payload,
+        method=method,
+        validate_certs=self.validate_certs,
         headers=headers,
-        force_basic_auth=True, 
-        url_username=self.username, 
-        url_password=self.password, 
-        timeout=timeout)
+        timeout=timeout,
+        **auth_kwargs)
     except HTTPError as e:
       raise e ## This allows errors raised during the request to be inspected while debugging
     if response.msg == 'No Content' and str(response.status).startswith('2'):
@@ -143,13 +151,19 @@ class Kibana(object):
       
     if self.version:
       headers['kbn-version'] = self.version
-    
+
+    auth = None
+    if self.api_key:
+      headers['Authorization'] = f'ApiKey {self.api_key}'
+    else:
+      auth = (self.username, self.password)
+
     if method == "POST":
       try:
         response = requests.post(
-          url, 
-          auth=(self.username, self.password),
-          files={'file': open(file,'rb')}, 
+          url,
+          auth=auth,
+          files={'file': open(file,'rb')},
           headers=headers,
           timeout=timeout
         )
@@ -1112,6 +1126,18 @@ class Kibana(object):
     result = self.send_api_request(endpoint, 'DELETE', space_id = space_id)
     return result
   
+# Synthetics Monitors
+
+  def get_synthetics_monitor_by_name(self, monitor_name):
+    endpoint = f'synthetics/monitors?query={urllib.parse.quote(monitor_name)}'
+    result = self.send_api_request(endpoint, 'GET')
+    return next(filter(lambda m: m['name'] == monitor_name, result.get('monitors', [])), None)
+
+  def create_synthetics_monitor(self, body):
+    endpoint = 'synthetics/monitors'
+    headers = {'kbn-xsrf': 'true'}
+    return self.send_api_request(endpoint, 'POST', data = body, headers = headers)
+
 # Data View
 
   def set_dataview_default(self, dataview_id = "logs-*"):
