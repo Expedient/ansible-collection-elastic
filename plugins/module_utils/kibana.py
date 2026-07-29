@@ -930,9 +930,11 @@ class Kibana(object):
     return import_object
 
   def get_fleet_server_hosts(self):
-    endpoint = 'fleet/settings'
+    endpoint = 'fleet/fleet_server_hosts'
     result = self.send_api_request(endpoint, 'GET')
-    return result['item']['fleet_server_hosts']
+    for item in result['items']:
+      if item['id'] == 'fleet-default-fleet-server-host':
+        return item['host_urls']
 
   def set_fleet_server_hosts(self, hosts: list, name='Default', default=True):
     endpoint = 'fleet/fleet_server_hosts/fleet-default-fleet-server-host' 
