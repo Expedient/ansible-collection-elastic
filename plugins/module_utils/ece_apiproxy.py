@@ -21,7 +21,7 @@ except:
   sys.path.append(util_path)
   from ece import ECE
 
-from ansible.module_utils.urls import open_url, urllib_error
+from ansible.module_utils.urls import open_url
 from json import loads, dumps
 import time
 import requests
