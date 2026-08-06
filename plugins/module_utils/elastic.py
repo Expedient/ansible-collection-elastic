@@ -183,5 +183,9 @@ class Elastic(object):
     target_template = self.get_index_template(template_name=template_name)
     if target_template != None:
     #json_body = dumps(body)
+      # Elasticsearch 9 returns these as system-managed metadata on GET but
+      # rejects them on PUT with invalid_index_template_exception
+      body.pop('created_date_millis', None)
+      body.pop('modified_date_millis', None)
       index_template = self.send_api_request(endpoint, 'PUT', data=body)
     return index_template
