@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from ansible.module_utils.urls import open_url, urllib_error
+from ansible.module_utils.urls import open_url
+from urllib import error as urllib_error
 from json import loads, dumps
 import time
 from yaml import load, dump
