@@ -1094,13 +1094,17 @@ class Kibana(object):
     return kibana_settings
 
   def update_kibana_settings(self, settings, space_id = 'default', *args, **kwargs ):
+    headers = {
+      'kbn-xsrf': True,
+      'x-elastic-internal-origin': 'Kibana'
+    }
     for setting, value in settings.items():
       endpoint  = f'kibana/settings/{setting}'
       body = {
         "value": value
-      } 
+      }
       body_json = dumps(body)
-      result = self.send_api_request(endpoint, 'POST', data = body_json, space_id = space_id)
+      result = self.send_api_request(endpoint, 'POST', data = body_json, headers = headers, space_id = space_id)
     return result
   
 # Exception Lists
