@@ -185,7 +185,7 @@ class Kibana(object):
     return alert_types
 
   def get_alert_by_name(self, alert_name):
-    endpoint = f'alerts/_find?search_fields=name&search={urllib.parse.quote(alert_name)}'
+    endpoint = f'alerting/rules/_find?search_fields=name&search={urllib.parse.quote(alert_name)}'
     alerts = self.send_api_request(endpoint, 'GET')
     return next(filter(lambda x: x['name'] == alert_name, alerts['data']), None)
 
