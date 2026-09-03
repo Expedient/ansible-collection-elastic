@@ -1142,6 +1142,12 @@ class Kibana(object):
     headers = {'kbn-xsrf': 'true'}
     return self.send_api_request(endpoint, 'POST', data = body, headers = headers)
 
+  def delete_synthetics_monitor(self, monitor_id):
+    endpoint = 'synthetics/monitors'
+    headers = {'kbn-xsrf': 'true'}
+    body = {'ids': [monitor_id]}
+    return self.send_api_request(endpoint, 'DELETE', data = body, headers = headers)
+
 # Data View
 
   def set_dataview_default(self, dataview_id = "logs-*"):

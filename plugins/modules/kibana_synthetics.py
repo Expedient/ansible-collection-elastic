@@ -35,20 +35,27 @@ requirements:
   - python3
 
 description:
-  - "This module creates a Synthetics monitor in Kibana"
+  - "This module creates or deletes a Synthetics monitor in Kibana"
   - "supports http, tcp, icmp, and browser monitor types"
   - "if a monitor with the given name already exists, it is left untouched"
+  - "if state is absent, only monitor_name and auth options are required"
 
 options:
+  state:
+    description:
+      - whether the monitor should exist
+    choices: ['present', 'absent']
+    default: present
+    type: str
   monitor_name:
     description:
-      - name of the monitor to create
+      - name of the monitor to create or delete
     required: True
     type: str
   monitor_type:
     description:
       - type of monitor to create
-    required: True
+      - required when state is present
     choices: ['http', 'tcp', 'icmp', 'browser']
     type: str
   monitor_host:
@@ -102,6 +109,14 @@ EXAMPLES = r'''
     private_locations:
       - cle2-ism
     schedule: 5
+
+- name: delete a synthetic monitor
+  expedient.elastic.kibana_synthetics:
+    host: expedient-networks.kb.elastic.expedient.cloud
+    port: 9243
+    api_key: "{{ kibana_api_key }}"
+    monitor_name: echo-health-vpan02.custcbb.local
+    state: absent
 '''
 
 try:
@@ -140,6 +155,24 @@ def build_monitor_body(params):
   return body
 
 
+def validate_present_params(module):
+  monitor_type = module.params.get('monitor_type')
+  if not monitor_type:
+    module.fail_json(msg='monitor_type is required when state is present')
+
+  type_field = {
+    'icmp': 'monitor_host',
+    'tcp': 'monitor_host',
+    'http': 'url',
+    'browser': 'inline_script',
+  }[monitor_type]
+  if not module.params.get(type_field):
+    module.fail_json(msg=f'{type_field} is required when monitor_type is {monitor_type}')
+
+  if not module.params.get('locations') and not module.params.get('private_locations'):
+    module.fail_json(msg='one of locations or private_locations is required when state is present')
+
+
 def main():
   module_args = dict(
     host=dict(type='str', required=True),
@@ -148,8 +181,9 @@ def main():
     password=dict(type='str', no_log=True),
     api_key=dict(type='str', no_log=True),
     verify_ssl_cert=dict(type='bool', default=True),
+    state=dict(type='str', default='present', choices=['present', 'absent']),
     monitor_name=dict(type='str', required=True),
-    monitor_type=dict(type='str', required=True, choices=['http', 'tcp', 'icmp', 'browser']),
+    monitor_type=dict(type='str', choices=['http', 'tcp', 'icmp', 'browser']),
     monitor_host=dict(type='str'),
     url=dict(type='str'),
     inline_script=dict(type='str'),
@@ -159,30 +193,41 @@ def main():
     deployment_info=dict(type='dict', default=None)
   )
 
-  argument_dependencies = [
-    ('monitor_type', 'icmp', ('monitor_host',)),
-    ('monitor_type', 'tcp', ('monitor_host',)),
-    ('monitor_type', 'http', ('url',)),
-    ('monitor_type', 'browser', ('inline_script',))
-  ]
-
   module = AnsibleModule(
     argument_spec=module_args,
-    required_if=argument_dependencies,
-    required_one_of=[('username', 'api_key'), ('locations', 'private_locations')],
+    required_one_of=[('username', 'api_key')],
     required_together=[('username', 'password')],
     mutually_exclusive=[('username', 'api_key'), ('password', 'api_key')],
     supports_check_mode=True
   )
 
+  state = module.params.get('state')
   monitor_name = module.params.get('monitor_name')
   results = {'changed': False}
+
+  if state == 'present':
+    validate_present_params(module)
 
   try:
     kibana = Kibana(module)
     monitor = kibana.get_synthetics_monitor_by_name(monitor_name)
   except HTTPError as e:
     module.fail_json(msg=f'Error looking up monitor {monitor_name}: {e.read()}')
+
+  if state == 'absent':
+    if not monitor:
+      results['msg'] = f'monitor named {monitor_name} is already absent'
+      module.exit_json(**results)
+
+    results['changed'] = True
+    results['msg'] = f'monitor named {monitor_name} will be deleted'
+    if not module.check_mode:
+      try:
+        kibana.delete_synthetics_monitor(monitor['id'])
+      except HTTPError as e:
+        module.fail_json(msg=f'Error deleting monitor {monitor_name}: {e.read()}')
+      results['msg'] = f'monitor named {monitor_name} deleted'
+    module.exit_json(**results)
 
   if monitor:
     results['msg'] = f'monitor named {monitor_name} already exists'
