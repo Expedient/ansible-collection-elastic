@@ -1135,7 +1135,7 @@ class Kibana(object):
   def get_synthetics_monitor_by_name(self, monitor_name):
     endpoint = f'synthetics/monitors?query={urllib.parse.quote(monitor_name)}'
     result = self.send_api_request(endpoint, 'GET')
-    return next(filter(lambda m: m['name'] == monitor_name, result.get('monitors', [])), None)
+    return next(filter(lambda m: m['name'].lower() == monitor_name.lower(), result.get('monitors', [])), None)
 
   def create_synthetics_monitor(self, body):
     endpoint = 'synthetics/monitors'

@@ -221,6 +221,7 @@ def main():
 
     results['changed'] = True
     results['msg'] = f'monitor named {monitor_name} will be deleted'
+    results['monitor'] = monitor
     if not module.check_mode:
       try:
         kibana.delete_synthetics_monitor(monitor['id'])
