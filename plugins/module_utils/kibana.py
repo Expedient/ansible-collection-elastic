@@ -1135,12 +1135,18 @@ class Kibana(object):
   def get_synthetics_monitor_by_name(self, monitor_name):
     endpoint = f'synthetics/monitors?query={urllib.parse.quote(monitor_name)}'
     result = self.send_api_request(endpoint, 'GET')
-    return next(filter(lambda m: m['name'] == monitor_name, result.get('monitors', [])), None)
+    return next(filter(lambda m: m['name'].lower() == monitor_name.lower(), result.get('monitors', [])), None)
 
   def create_synthetics_monitor(self, body):
     endpoint = 'synthetics/monitors'
     headers = {'kbn-xsrf': 'true'}
     return self.send_api_request(endpoint, 'POST', data = body, headers = headers)
+
+  def delete_synthetics_monitor(self, monitor_id):
+    endpoint = 'synthetics/monitors'
+    headers = {'kbn-xsrf': 'true'}
+    body = {'ids': [monitor_id]}
+    return self.send_api_request(endpoint, 'DELETE', data = body, headers = headers)
 
 # Data View
 
